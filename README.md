@@ -1,2 +1,3 @@
 # econ-8300
-econometrics repository
+
+This repository holds datasets and other random stuff.
