@@ -1,0 +1,563 @@
+/* =========================================================
+   UNO COLOR SYSTEM
+   ========================================================= */
+
+:root {
+  --uno-black: #101820;
+  --uno-gray: #53565a;
+  --uno-red: #c8102e;
+  --uno-red-dark: #9e0b23;
+  --uno-light-gray: #f1f1f1;
+  --uno-white: #ffffff;
+
+  --r-background-color: var(--uno-white);
+
+  --r-main-font: Arial, Helvetica, sans-serif;
+  --r-main-font-size: 36px;
+  --r-main-color: var(--uno-black);
+
+  --r-heading-font: Arial, Helvetica, sans-serif;
+  --r-heading-color: var(--uno-black);
+  --r-heading-font-weight: 700;
+  --r-heading-text-transform: none;
+  --r-heading-letter-spacing: normal;
+
+  --r-link-color: var(--uno-red);
+  --r-link-color-dark: var(--uno-red-dark);
+  --r-link-color-hover: var(--uno-red-dark);
+
+  --r-selection-background-color: #f3c8cf;
+  --r-selection-color: var(--uno-black);
+}
+
+
+/* =========================================================
+   BACKGROUND AND DEFAULT ALIGNMENT
+   ========================================================= */
+
+.reveal-viewport {
+  background: var(--uno-white);
+}
+
+.reveal {
+  color: var(--uno-black);
+}
+
+.reveal .slides,
+.reveal .slides section {
+  text-align: left;
+}
+
+
+/* =========================================================
+   OPTIONAL ALIGNMENT CLASSES
+   ========================================================= */
+
+
+.reveal .slides section.title-slide {
+  text-align: center;
+}
+
+.reveal .slides section.centered,
+.reveal .centered {
+  text-align: center;
+}
+
+.reveal .slides section.right-aligned,
+.reveal .right-aligned {
+  text-align: right;
+}
+
+
+/* =========================================================
+   TYPOGRAPHY
+   ========================================================= */
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+  color: var(--uno-black);
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  line-height: 1.15;
+  text-transform: none;
+}
+
+.reveal h1 {
+  font-size: 2.1em;
+}
+
+.reveal h2 {
+  font-size: 1.55em;
+  margin-bottom: 0.7em;
+  padding-bottom: 0.15em;
+  border-bottom: 0.08em solid var(--uno-gray);
+}
+
+.reveal h3 {
+  font-size: 1.05em;
+  margin-bottom: 0.4em;
+}
+
+.reveal p,
+.reveal li {
+  color: var(--uno-black);
+  line-height: 1.4;
+}
+
+.reveal li {
+  margin-bottom: 0.35em;
+}
+
+.reveal strong {
+  color: var(--uno-black);
+  font-weight: 700;
+}
+
+.reveal em {
+  color: var(--uno-black);
+}
+
+
+/* =========================================================
+   LISTS
+   ========================================================= */
+
+.reveal ul,
+.reveal ol {
+  margin-left: 1.25em;
+}
+
+.reveal li::marker {
+  color: var(--uno-gray);
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   LINKS
+   ========================================================= */
+
+.reveal a,
+.reveal a:visited {
+  color: var(--uno-red);
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.12em;
+}
+
+.reveal a:hover,
+.reveal a:focus {
+  color: var(--uno-red-dark);
+}
+
+.reveal a:focus-visible {
+  outline: 0.1em solid var(--uno-red);
+  outline-offset: 0.12em;
+}
+
+
+/* =========================================================
+   REUSABLE TEXT CLASSES
+   ========================================================= */
+
+.reveal .small {
+  font-size: 0.7em;
+}
+
+.reveal .tiny {
+  font-size: 0.55em;
+}
+
+.reveal .muted {
+  color: var(--uno-gray);
+}
+
+.reveal .accent {
+  color: var(--uno-red);
+}
+
+.reveal .gray-accent {
+  color: var(--uno-gray);
+}
+
+.reveal .slides section.small-text {
+  font-size: 0.9em;
+}
+
+
+/* =========================================================
+   TEXT BOXES AND CALLOUTS
+   ========================================================= */
+
+.reveal .text-box {
+  color: var(--uno-black);
+  background: var(--uno-white);
+  border: 0.08em solid var(--uno-gray);
+  border-radius: 0.2em;
+  padding: 0.75em 1em;
+  margin: 1em 0;
+}
+
+.reveal .callout {
+  color: var(--uno-black);
+  background: var(--uno-light-gray);
+  border-left: 0.2em solid var(--uno-gray);
+  padding: 0.75em 1em;
+  margin: 1em 0;
+}
+
+.reveal blockquote {
+  width: auto;
+  color: var(--uno-black);
+  background: var(--uno-light-gray);
+  border-left: 0.2em solid var(--uno-gray);
+  padding: 0.75em 1em;
+  margin: 1em 0;
+  box-shadow: none;
+}
+
+
+/* =========================================================
+   COLUMNS
+   ========================================================= */
+
+.reveal .columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+.reveal .columns.top {
+  align-items: start;
+}
+
+.reveal .columns-40-60 {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+.reveal .columns-60-40 {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+/* =========================================================
+   LINES BETWEEN OBJECTS/ SPACER
+   ========================================================= */
+
+.reveal hr {
+  height: 0;
+  margin: 1em 0;
+  border: 0;
+  border-top: 2px solid var(--uno-gray);
+}
+
+.reveal .column-divider {
+  padding-left: 2rem;
+  border-left: 2px solid var(--uno-gray);
+}
+
+.reveal .spacer {
+  height: 1em;
+}
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
+.reveal table {
+  width: 100%;
+  color: var(--uno-black);
+  border-collapse: collapse;
+  font-size: 0.8em;
+}
+
+.reveal th {
+  color: var(--uno-black);
+  background: var(--uno-light-gray);
+  font-weight: 700;
+}
+
+.reveal th,
+.reveal td {
+  padding: 0.4em 0.55em;
+  border: 1px solid var(--uno-gray);
+}
+
+
+/* =========================================================
+   CODE
+   ========================================================= */
+
+.reveal code {
+  color: var(--uno-black);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.reveal :not(pre) > code {
+  background: var(--uno-light-gray);
+  border: 1px solid var(--uno-gray);
+  border-radius: 0.15em;
+  padding: 0.08em 0.2em;
+}
+
+.reveal pre {
+  width: 100%;
+  box-shadow: none;
+}
+
+.reveal pre code {
+  max-height: 550px;
+  padding: 1em;
+  border-radius: 0.2em;
+}
+
+
+/* =========================================================
+   MATH
+   ========================================================= */
+
+.reveal .katex {
+  color: var(--uno-black);
+}
+
+.reveal .katex-display {
+  margin: 1em 0;
+  font-size: 1.05em;
+}
+
+
+/* =========================================================
+   FILL-IN BLANKS
+   ========================================================= */
+
+.reveal span.blank {
+  display: inline-block;
+  width: 10em;
+  height: 0.9em;
+  margin: 0 0.15em;
+  vertical-align: baseline;
+  border-bottom: 0.08em solid var(--uno-gray);
+}
+
+.reveal span.blank.short {
+  width: 5em;
+}
+
+.reveal span.blank.medium {
+  width: 8em;
+}
+
+.reveal span.blank.long {
+  width: 13em;
+}
+
+
+/* =========================================================
+   IMAGES
+   ========================================================= */
+
+.reveal .slide-image {
+  display: block;
+  max-width: 75%;
+  max-height: 500px;
+  margin: 1em auto;
+  object-fit: contain;
+}
+
+.reveal figure {
+  margin: 1em 0;
+}
+
+.reveal figcaption {
+  color: var(--uno-gray);
+  margin-top: 0.4em;
+  font-size: 0.55em;
+  line-height: 1.3;
+  text-align: center;
+}
+
+
+/* =========================================================
+   QR CODES AND IMAGES
+   ========================================================= */
+
+.reveal .qr-code {
+  display: block;
+  width: 280px;
+  height: 280px;
+  margin: 1em auto;
+  object-fit: contain;
+}
+
+.reveal .qr-code-right {
+  display: block;
+  width: 280px;
+  height: 280px;
+  margin: 1em 0 1em auto;
+  object-fit: contain;
+}
+
+.slide-logo {
+  position: fixed;
+  right: 24px;
+  bottom: 60px;
+  width: 110px !important;
+  max-width: 110px !important;
+  height: auto !important;
+  max-height: 60px !important;
+  object-fit: contain;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.hide-logo .slide-logo {
+  display: none !important;
+}
+
+/* =========================================================
+   SOURCES AND FOOTNOTES
+   ========================================================= */
+
+.reveal .source,
+.reveal .footnote {
+  color: var(--uno-gray);
+  font-size: 0.48em;
+  line-height: 1.3;
+}
+
+.reveal .source {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+.reveal :focus-visible {
+  outline: 0.1em solid var(--uno-red);
+  outline-offset: 0.12em;
+}
+
+.reveal ::selection {
+  color: var(--uno-black);
+  background: #f3c8cf;
+}
+
+
+/* =========================================================
+   PRINT AND PDF
+   ========================================================= */
+
+@media print {
+  .reveal {
+    color: var(--uno-black);
+    background: var(--uno-white);
+  }
+
+  .reveal h1,
+  .reveal h2,
+  .reveal h3,
+  .reveal h4,
+  .reveal h5,
+  .reveal h6 {
+    color: var(--uno-black);
+  }
+
+  .reveal a,
+  .reveal a:visited {
+    color: var(--uno-red);
+    text-decoration: underline;
+  }
+
+  .reveal .text-box,
+  .reveal .callout,
+  .reveal blockquote,
+  .reveal table,
+  .reveal figure {
+    break-inside: avoid;
+  }
+}
+
+/* =========================================================
+   CONTACT SLIDE
+   ========================================================= */
+
+.reveal .contact-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+  gap: 3rem;
+  align-items: center;
+  margin-top: 1.5em;
+}
+
+.reveal .contact-information {
+  align-self: center;
+}
+
+.reveal .contact-label {
+  color: var(--uno-gray);
+  margin: 0 0 0.25em;
+  font-size: 0.65em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.reveal .contact-email {
+  margin: 0;
+  font-size: 1.15em;
+}
+
+.reveal .contact-description {
+  max-width: 19em;
+  margin-top: 1.25em;
+  color: var(--uno-gray);
+  font-size: 0.7em;
+  line-height: 1.4;
+}
+
+.reveal .qr-panel {
+  justify-self: end;
+  width: 320px;
+  padding: 0.8em;
+  background: var(--uno-light-gray);
+  border-top: 6px solid var(--uno-red);
+  text-align: center;
+}
+
+.reveal .qr-heading {
+  margin: 0 0 0.6em;
+  color: var(--uno-black);
+  font-size: 0.7em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.reveal .contact-qr {
+  display: block;
+  width: 230px !important;
+  height: 230px !important;
+  margin: 0 auto;
+  background: white;
+  object-fit: contain;
+}
+
+.reveal .qr-caption {
+  margin: 0.6em 0 0;
+  color: var(--uno-gray);
+  font-size: 0.5em;
+  text-align: center;
+}

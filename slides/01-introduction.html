@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <!-- CHANGE FOR EACH DECK -->
+    <title>ECON 8300: Introduction</title>
+
+    <link rel="stylesheet" href="../reveal/dist/reveal.css">
+    <link rel="stylesheet" href="../reveal/dist/theme/white.css">
+    <link rel="stylesheet" href="../reveal/plugin/highlight/monokai.css">
+    <link rel="stylesheet" href="css/econ-8300.css">
+  </head>
+
+  <body>
+    <div class="reveal">
+      <div class="slides">
+
+        <!-- CHANGE FOR EACH DECK -->
+        <section
+          data-markdown="markdown/01-introduction.md"
+          data-separator="^---$"
+          data-separator-vertical="^--$"
+          data-separator-notes="^Notes?:"
+          data-charset="utf-8"
+        ></section>
+
+      </div>
+
+      <img
+        class="slide-logo"
+        src="images/uno-logo.png"
+        alt="University of Nebraska at Omaha"
+      >
+    </div>
+
+    <script type="module">
+      import Reveal from "../reveal/dist/reveal.mjs";
+
+      import Markdown from "../reveal/dist/plugin/markdown.mjs";
+      import Highlight from "../reveal/dist/plugin/highlight.mjs";
+      import Notes from "../reveal/dist/plugin/notes.mjs";
+      import Math from "../reveal/dist/plugin/math.mjs";
+      import Search from "../reveal/dist/plugin/search.mjs";
+      import Zoom from "../reveal/dist/plugin/zoom.mjs";
+
+      Reveal.initialize({
+        hash: true,
+        slideNumber: "c/t",
+
+        controls: true,
+        progress: true,
+        center: true,
+
+        transition: "fade",
+        backgroundTransition: "fade",
+
+        plugins: [
+          Markdown,
+          Highlight,
+          Notes,
+          Math.KaTeX,
+          Search,
+          Zoom
+        ]
+      });
+    </script>
+  </body>
+</html>
