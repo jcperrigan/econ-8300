@@ -1,0 +1,8 @@
+.DS_Store
+.Rproj.user/
+.Rhistory
+.RData
+node_modules/
+
+data/private/
+data/intermediate/
