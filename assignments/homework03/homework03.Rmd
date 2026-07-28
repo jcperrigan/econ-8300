@@ -1,0 +1,333 @@
+---
+title: "ECON-8300"
+output: 
+  html_document:
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Homework03
+
+Grading Rubric (per question):  
+3 points if complete and correct  
+0 points otherwise 
+
+
+## Retrieving your work
+
+This and all future homework .Rmd files are written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing. 
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment. 
+
+## Submitting your work
+
+When you upload your files to Canvas, you are to submit ***two*** files:
+
+a. Your reproducible document file (.Rmd) which should be saved as homework##-ID.Rmd. For example, my homework03 file would be saved as homework03-jperrigan.Rmd.
+
+b. Your rendered reproducible document file (.html) which should be saved as homework##-ID.html. For example, my homework03 file would be saved as homework03-jperrigan.html.
+
+Your ID is your Canvas username. It is also the text before the "@" symbol in your UNO email address.
+
+You have an unlimited number of submissions, but only the latest submission will be viewed and graded. **Proper means that the file is correctly named and formatted. Latest means that the file is the most recent submission prior to the deadline. Remember the .Rmd file needs to render properly to .html before submitting.** 
+
+
+***
+
+All students are expected to complete all problems. If any problem asks you a particular question, be sure to answer it completely (with code, written sentences, or both).
+
+***Do not change anything in this file above the double line. Doing so will prevent your homework from being graded.***
+
+***
+***
+
+### Use the URLs to access the data. No local files allowed.
+
+# Loading and looking at the data 
+
+We will be using one of the Wooldridge data sets for this problem set.
+
+To install the wooldridge package, use the following: "install.packages('wooldridge')". Simply remove the "#" in the below code box.
+
+If you already have it installed, add it to your notebook library.
+```{r}
+#install.packages('wooldridge')
+library(wooldridge)
+```
+
+Once you have the wooldridge package loaded, you can start to use the datasets by using the following code to load the data and then attach it:
+
+```{r}
+data('meap01')
+attach(meap01)
+```
+
+Attaching the dataframe means you can refer to objects in the dataframe by simply their name, instead of needing to refer to the dataframe each time. This is useful when working with a single dataframe at a time.
+
+Meap01 is a dataframe with 1,823 observations on 11 variables:
+
+* dcode: district code
+
+* bcode: building code
+
+* math4: percent students satisfactory, 4th grade math
+
+* read4: percent students satisfactory, 4th grade reading
+
+* lunch: percent students eligible for free or reduced lunch 
+
+* enroll: school enrollment
+
+* expend: total spending, $
+
+* exppp: expenditures per pupil: expend/enroll
+
+* lenroll: log(enroll)
+
+* lexpend: log(expend)
+
+* lexppp: log(exppp)
+
+
+***
+
+**#1** 
+
+**Problem:** Using the "meap01" data:
+
+a) Compute the sample means of `exppp` and `math4`.
+
+b) Construct mean-centered variables:
+
+
+   $x_i^c = exppp_i - \bar{exppp}, \quad y_i^c = math4_i - \bar{math4}$
+
+
+Assign these values to `xc` and `yc`.
+
+c) Verify numerically that $\sum_i x_i^c = 0$ and $\sum_i y_i^c = 0$.
+   
+
+**Answer:**
+
+```{r, problem01}
+#xc <-
+#yc <-
+```
+
+
+***
+
+**#2** 
+
+**Problem:** 
+
+a) Using the centered variables, compute
+
+$\hat\beta_1 = \frac{\sum_i x_i^c y_i^c}{\sum_i (x_i^c)^2}$
+
+Assign your value to `b1_hat`.
+
+b) Then, using your calculated value for $\hat\beta_1$, calculate $\hat\beta_0$:
+
+$\hat{\beta_0} = \bar{y} - \hat{\beta_1}\bar{x}$.
+
+Assign your value to `b0_hat`.
+
+
+**Answer:**
+
+```{r, problem02}
+#b1_hat <-
+#b0_hat <-
+```
+
+***
+
+
+**#3** 
+
+**Problem:** 
+
+Estimate the regression
+
+$math4 = \beta_0 + \beta_1 exppp + u$
+
+Report $\hat\beta_0$, $\hat\beta_1$, standard errors, and $R^2$.
+
+This R code should be written in the code chunk of the **Answer** section below. Save your model results to `prob03`. 
+
+**Answer:**
+
+```{r, problem03}
+#prob03 <-
+```
+
+***
+
+**#4** 
+
+**Problem:** 
+
+Construct a 95% confidence interval for $\beta_1$ **manually** using
+
+$\hat\beta_1 \pm t_{0.975,\,n-2} \cdot SE(\hat\beta_1)$
+
+Verify it matches `confint()`.
+
+This R code should be written in the code chunk of the **Answer** section below. 
+
+Save your confidence interval as a vector to `prob04`, with the lower bound of the confidence interval coming first. 
+
+**Answer:**
+
+```{r, problem04}
+#prob04 <-
+```
+
+***
+
+**#5** 
+
+**Problem:** 
+
+Test
+
+$H_0: \beta_1 = 0 \quad vs \quad H_1: \beta_1 \neq 0$
+
+State the test statistic and p-value. Assign the values to `t_stat` and `p_two`.
+
+This R code should be written in the code chunk of the **Answer** section below. 
+
+**Answer:**
+
+```{r, problem05}
+#t_stat <-
+#p_two <-
+```
+
+***
+
+**#6** 
+
+**Problem:** 
+
+a) Now test $H_0: \beta_1 \le 0 \quad vs \quad H_1: \beta_1 > 0$
+
+Manually compute the one-sided p-value. Assign the value to `p_one`.
+
+b) Explain why it differs from the two-sided case.
+
+Assign your response to this question as a string to `prob06`.
+
+This R code should be written in the code chunk of the **Answer** section below. 
+
+**Answer:**
+
+```{r, problem06}
+#p_one <-
+#prob06 <-
+```
+
+
+***
+
+
+**#7** 
+
+**Problem:** Using your estimated level model from Question 2:
+
+a) Compute the predicted change in `math4` if `exppp` increases by **$500**. Save this answer to `change_500`.
+
+b) Compute the predicted change if `exppp` **decreases** by **$1,000**. Save this answer to `change_minus_1000`.
+
+b) Explain whether linearity is a reasonable approximation over this range. Save this answer as a string to `prob07`.**
+
+
+This R code should be written in the code chunk of the **Answer** section below. 
+
+
+```{r, problem07}
+#change_500 <-
+#change_minus_1000 <-
+#prob07 <-
+```
+
+***
+
+**#8** 
+
+**Problem:** 
+
+Estimate
+
+$math4 = \beta_0 + \beta_1 \ln(exppp) + u$
+
+a) Compute the predicted change in `math4` for a 10% increase in spending. Save this to `pred_10pct`**
+
+b) Interpret $\hat\beta_1$ as a semi-elasticity. Compare this prediction to Question 4. Save this answer as a string to `prob08`.
+
+This R code should be written in the code chunk of the **Answer** section below. 
+
+**Answer:**
+
+```{r, problem08}
+#pred_10pct <-
+#prob08 <-
+```
+
+
+***
+
+**#9** 
+
+**Problem:** 
+
+Compare the **level** and **log** models using:**
+
+* $R^2$
+* Residual standard error
+* Economic interpretability
+
+Which model do you prefer and why? 
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer as a string to `prob09`. 
+
+**Answer:**
+
+```{r, problem09}
+#prob09 <-
+```
+
+
+***
+
+
+**#10** 
+
+**Problem:** 
+
+In **5–7 sentences**, explain the relationship between:
+
+* confidence intervals
+* p-values
+* hypothesis tests
+
+Focus on how they provide equivalent information (e.g., CI-based rejection vs p-value-based rejection).
+
+This R code should be written as a string in the code chunk of the Answer section below. The string should be assigned to `prob10`.
+
+**Answer:**
+
+```{r, problem10}
+#prob10 <- 
+```
+
+
+***

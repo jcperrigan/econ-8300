@@ -13,11 +13,17 @@ Opening remarks.
 
 ---
 
-## Today
+## Week 1
 
 <ol>
   <li class="fragment">Course structure</li>
   <li class="fragment">Expectations</li>
-  <li class="fragment">Econometric reasoning</li>
-  <li class="fragment">Where we begin</li>
+  <li class="fragment">What is Econometrics?</li>
+  <li class="fragment">Introduction to R</li>
 </ol>
+
+---
+
+## Course structure
+
+---

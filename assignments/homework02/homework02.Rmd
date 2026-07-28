@@ -1,0 +1,218 @@
+---
+title: "ECON-8300"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Homework02
+
+Grading Rubric (per question):  
+3 points if complete and correct  
+0 points otherwise 
+
+
+## Retrieving your work
+
+This and all future homework .Rmd files are written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing. 
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment. 
+
+
+## Submitting your work
+
+When you upload your files to Canvas, you are to submit ***two*** files:
+
+a. Your reproducible document file (.Rmd) which should be saved as homework##-ID.Rmd. For example, my homework02 file would be saved as homework02-jperrigan.Rmd.
+
+b. Your rendered reproducible document file (.html) which should be saved as homework##-ID.html. For example, my homework02 file would be saved as homework02-jperrigan.html.
+
+Your ID is your Canvas username. It is also the text before the "@" symbol in your UNO email address.
+
+You have an unlimited number of submissions, but only the  latest submission will be viewed and graded. **Proper means that the file is correctly named and formatted. Latest means that the file is the most recent submission prior to the deadline. Remember the .Rmd file needs to render properly to .html before submitting.** 
+
+
+***
+
+All students are expected to complete all problems. If any problem asks you a particular question, be sure to answer it completely (with code, written sentences, or both).
+
+***Do not change anything in this file above the double line. Doing so will prevent your homework from being graded.***
+
+***
+***
+
+### Use the URLs to access the data. No local files allowed.
+
+
+
+Use the following description for problems 1 and 2.
+
+In a given population of two-earner male-female couples, male earnings have a mean of \$63,000 per year and a standard deviation of \$15,500. Female earnings have a mean of \$52,000 per year and a standard deviation of \$18,000. The correlation between male and female earnings for a couple is 0.83. Let *C* denote the combined earnings for a randomly selected couple.
+
+
+**#1** 
+
+**Problem:** What is the mean of *C*? 
+
+Your answer should be in thousands of dollars (for example, \$2,000 would be written as \$2). This R code should be written in the code chunk of the **Answer** section below. Make sure to leave the answer assigned to "prob01."
+
+**Answer:**
+
+```{r, problem01}
+#prob01 <- 
+```
+
+
+***
+
+**#2** 
+
+**Problem:** What is the standard deviation of *C*?
+
+This R code should be written in the code chunk of the **Answer** section below. Make sure to leave the answer assigned to "prob02."
+
+**Answer:**
+
+```{r, problem02}
+#prob02 <- 
+```
+
+
+***
+
+**#3** 
+
+**Problem:** Is the mean or the median more appropriate to use when reporting the central tendency of income data? Explain, considering income distribution.
+
+This R code should be written in the code chunk of the **Answer** section below. Save your answer as a string assigned to "prob03."
+
+```{r, problem03}
+# prob03 <-
+```
+
+***
+
+**#4** 
+
+**Problem:** In a population, the sample population $\mu_Y = 60$ and the sample variance $\sigma^2_Y = 22$. In a random sample of size $n = 60$, find the probability that the sample average is less than 58: $Pr(\overline{Y} \leq 58)$.
+
+This R code should be written in the code chunk of the **Answer** section below. Make sure to leave the answer assigned to "prob04."
+
+**Answer:**
+
+```{r, problem04}
+#prob04 <- 
+```
+
+***
+
+
+Use the following description for problems 5, 6, and 7:
+
+$Y_1, \cdots, Y_n$ are i.i.d. Bernoulli random variables with $p = 0.41$. Let $\bar{Y}$ denote the sample mean.
+
+**#5**
+
+**Problem:** Use the central limit theorem to compute approximations for $Pr(\bar{Y} \geq 0.46)$ when $n = 100$
+
+
+This R code should be written in the code chunk of the **Answer** section. Make sure to leave the answer assigned to "prob05."
+
+**Answer:**
+
+```{r, problem05}
+#prob05 <- 
+```
+
+***
+
+
+**#6** 
+
+**Problem:** Use the central limit theorem to compute approximations for $Pr(\bar{Y} \leq 0.38)$ when $n = 400$
+
+This R code should be written in the code chunk of the **Answer** section below. Make sure to leave the answer assigned to "prob05."
+
+**Answer:**
+
+```{r, problem06}
+#prob06 <- 
+```
+
+
+***
+
+**#7** 
+
+**Problem:** How large would *n* need to be to ensure that $Pr(0.38 \leq \bar{Y} \leq 0.44) \geq 0.95$, given $p = 0.41$? Use the central limit theorem to compute an approximate answer. Make sure to round your answer up using ceiling() to the nearest whole number.
+
+This R code should be written in the code chunk of the **Answer** section below. Make sure to leave the answer assigned to "prob07."
+
+**Answer:**
+
+```{r, problem07}
+#prob07 <-
+```
+
+
+***
+
+Use the following description to answer questions 8, 9, and 10:
+
+
+In a survey of 600 likely voters, 272 responded that they would vote for the incumbent, and 328 responded that they would vote for the challenger. Let $\hat{p}$ denote the fraction of all likely voters who preferred the incumbent at the time of the survey.
+
+
+**#8**
+
+**Problem**: Use the estimator of the variance of $\hat{p}$ to calculate the standard error of your estimator.
+
+This R code should be written in the code chunk of the **Answer** section below. Make sure to leave the answer assigned to "prob08."
+
+**Answer:**
+
+```{r, problem08}
+#prob08 <- 
+```
+
+
+***
+
+**#9**
+
+**Problem**: What is the *p*-value for the test of $H_0: p = 0.5$ vs. $H_1: p \neq 0.5$?
+
+This R code should be written in the code chunk of the **Answer** section below. Make sure to leave the answer assigned to "prob09."
+
+**Answer:**
+
+```{r, problem09}
+#prob09 <- 
+```
+
+
+***
+
+**#10**
+
+**Problem**: What is the *p*-value for the test of $H_0: p = 0.5$ vs. $H_1: p > 0.5$?
+
+This R code should be written in the code chunk of the **Answer** section below. Make sure to leave the answer assigned to "prob10."
+
+**Answer:**
+
+```{r, problem10}
+#prob10 <- 
+```
+
+
+***
+

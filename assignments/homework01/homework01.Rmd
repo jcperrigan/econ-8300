@@ -1,0 +1,242 @@
+---
+title: "ECON-8300"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Homework01
+
+Grading Rubric (per question):  
+3 points if complete and correct  
+0 points otherwise 
+
+
+## Retrieving your work
+
+This and all future homework .Rmd files are written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing. 
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment. 
+
+
+## Submitting your work
+
+When you upload your files to Canvas, you are to submit ***two*** files:
+
+a. Your reproducible document file (.Rmd) which should be saved as homework##-ID.Rmd. For example, my homework01 file would be saved as homework01-jperrigan.Rmd.
+
+b. Your rendered reproducible document file (.html) which should be saved as homework##-ID.html. For example, my homework01 file would be saved as homework01-jperrigan.html.
+
+Your ID is your Canvas username. It is also the text before the "@" symbol in your UNO email address.
+
+You have an unlimited number of submissions, but only the  latest submission will be viewed and graded. **Proper means that the file is correctly named and formatted. Latest means that the file is the most recent submission prior to the deadline. Remember the .Rmd file needs to render properly to .html before submitting.** 
+
+
+***
+
+All students are expected to complete all problems. If any problem asks you a particular question, be sure to answer it completely (with code, written sentences, or both).
+
+***Do not change anything in this file above the double line. Doing so will prevent your homework from being graded.***
+
+***
+***
+
+### Use the URLs to access the data. No local files allowed.
+
+
+For all of these problems, I highly recommend making use of the [R documentation!](https://www.r-project.org/other-docs.html). 
+
+DataCamp also has a [great website of R documentation](https://www.rdocumentation.org/) that's even more user-friendly due to its better search function.
+
+
+**#1** 
+
+**Problem:** Create a vector containing the numbers 1 to 100, inclusive.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the vector to "prob01."
+
+Make sure to remove the "#" from in front of "prob01" in order for the code to run.
+
+**Answer:**
+
+
+```{r, problem01}
+#prob01 = 
+
+```
+
+***
+
+**#2** 
+
+**Problem:** Use ```seq()``` to create another vector from 1 to 100, but this time counting by 3 (as in, 1, 4, 7, etc.)
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your vector to "prob02."
+
+**Answer:**
+
+```{r, problem02}
+#prob02 = 
+
+```
+
+
+***
+
+**#3** 
+
+**Problem:** Select elements 8, 15 to 20, and 26, from the vector saved as "prob02." Save these elements as a new vector.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your vector to "prob03."
+
+**Answer:**
+
+```{r, problem03}
+#prob03 = 
+```
+
+***
+
+**#4** 
+
+**Problem:** Use the [modulo operator](https://search.r-project.org/CRAN/refmans/numbers/html/mod.html) to assess whether each element in "prob03" is divisible by two without a remainder.
+
+This R code should be written in the code chunk of the **Answer** section below. Save your vector of TRUE/ FALSE logical values to "prob04."
+
+[Click here for more information on logical values in R.](https://math.oxford.emory.edu/site/math117/logicalValuesInR/#:~:text=There%20are%20only%20two%20logical,corresponding%20to%20a%20binary%20choice.)
+
+
+**Answer:**
+
+```{r, problem04}
+#prob04 = 
+```
+
+
+***
+
+
+**#5** 
+
+**Problem:** Use the information from the [R documentation](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/sample) to generate the sum of a sample of throwing two fair dice. 
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer to "prob05." Leave the ```set.seed(3)``` in place, as that creates reproducible results.
+
+**Answer:**
+
+```{r, problem05}
+set.seed(3)
+
+#prob05 = 
+```
+
+
+***
+
+**#6** 
+
+**Problem:** It would get kind of old to have to keep copying and pasting the ```sample()``` code from problem 5 if you wanted to generate multiple samples and sums. 
+
+For this problem, write a function that will sum the value of throwing two fair dice. Use [this chapter](https://bookdown.org/ndphillips/YaRrr/the-structure-of-a-custom-function.html) from YaRrr! to get you started.
+
+Functions take four attributes (from YaRrr):
+
+1. Name: What is the name of your function? You can give it any valid object name. However, be careful not to use names of existing functions or R might get confused.
+
+2. Arguments: What are the inputs to the function? Does it need a vector of numeric data? Or some text? You can specify as many inputs as you want.
+
+3. Actions: What do you want the function to do with the inputs? Create a plot? Calculate a statistic? This is where you’ll write all the real R code behind the function.
+
+4. Output: What do you want the code to return when it’s finished with the actions? Should it return a scalar statistic? A vector of data? 
+
+When writing your function, break down exactly what the arguments are, the actions you want the function to take, and the output you want the function to give you.
+
+This R code should be written in the code chunk of the **Answer** section below. Save the sum of the thrown dice to "prob06." Leave the ```set.seed(8)``` in place, as that creates reproducible results.
+
+
+**Answer:**
+
+```{r, problem06}
+set.seed(8)
+
+#prob06 = 
+```
+
+
+***
+
+
+**#7**
+
+**Problem**: Use your function to generate a sample of sums of 1,000 rolls of two fair dice.
+
+[Use this](https://aosmith.rbind.io/2018/06/05/a-closer-look-at-replicate-and-purrr/#the-replicate-function) to get started.
+
+This R code should be written in the code chunk of the **Answer** section below. Save your vector of sums to "prob07." Leave the ```set.seed(13)``` in place, as that creates reproducible results.
+
+**Answer:**
+
+```{r, problem07}
+set.seed(13)
+
+#prob07 = 
+
+```
+
+
+***
+
+**#8**
+
+**Problem**: Calculate the minimum, mean, and maximum value of two thrown dice from the sample you created in question 7.
+
+This R code should be written in the code chunk of the **Answer** section below. Save your answer as a vector to "prob08," with the minimum first, the mean second, and the maximum third.
+
+**Answer:**
+
+```{r, problem08}
+#prob08 = 
+```
+
+***
+
+**#9**
+
+**Problem**: Create a histogram of the 1,000 values you found in question 7. Draw a vertical line at the mean, and give your histogram a name.
+
+To get started on plotting, [check this out](https://bookdown.org/ndphillips/YaRrr/plotting1.html) from YaRrr!
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your histogram to "prob09."
+
+**Answer:**
+
+```{r, problem09}
+#prob09 = 
+```
+
+
+***
+
+**#10**
+
+**Problem**: Which questions did you find simple on this homework assignments? Which questions did you find difficult? Based on your answers to these questions, what is your plan to prepare for next week?
+
+Save your answer as a string to "prob10."
+
+**Answer:**
+
+```{r, problem10}
+#prob10 = "Enter your answer in between quotation marks here."
+```
+
+
+***
+

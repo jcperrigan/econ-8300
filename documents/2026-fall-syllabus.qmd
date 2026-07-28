@@ -1,0 +1,386 @@
+---
+title: "ECON 8300: Econometrics"
+subtitle: "Course Syllabus · Fall 2026"
+author: "Jessica Perrigan"
+format:
+  html:
+    css: ../css/syllabus.css
+    toc: true
+    toc-title: "Contents"
+    toc-depth: 2
+    number-sections: false
+    link-external-newwindow: true
+    smooth-scroll: true
+lang: en
+---
+
+**Days and times:** Mondays, 6:00 p.m. to 8:40 p.m.
+
+**Dates:** August 24 to December 18, 2026
+
+**Location:** Remote, [click here to enter the Zoom classroom](https://unomaha.zoom.us/j/99958143068)
+
+**Instructor:** Jessica Perrigan, [jperrigan@unomaha.edu](mailto:jperrigan@unomaha.edu)
+
+
+
+## Course Objectives
+
+We will cover regression analysis, including extensions like panel data and time series, with a focus on estimating causal effects (e.g. whether our estimates will deliver answers to questions like: “what is the effect of a marketing program on sales?”).
+
+**Applied econometrics is when theory meets data from the real world in order to answer a research question**. It is the application of quantitative methods to explain the relationship (strength and direction) between variables or to forecast future trends. The techniques can be applied to a wide range of questions in economics and beyond, for example:
+
+- Do smaller classes improve learning?
+
+- Does democracy increase economic growth?
+
+- Does higher education reduce crime rates?
+
+The beauty of econometrics lies in the chance to base the answers to this type of questions on theory and empirical methods instead of gut feeling, prejudice or anecdotal evidence.
+
+**The objective of this course is to provide you with a set of theoretical, econometric and reasoning skills to assess causality and impact.** The course will introduce you to framing questions, a variety of econometric techniques, and a set of reasoning skills intended to help you become both a consumer and producer of applied empirical research.
+
+
+
+### Learning Objectives
+
+1.  Construct, estimate and interpret simple and multiple regression models that describe relationships between discrete and continuous variables.
+
+2.  Apply and compare alternative functional forms for the outcome and explanatory variables in the context of linear regression models, including logarithmic transformations, quadratic functions and interaction terms.
+
+3.  Identify common problems encountered in econometric modeling, including omitted variable bias, simultaneity bias, selection bias, serial correlation, heteroskedasticity and measurement error.
+
+4.  Estimate and interpret extensions of the multiple regression model that are designed to account for common sources of estimation bias.
+
+5.  Construct, estimate and interpret the estimates from different econometric models, and choose the appropriate estimator for a given context.
+
+6.  Create new or extend existing econometric analyses to study a relationship of interest, and communicate the results of this analysis in both written and oral form.
+
+
+
+## Office Hours and Communication
+
+You can expect me to answer emails within 24 hours during the week and 48 hours at the weekend.
+
+[You can sign up for a meeting with me by clicking this link.](https://calendly.com/jperrigan/30min)
+
+You must sign up for a meeting at least twelve hours in advance. When coming to office hours, please bring both your questions and what you have done already to try and answer them.
+
+
+
+## Expectations
+
+The best way to learn is by engaging with the material. To be an economist (or analyst, data scientist...) this is important stuff to know.
+
+I expect you to take the problem sets seriously as practice opportunities, and to ask questions when you have them. I won’t know if you are struggling with material unless you tell me, so I expect that you will be an active participant in your learning. I also expect that you have read the chapters and watched the lecture videos before coming to class.
+
+It is also expected that you are familiar with probability and statistics. Please review the “Math Refresher B: Fundamentals of Probability” and the “Math Refresher C: Fundamentals of Mathematical Statistics” if you need to.
+
+Finally, I expect you to have meaningful and constructive dialogue and to collaborate with your classmates. This requires a degree of mutual respect and willingness to listen. Respect for individual differences and alternative viewpoints will be maintained at all times in this class. One’s words and use of language should be temperate and within acceptable bounds of civility and decency.
+
+### Camera Expectations
+
+Because this is a synchronous remote course, students are expected to keep their cameras on during class.
+
+Being visible helps create an engaged, interactive learning environment and allows us to communicate more naturally as a class.
+
+If you have a temporary circumstance that prevents you from using your camera—or need an accommodation—please contact me in advance
+
+### How to Succeed
+
+- Do not fall behind. This course covers challenging material at a rigorous pace.  As a general rule, plan to spend at least six hours outside of class on the lectures and reading for each class session; in addition, you will need to spend time working on your research project. If you are having trouble keeping up with the course, visit me in office hours and we’ll develop a better study plan.
+
+- Ask questions. Bring questions from the readings to class, raise your hand if you have a question during class, and visit me during my office hours to go over material outside of class.
+
+- Don’t fall behind on your semester-long project! Aside from avoiding late-semester data crises, applying the material from class to your own research is a great way to deepen your understanding.
+
+- Form a study group. Get together with a few other people in class to review problem sets and project progress. Study groups are fun, supportive and a great way to fill in the gaps and stay on track.
+
+- Start thinking like an econometrician! Think about economic relationships that are interesting to you, and consider how you might test them in an ideal world with no data restrictions. Are differences in choices or outcomes due purely to chance or can they be explained by economic theory? As you read journal articles, consider the assumptions that authors are making. Are they reasonable, or can you think of plausible violations?
+
+
+
+## Course Structure
+
+This course will have reading to complete, sample notebooks to review, and lecture videos to watch before class each week. Then the class period will be a lab period, where you can work on that day's problem set and collaborate with your classmates.
+
+One of the great advantages of university is the opportunity to problem-solve with others--it's way more fun than listening to me lecture! This way you can do the pre-class preparation work on your schedule.
+
+
+
+### Grading
+
+This course will be graded as follows:
+
+- Midterm:  20%
+
+- Cumulative Final:  20%
+
+- Problem sets: 20%
+
+- Pre-test: 0%
+
+- Post-test: 3%
+
+- Research paper: 37%
+
+  - Research proposal: 3%
+
+  - First draft: 4%
+
+  - First draft peer review: 3%
+
+  - Final paper: 18%
+
+  - Presentation and oral defense: 7%
+
+  - Presentation-day engagement: 2%
+
+
+Final grades will be based on the total points you earn, and distributed according to the following scale:
+
+### Grade Scale
+
+- A+:  97– 100%
+
+- A:  93 – 96.9%
+
+- A-: 90 – 92.9%
+
+- B+:  87 – 89.9%
+
+- B:  83 – 86.9%
+
+- B-: 80 – 82.9%
+
+- C+: 77–79.9%
+
+- C: 73–76.9%
+
+- C-: 70–72.9%
+
+- D+: 67–69.9%
+
+- D: 63–66.9%
+
+- D-: 60–62.9%
+
+- F: 59.9% or below
+
+A grade of A+ is reserved for students who truly go above and beyond in demonstrating their understanding of and engagement with the material.
+
+
+
+### Problem Sets
+
+There will be (mostly) weekly problem sets this semester. Problem sets open the week before we cover the topic, and you will work on the problem sets during class time. They are designed for you to be able to finish them during the class period.
+
+The goal with the problem sets is to help you practice application of course concepts. They will also help you as you work on your projects–if you work hard on them, the concepts learned through the problem sets will improve project outcomes.
+
+They will be based on the reading and other materials posted for that week. To successfully complete your problem sets, you will need to keep up with the required materials. I also encourage you to collaborate with your classmates!
+
+I do not accept late problem sets (see Late Policy). I will drop the lowest problem set grade.
+
+
+
+### Exams
+
+There is one midterm exam and one cumulative final exam, each worth 20% of your final grade. The exam will include R code and output, some of which is useful for answering the questions.
+
+I will provide a set of sample questions the week before the exam. I will not provide answer keys to the practice questions, but I am happy to help you with questions in class or during office hours.
+
+The exams will be completed during the course period. You may use your notes, but you will not have time to finish the exam if you need to spend a long time looking everything up!
+
+
+
+### Project
+
+The objective for this assignment is for you to apply the econometric methods that we will study. You may be working in groups (depending on class size). There are data sets available to use or you may use one of your own choice.
+
+You will choose your own research question that can be answered using data. Choose your research question carefully! Developing and motivating your research question entails a review of the existing economic literature, as well as consideration of data availability.
+
+Use chapter 19 in Wooldridge as a resource. It’s a great guide to completing an empirical econometrics project.
+
+The total empirical project (including research proposal, first draft, peer reviews, final paper, and presentation) accounts for 37% percent of your final grade and will be due in stages over the course of the semester.  The relevant assignment dates are listed below.
+
+**Important Deadlines:**
+
+- September 20: Research Proposal Due
+
+- November 1: First Draft Due
+
+- November 8: Peer Reviews Due
+
+- November 29: Final Projects Due
+
+- November 30: Final Presentations
+
+
+
+## Late Policy
+
+Because I release answer keys the day after assignments are due, I do not accept late assignments unless you contact me ahead of time so that I can hold the answer key.
+
+If you do not notify me before I release the problem set answer key, I cannot in any circumstance accept late problem sets.
+
+Late research paper work will be penalized by 8 percentage points per calendar day after the deadline, except for extraordinary circumstances (illness, emergency, etc) that are discussed with me.
+
+If there is an extraordinary circumstance, you should notify me **before** a missed assignment deadline that you will not be able to complete the assigned work at the given deadline and we may agree on an appropriate accommodation.
+
+
+
+## Grade Change or Extra Credit Requests
+
+I evaluate and assign grades for a lot of work from a lot of students in multiple courses, so it’s possible I may make mistakes. It is appropriate and helpful to me if you keep track of your grades that I post to Canvas and notify me if I have made a mistake.
+
+It is not appropriate to ask for grade changes or special extra credit opportunities after performing poorly on assignments or exams, or not achieving a grade that you hoped to earn. These requests will not be granted.
+
+In the event that scores are low for an assignment or exam across most or all students I do reserve the right to increase every students’ grade by the same amount or give an extra credit opportunity to all students.
+
+Please understand that such events are rare and will probably not happen in a typical semester. Please do not make requests for such grade changes or extra credit opportunities.
+
+If you would like to appeal your grade at the end of the semester, [please click this link for information about the grade appeal process.](https://catalog.unomaha.edu/graduate/appeals/)
+
+
+
+## Tools
+
+We will be using R to complete computer assignments in this course.
+
+### Downloading R
+
+To start with, you need R! For a great walk-through of how to download R and RStudio (my preferred IDE), [see this section of Hands-On Programming with R](https://rstudio-education.github.io/hopr/starting.html).
+
+R and RStudio are available to use on the school computers in the lab, which you can use for your homework and project work if needed or desired.
+
+
+
+### R Resources
+
+- You will need to become accustomed to using [R documentation (click here to access it)](https://www.rdocumentation.org/); no one can ever remember everything that can be done with R! You will often need to look things up.
+
+- If you have not used R before (or even if you have!) the [R for Beginners free online book (click here to access it)](https://cran.r-project.org/doc/contrib/Paradis-rdebuts_en.pdf) is a great resource.
+
+- [YaRrr! The Pirate’s Guide to R (click here to access it)](https://bookdown.org/ndphillips/YaRrr/) is one of my favorite free R resources! I’ll be referencing it throughout the semester.
+
+- [Hands-On Programming with R (click here to access it)](https://rstudio-education.github.io/hopr/) is another great introduction to R, and is more user-friendly than R for Beginners.
+
+- [R for Data Science (click here to access it)](https://r4ds.had.co.nz/index.html) is fantastic as well. Its focus is more on, well, data science than econometrics, but the Explore, Wrangle, Program, and Communicate sections are well worth checking out.
+
+- [RStudio produces cheat sheets (click here to access them)](https://www.rstudio.com/resources/cheatsheets/) that are easy-to-follow resources on various topics, from data tidying to data visualization.
+
+- [StackOverflow (click here to access the website)](https://stackoverflow.com/questions/tagged/r) is great. If you have a problem, chances are someone has had something similar happen to them and then asked about it on StackOverflow!
+
+Being able to problem solve when coding is an **essential skill.** It’s a rare day when I don’t get an error message. **Become accustomed to looking at and understanding those error messages, and looking at the R documentation to figure out what could be going wrong.**
+
+If you are having R problems, I will always ask you one thing that you’ve done to try to solve it on your own.
+
+
+
+## Materials
+
+My expectation is that you will read, watch, and/ or listen to the required materials BEFORE class. The required items will be marked as (REQUIRED) and the optional items as (OPTIONAL).
+
+I do highly suggest that you engage with the optional materials, as they can provide a lot of value.
+
+**Required: **
+
+- Wooldridge’s Introductory Econometrics, 8th Edition (though previous editions are OK too). Print ISBN 0357900162, Digital ISBN 9798214048499. [For instructions on how to buy the book via the bookstore, click here.](https://www.unomaha.edu/registrar/students/after-enrollment/buying-textbooks.php)
+
+- [Econometrics with R (click here to access the online book)](https://www.econometrics-with-r.org/) is a great resource that shows a lot of examples of econometrics problems worked out using R.
+
+**Supplementary:**
+
+- *Joshua D. Angrist and Jörn-Steffen Pischke, *Mostly Harmless Econometrics: An Empiricist’s Companion,* ISBN 978-0691120355
+
+**Comments on the supplemental material:**
+
+MHE is a great book, and I just really like it. I will recommend sections from it sometimes when I think they are especially relevant, but it is an optional and supplementary resource.
+
+
+
+## Course Schedule
+
+- Week 1: Introduction to Econometrics and Econometric Data, Introduction to R
+
+- Week 2: Simple Linear Regression
+
+- Week 3: No Class, Labor Day
+
+- Week 4: Multiple Regression: Estimation
+
+- Week 5: Multiple Regression: Inferences
+
+- Week 6: Multiple Regression: OLS Asymptotics
+
+- Week 7: Multiple Regression: Further Issues
+
+- Week 8: Midterm Exam
+
+- Week 9: No Class, Fall Break
+
+- Week 10: Limited Dependent Variable Models
+
+- Week 11: Heteroskedasticity
+
+- Week 12: More on Specification and Data Issues
+
+- Week 13: Panel Data
+
+- Week 14: Difference-in-Differences
+
+- Week 15: Presentations
+
+- Week 16: Prep Week
+
+- Week 17: Final Exam
+
+
+
+
+## Generative AI Policy
+
+In this course, students are not permitted to submit text that is generated by artificial intelligence (AI) systems such as ChatGPT, Bing Chat, Claude, Google Bard, or any other automated assistance for any classwork or assessments. This includes using AI to generate answers to assignments, exams, or projects, or using AI to complete any other course-related tasks.
+
+**Using AI in this way undermines your ability to develop critical thinking, writing, or research skills that are essential for this course and your academic success.**
+
+Students may use AI as part of their research and preparation for assignments, or as a text editor, but text that is submitted must be written by the student. For example, students may use AI to generate ideas, questions, or summaries that they then revise, expand, or cite properly.
+
+When using an AI tool in this way, add an appendix showing (a) the entire exchange, highlighting the most relevant sections; (b) a description of precisely which AI tools were used (e.g. ChatGPT private subscription version or DALL-E free version); and (c) an explanation of how the AI tools were used (e.g. to generate ideas, maps of the conceptual territory, illustrations of key concepts, etc.),
+
+Students should also be aware of the potential benefits and limitations of using AI as a tool for learning and research. AI systems can provide helpful information or suggestions, but they are not always reliable or accurate. Students should critically evaluate the sources, methods, and outputs of AI systems. Violations of this policy will be treated as academic misconduct. If you have any questions about this policy or if you are unsure whether a particular use of AI is acceptable, please do not hesitate to ask for clarification.
+
+
+## Academic Integrity
+
+All students are required to adhere to the highest standards of academic integrity and behavior and must satisfy the [UNO Academic Integrity Policy (click here to access the policy)](http://www.unomaha.edu/student-life/student-conduct-and-community-standards/policies/academic-integrity.php) and [Student Code of Conduct (click here to access the policy)](http://www.unomaha.edu/student-life/student-conduct-and-community-standards/policies/code-of-conduct.php). It is the student’s responsibility to read, understand and abide by these policies.
+
+If I find that you have plagiarized, cheated, or been dishonest in completing your assignments, I reserve the right to award you no points on the entire assignment and to report the behavior to the university.
+
+If I find that you have plagiarized, cheated, or been dishonest in completing an exam or the research project, I reserve the right to award you no points on the entire exam or assignment, to report the behavior to the university, and to give you a failing grade for the course, independent of your score on other assignments.
+
+Academic integrity is essential to education, and it’s a big deal.
+
+
+
+## Student Services
+
+### Accessibility Services Center
+
+Reasonable accommodations are provided for students who are registered with the Accessibility Services Center and make their requests sufficiently in advance.
+
+For more information, contact the ASC  by going to their office in HK 104 (inside the UNO Wellness Center), calling 402.554.2872, or [clicking here to go to their website.](https://www.unomaha.edu/student-life/accessibility/index.php)
+
+
+
+### Counseling and Psychological Services (CAPS)
+
+CAPS Services are available to ALL enrolled students. CAPS is dedicated to working with students, faculty, and staff to provide counseling services, outreach, and prevention that can assist our diverse student body related to the challenges that impact their overall well-being. They're fantastic and highly recommended! You can learn more [by clicking here to go to their website](https://www.unomaha.edu/student-life/wellness/counseling-and-psychological-services/index.php) or by calling 402.554.2409.
+
+
+
+### Tutors and Writing Center
+
+ I highly recommend using the Writing Center as a resource when working on your research project.
+
+ They can offer very helpful feedback on how to make your final project as well-written as it can be. [You can click on this link to schedule time at the Writing Center.](https://www.unomaha.edu/college-of-arts-and-sciences/writing-center/index.php)
