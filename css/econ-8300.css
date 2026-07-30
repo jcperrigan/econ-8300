@@ -188,6 +188,10 @@
   font-size: 0.9em;
 }
 
+.reveal .small-text {
+  font-size: 0.7em;
+  line-height: 1.35;
+}
 
 /* =========================================================
    TEXT BOXES AND CALLOUTS
@@ -407,20 +411,25 @@
   object-fit: contain;
 }
 
-.slide-logo {
+.reveal .slide-logo {
   position: fixed;
   right: 24px;
-  bottom: 60px;
+  bottom: 24px;
   width: 110px !important;
-  max-width: 110px !important;
   height: auto !important;
+  max-width: none !important;
   max-height: 60px !important;
+  margin: 0 !important;
   object-fit: contain;
   z-index: 20;
   pointer-events: none;
+  background: none !important;
+  border: 0;
+  box-shadow: none;
 }
 
-.hide-logo .slide-logo {
+.reveal.has-logo-hidden .slide-logo,
+.reveal .hide-logo .slide-logo {
   display: none !important;
 }
 
@@ -560,4 +569,38 @@
   color: var(--uno-gray);
   font-size: 0.5em;
   text-align: center;
+}
+
+
+/* =========================================================
+   PRINT RULES
+   ========================================================= */
+
+@media print {
+  body {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  nav,
+  .toc-actions,
+  .page-navigation {
+    display: none;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  table,
+  figure,
+  blockquote,
+  pre {
+    break-inside: avoid;
+  }
 }

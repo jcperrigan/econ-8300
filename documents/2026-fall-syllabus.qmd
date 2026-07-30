@@ -2,15 +2,21 @@
 title: "ECON 8300: Econometrics"
 subtitle: "Course Syllabus · Fall 2026"
 author: "Jessica Perrigan"
+
+toc: true
+toc-depth: 2
+toc-title: "Contents"
+
 format:
   html:
     css: ../css/syllabus.css
-    toc: true
-    toc-title: "Contents"
-    toc-depth: 2
     number-sections: false
     link-external-newwindow: true
     smooth-scroll: true
+  pdf:
+    pdf-engine: typst
+    pdf-standard: ua-1
+    linkcolor: "#a30d26"
 lang: en
 ---
 
@@ -26,8 +32,6 @@ lang: en
 
 ## Course Objectives
 
-We will cover regression analysis, including extensions like panel data and time series, with a focus on estimating causal effects (e.g. whether our estimates will deliver answers to questions like: “what is the effect of a marketing program on sales?”).
-
 **Applied econometrics is when theory meets data from the real world in order to answer a research question**. It is the application of quantitative methods to explain the relationship (strength and direction) between variables or to forecast future trends. The techniques can be applied to a wide range of questions in economics and beyond, for example:
 
 - Do smaller classes improve learning?
@@ -39,6 +43,7 @@ We will cover regression analysis, including extensions like panel data and time
 The beauty of econometrics lies in the chance to base the answers to this type of questions on theory and empirical methods instead of gut feeling, prejudice or anecdotal evidence.
 
 **The objective of this course is to provide you with a set of theoretical, econometric and reasoning skills to assess causality and impact.** The course will introduce you to framing questions, a variety of econometric techniques, and a set of reasoning skills intended to help you become both a consumer and producer of applied empirical research.
+
 
 
 
