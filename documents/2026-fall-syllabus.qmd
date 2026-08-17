@@ -4,7 +4,6 @@ subtitle: "Course Syllabus · Fall 2026"
 author: "Jessica Perrigan"
 
 toc: true
-toc-depth: 2
 toc-title: "Contents"
 
 format:
