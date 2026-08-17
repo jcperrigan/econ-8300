@@ -290,7 +290,7 @@ I do highly suggest that you engage with the optional materials, as they can pro
 
 **Required: **
 
-- Wooldridge’s Introductory Econometrics, 8th Edition (though previous editions are OK too). Print ISBN 0357900162, Digital ISBN 9798214048499. [For instructions on how to buy the book via the bookstore, click here.](https://www.unomaha.edu/registrar/students/after-enrollment/buying-textbooks.php)
+- Wooldridge’s Introductory Econometrics, 8th Edition (though previous editions are OK too). Print ISBN 0357900162, Digital ISBN 9798214048499. You have access to this book through First Day Access. [To opt out of First-Day Access, and for more information, click here.](https://www.omahamaverickstore.com/first_day_access_faq.asp)
 
 - [Econometrics with R (click here to access the online book)](https://www.econometrics-with-r.org/) is a great resource that shows a lot of examples of econometrics problems worked out using R.
 
