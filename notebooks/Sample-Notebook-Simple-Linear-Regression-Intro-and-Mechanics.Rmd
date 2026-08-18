@@ -1,0 +1,818 @@
+---
+title: "Sample Notebook: The Simple Regression Model - Introduction, Mechanics, and Assumptions"
+output:
+  html_document:
+    toc: yes
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# What are we doing here?
+
+The goal of simple regression analysis is to to model the relationship between a dependent variable $Y$ and one explanatory variable $X$. We can also learn about the direction and the strength of the relationship.
+
+Linear regression has two primary goals:
+
+* To understand the relationships between $X$ and $Y$. How do changes in the independent variable(s) relate to changes in the dependent variable?
+* To predict the dependent variable by entering values for the independent variables into the regression equation.
+
+In this document, we will load data, explore our data, create a simple linear regression model, and look at the $R^2$. 
+
+We will then examine the first three assumptions for simple linear regression. Does our model follow the assumptions?
+
+## Loading packages
+
+We will use the ```wooldridge``` package that includes datasets that we can use throughout the semester. We will also use some other packages, including ```tidyverse```, ```knitr```, and ```kableExtra```. To install the packages you don't already have installed,  remove the "#" from the line of code that has ```install.packages("package name")```.
+
+If you already have it installed, add it to your notebook.
+```{r}
+#install.packages("wooldridge")
+#install.packages("knitr")
+#install.packages("kableExtra")
+#install.packages("tidyverse")
+library(wooldridge)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+```
+
+# Loading and exploring the data
+
+## Loading the data
+We're going to use the ```wage2``` dataset from the wooldridge package.
+
+You can use ?wage2 to look at the supporting documentation.
+```{r}
+?wage2
+```
+
+The data in ```wage2``` looks at earnings in 1980 compared to years of education (and other variables).
+
+The variable *wage* is the monthly earnings, while *educ* is the years of education. We will examine the relationship between wage and the years of education.
+
+
+## Descriptive statistics
+
+We are interested in the relationship between *wage* and *educ*. Let's find the means of these variables.
+
+```{r}
+mean(wage2$wage)
+mean(wage2$educ)
+```
+
+That is one way to find the mean! You can also look at the descriptive statistics for the entire data set. This is good practice generally, as it lets you get a feel for the shape of your data at the beginning of an analysis.
+
+It can tell you whether there are outliers to be aware of, whether there may be something funny happening with the distribution of certain variables, whether there are missing values...
+
+```{r}
+
+wage2_summmary <- summary(wage2)
+
+kbl(
+  wage2_summmary,
+  caption = "Wage2 Summary",
+  align = "lcc"
+) |>
+  kable_classic(full_width = FALSE) |>
+  row_spec(0, bold = TRUE)
+
+```
+
+
+We see the means of *wage* and *educ* match what we found when we used mean().
+
+## Plotting the relationship
+
+Next, we'll plot the relationship between years of education on the x-axis and the natural log of monthly earnings on the y-axis.
+
+Remember the standard formatting for plotting using base R: 
+
+plot(x, y, main, xlab, ylab, xlim, ylim, axes, col)
+
+* x is the data set whose values on the x-axis.
+* y is the data set whose values are on the y-axis.
+* main is the tile of the graph.
+* xlab is the label in the horizontal axis.
+* ylab is the label in the vertical axis.
+* xlim is the limits of the values of x used for plotting.
+* ylim is the limits of the values of y used for plotting.
+* axes indicates whether both axes should be drawn on the plot.
+* col tells the plot what color to use for the points.
+
+```{r, fig.alt = "Scatter plot of natural log of month earnings vs. years of education using base R"}
+plot(x = wage2$educ,
+     y = wage2$lwage,
+     main = 'Monthly Earnings vs. Years of Education',
+     xlab = 'Years of Education',
+     ylab = 'Monthly Earnings',
+     col = 'steelblue')
+```
+
+Let's compare that to a plot using ```ggplot2```. This package is included in ```tidyverse```, which we've already loaded into our session. If you just want to install or load ```ggplot``` by itself, you can do that as well. 
+
+For more information on using ```ggplot2```, I recommend the online book [ggplot2: Elegant Graphics for Data Analysis (3e)](https://ggplot2-book.org/introduction).
+
+
+```{r}
+#install.packages("ggplot2")
+#library(ggplot2)
+```
+
+
+```{r, fig.alt = "Scatter plot of natural log of month earnings vs. years of education, with color addded for urban compared to rural residents, using ggplot"}
+theme_update(plot.title = element_text(hjust = 0.5))
+ggplot(wage2, aes(x = educ, y = lwage, color = factor(urban))) + 
+  geom_point() + 
+  labs(y= "Montly Earnings", x = "Years of Education", color = '=1 if Urban') + 
+  ggtitle('Monthly Earnings and Years of Education')
+```
+
+
+**A few things to consider:**
+
+1. Does this relationship look like it is linear? 
+2. Does this relationship look like it is positive or negative?
+3. Based on what you see here, do you think that an increase in years of education is associated with an increase in wage?
+4. Looking ahead, do you think years of education is the only variable that determines the wage rate? What else could be involved?
+
+
+# Quantifying the relationship
+
+## Correlation
+Let's start to quantify this relationship by finding the correlation between *ln(wage)* and *educ*.
+
+```{r}
+cor(wage2$lwage, wage2$educ)
+```
+
+Let's remind ourselves of the formula for the Pearson correlation coefficient:
+
+$r = \frac{\Sigma_{i = 1}^n(x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\Sigma_{i = 1}^n(x_i - \bar{x})^2\Sigma_{i = 1}^n(y_i - \bar{y})^2}}$
+
+where: 
+$x_i = i^{th}$ data point of $x$
+$y_i = i^{th}$ data point of $y$
+$\bar{x} =$ mean of $x$
+$\bar{y} =$ mean of $y$
+$n =$ number of data points
+
+So what does this Pearson correlation coefficient tell us? 
+
+It tells us that there is a positive relationship, because the correlation coefficient is positive. That means that as *educ* increases, *wage* also increases.
+
+It also tells us about the strength of the relationship. We see that there is a medium positive correlation. There are some *general* guidelines for strength of correlation:
+
+
+| Strength of Association | Positive       | Negative     |
+|-------------------------|----------------|--------------|
+| Small                   | 0.1 to 0.3     | -0.1 to -0.3 |
+| Medium                  | 0.3 to 0.5     | -0.3 to -0.5 |
+| Large                   | 0.5 to 1.0     | -0.5 to -1.0 |
+
+
+If you were to draw a line on the plot to best describe the relationship, where would you draw it? Mentally draw your best fit line, then we will have R draw it for us.
+
+```{r, fig.alt = "Scatter plot of natural log of month earnings vs. years of education with regression line added"}
+theme_update(plot.title = element_text(hjust = 0.5))
+ggplot(wage2, aes(x = educ, y = lwage)) + 
+  geom_point(color = "#E69F00") + 
+  labs(y= "ln(Montly Earnings)", x = "Years of Education") + 
+  ggtitle('Ln(Monthly Earnings) and Years of Education') + 
+  geom_smooth(method = 'lm', color = "#56B4E9")
+```
+
+## The best fit line
+
+So how is R drawing that best fit red line? It's using "lm(y~x)".
+
+What is "lm()"? We can use ?lm to find out more!
+
+```{r}
+?lm
+```
+
+As we can see from the description, "lm()" is used to fit linear models. 
+
+The way you write a linear model in R is lm(y variable ~ x variable(s)). If you look more closely at the description, you can see a lot of other options:
+
+lm(formula, data, subset, weights, na.action,
+   method = "qr", model = TRUE, x = FALSE, y = FALSE, qr = TRUE,
+   singular.ok = TRUE, contrasts = NULL, offset, ...)
+
+For now, we'll just focus on the formula and data. Let's break down what's happening under the hood.
+
+### The population regression model
+
+A simple linear regression is a linear equation that describes the relationship between an explanatory variable and an outcome variable, specifically with the assumption that the explanatory variable influences the outcome variable, and not vice-versa.
+
+So we believe there is a relationship in the population between $X$ and $Y$ that we can describe as:
+
+$\mu_y = E(Y) = \beta_0 + \beta_1 X$
+
+$X$ has a *linear* effect on $\mu_y$ (the population mean response):
+
+$\Delta \mu_y = \beta_1 \Delta X$
+
+So the change in $\mu_y$ is simply $\beta_1$ multiplied by the change in $X$.
+
+But we don't have data on the entire population! Instead, we have a sample of $y_i$ and $x_i$ from the population.
+
+Our goal is to use our sample to learn about the population, and the sample data fit the statistical model:
+
+$y_i = E(Y_i) + \epsilon_i = \beta_0 + \beta_1 x_i + \epsilon_i$, 
+
+where the errors ($\epsilon_i$) are independent and normally distributed $\mathcal{N}(0, \sigma)$.
+
+We use $\epsilon$ to stand for the residual part of the model, to represent the "noise" in the data. It's the variation in $Y$ due to other causes that prevent the observed data from forming a perfectly straight line. These $\epsilon_i$ are an unknown "true error" term, $\epsilon_i = Y_i - E(Y_i)$.
+
+### Using our data
+
+Example: Let $y_i$ denote the wage of some individual in our sample indexed by $i$, where $i\in{1,2,..,n}$, let $x_i$ denote the number of years of education of the same individual, and let $n$ denote the sample size.A simple linear regression equation of these two variables in the sample takes the form
+
+$y_i = \hat{\beta_0} + \hat{\beta_1}x_i + e_i$,
+
+where $\hat{\beta_1}$ is the sample estimate of the regression line with respect to years of education, and $\hat{\beta_0}$ is the sample estimate for the vertical intercept of the regression line.
+
+We then use these estimated values, $\hat{\beta_0}$ and $\hat{\beta_1}$, to make predictions for values of $y_i$ for some given value of $x_i$. The predicted value from an estimated regression is given by:
+
+$\hat{y_i} = \hat{\beta_0} + \hat{\beta_1} x_i$.
+
+The term $e_i$ is the residual or error term in the regression. We don't expect education to *exactly* predict the wage, and not all the data points in our sample will line up exactly on the regression line. For some individual $i\in{1,2,..,n}$ in the sample, $e_i$ is the difference between their actual income and the predicted level of income based on their years of education.
+
+This vertical distance between $y_i$ and its estimated value $\hat{y_i}$ is its observed residual:
+
+$e_i = y_i - \hat{y_i}$, 
+
+and is an estimate of the actual unknown "true error" term:
+
+$\epsilon_i = Y_i - E(Y_i)$.
+
+
+### The best fit line "by hand"
+
+Some actual values for $y_i$ will be above the regression line, and some will be below it. That means that some $e_i$ will be positive, and other negative. 
+
+The *best fit regression line* is one such that the positive values exactly offset the negative values, so that the mean of the residuals equals zero:
+
+$\frac{1}{n}\Sigma^n_{i=1}e_i = 0$.
+
+Remembering that $e_i = y_i - \hat{y_i}$, the minimization problem that OLS is solving is:
+
+${\beta_0, \beta_1} = min_{\hat{\beta_0}, \hat{\beta_1}}\Sigma_{i = 1}^N(y_i - \bar{y})^2$.
+
+Also remembering that $\hat{y_i} = \hat{\beta_0} + \hat{\beta_1} x_i$, we can then plug that in as well:
+
+${\beta_0, \beta_1} = min_{\hat{\beta_0}, \hat{\beta_1}}\Sigma_{i = 1}^N(y_i - \hat{\beta_0} - \hat{\beta_1})^2$.
+
+This standard method for estimating regression coefficients by minimizing the sum of squared residuals is called the ordinary least squares (OLS) method.
+
+OLS solves this optimization problem by taking the derivatives and setting them equal to 0. (If you're curious about the derivation, I like [this short PDF explanation which you can click here to access](https://are.berkeley.edu/courses/EEP118/current/derive_ols.pdf)).
+
+After we've done that optimization, we get our equations for $\hat{\beta}_1$ and $\hat{\beta}_0$:
+
+$\hat{\beta}_1 = \frac{\Sigma{i = 1}^N (x_i - \bar{x})(y_i - \bar{y})}{\Sigma_{i = 1}^N(x_i - \bar{x})^2}$
+
+$\hat{\beta}_0 = \bar{y} - \hat{\beta}_1\bar{x}$
+
+
+**Steps to estimating $\hat{\beta}_0$ and $\hat{\beta}_1$ by hand:** 
+
+1. Calculate $\bar{y}$
+2. Calculate $\bar{x}$
+3. Calculate $(x_i - \bar{x})$ and $(x_i - \bar{x})^2$ for each row in our data
+4. Calculate the sum of $(x_i - \bar{x})^2$
+5. Calculate $(y_i - \bar{y})$ for each row in our data
+6. Calculate the sum of $(x_i - \bar{x})(y_i - \bar{y})$
+7. Plug everything in!
+
+#### Step 1: Calculate $\bar{y}$
+
+Here we need to find the mean of $y$:
+
+```{r}
+ybar = mean(wage2$lwage)
+print(ybar)
+```
+
+#### Step 2: Calculate $\bar{x}$
+
+Next we need to find the mean of $x$:
+
+```{r}
+xbar = mean(wage2$educ)
+print(xbar)
+```
+
+
+#### Step 3: Calculate $(x_i - \bar{x})$ and $(x_i - \bar{x})^2$ for each row in our data
+
+R allows you to do row-wise calculations, and then save the result in a new column in our dataframe:
+
+```{r}
+# Adding xbar to the dataframe:
+wage2$xbar <- xbar
+
+# Here is the value for x_i - xbar:
+wage2$x_minus_xbar = wage2$educ - xbar
+
+#Here is the value for (x_i - xbar)^2
+wage2$x_minus_xbar_squared = wage2$x_minus_xbar^2
+```
+
+Let's check to make sure it added our new columns. We'll use head() to check for the first six rows of our new variables, *x_minus_xbar* and *x_minus_xbar_squared*:
+
+```{r}
+educ_head <- head(wage2[, c('educ', 'xbar', 'x_minus_xbar', 'x_minus_xbar_squared')])
+
+kbl(
+  educ_head,
+  caption = "First 10 Rows of Wage2 Dataframe with the Additional X Variables Added",
+  align = "lcc"
+) |>
+  kable_classic(full_width = FALSE) |>
+  row_spec(0, bold = TRUE)
+```
+
+Perfect! 
+
+
+#### Step 4: Calculate the sum of $(x_i - \bar{x})^2$
+
+Here we need to sum up the value of our new column, *x_minus_xbar*:
+
+```{r}
+sum_x_minus_xbar_squared = sum(wage2$x_minus_xbar_squared)
+print(sum_x_minus_xbar_squared)
+```
+
+#### Step 5: Calculate $(y_i - \bar{y})$ for each row in our data
+
+We'll do this just like we did with $x_i - \bar{x}$ above, except now we will use *lwage* and *ybar*. We will then check to make sure it added correctly.
+
+```{r}
+# Adding ybar to the dataframe:
+wage2$ybar <- ybar
+
+# Here is the value for y_i - ybar:
+wage2$y_minus_ybar = wage2$lwage - ybar
+
+#Here is the value for (y_i - ybar)^2
+wage2$y_minus_ybar_squared = wage2$y_minus_ybar^2
+```
+
+Let's check to make sure it added our new columns. We'll use head() to check for the first rows of our new variables, *y_minus_xbar* and *y_minus_xbar_squared*:
+
+```{r}
+lwage_head <- head(wage2[, c('lwage', 'ybar', 'y_minus_ybar', 'y_minus_ybar_squared')])
+
+kbl(
+  lwage_head,
+  caption = "First 10 Rows of Wage2 Dataframe with the Additional Y Variables Added",
+  align = "lcc"
+) |>
+  kable_classic(full_width = FALSE) |>
+  row_spec(0, bold = TRUE)
+```
+
+
+
+#### Step 6: Calculate the sum of $(x_i - \bar{x})(y_i - \bar{y})$
+
+For this step, we need to multiply our new columns *x_minus_xbar* and *y_minus_ybar* together, then add up the products. 
+
+We'll take this in a couple of steps. Try to think through how you could do this in one line of code!
+
+```{r}
+wage2$prod_diff = wage2$x_minus_xbar * wage2$y_minus_ybar
+sum_xy_diff = sum(wage2$prod_diff)
+print(sum_xy_diff)
+```
+
+#### Step 7: Plug everything in!
+
+Let's remind ourselves of the equations for $\hat{\beta}_1$ and $\hat{\beta}_0$:
+
+$\hat{\beta}_1 = \frac{\Sigma{i = 1}^N (x_i - \bar{x})(y_i - \bar{y})}{\Sigma_{i = 1}^N(x_i - \bar{x})^2}$
+
+$\hat{\beta}_0 = \bar{y} - \hat{\beta}_1\bar{x}$
+
+Now let's plug everything in and get our estimates for $\hat{\beta}_1$ and $\hat{\beta}_0$:
+
+```{r}
+beta_hat_1 = signif(sum_xy_diff / (sum_x_minus_xbar_squared), digits = 6)
+cat("Our estimate for beta_hat_1 is", beta_hat_1, '\n')
+
+beta_hat_0 = signif(ybar - beta_hat_1 * xbar, digits = 6)
+cat("Our estimate for beta_hat_0 is", beta_hat_0)
+```
+
+### Using R to get $\hat{\beta}_0$ and $\hat{\beta}_1$ instead
+
+Instead of doing all that work by hand, we can let R do it for us.
+
+Remember, to use the ```reporting.R``` notebook to report your model results, you have to:
+
+* Download or copy ```reporting.R```
+
+* Save it in the same folder as your .Rmd file (your lab/notebook)
+
+* Add the following code chunk before reporting your results:
+
+```{r load-reporting}
+source("reporting.R")
+```
+
+If you get an error like *“cannot open file reporting.R”*, it means the file is not in the same folder as your `.Rmd`.
+
+You also need to make sure you have all the necessary packages loaded. Along with ```tidyverse```, which we loaded above, you will need ```knitr``` and ```kableExtra```.
+
+The next step is to fit the model. The code lm() fits linear models. Notice the "lwage ~ educ". That is because in R's formulas, it goes y ~ x.
+
+For a quick way to view the model results, remove the '#' in front of `summary(mod1)`.
+
+
+```{r}
+mod1 <- lm(lwage ~ educ, data = wage2)
+#summary(mod1)
+```
+
+
+**Important:** the chunk that prints the table must include `results='asis'`. You can choose between "simple" or "full" results. You must add the term labels to your coefficients 
+
+
+```{r, results='asis'}
+mk_coeftab(
+  mod1,
+  mode = "simple",
+  term_labels = c(
+    educ = "Years of Education"
+  ),
+  caption = "Model: Years of Education on Ln(Wage)"
+)
+```
+
+That was a lot easier! 
+
+We can write our regression model as:
+
+$\hat{ln(wage)} = 5.973 + 0.06 \cdot educ$
+
+### Logarithm review
+
+Let's first review the basic idea of a log transformation. It's the opposite of an exponent. In other words, if we take the logarithm of a number, we undo an exponentiation. 
+
+So if we take base $b = 2$ and raise it to the power of $k = 3$, we have $2^3$. The result is some number $c$. We can calculate:
+
+$c = 2^3 = 8$.
+
+But what if we didn't know the exponent $k$? We just knew that the base was $2$ and the final result was $8$:
+
+$2^k = 8$.
+
+In order to find $k$, we would undo the exponent using a log of base 2, or $log_2$, such that:
+
+$log_2 8 = k$, so
+
+$log_2 8 = 3$.
+
+### Why the natural logarithm?
+
+In economics, we are most likely to use the natural logarithm. The reason why is the natural log gives the time needed to reach a certain level of growth:
+
+* $ln(x)$ is the time needed to grow to $x$ with 100% continuous compounding. It lets us plug in growth for $x$ and get the time it would take to reach that growth. 
+* $e^x$ is the amount we have after starting at 1.0 and growing for $x$ units of time with 100% continuous compounding. It lets us plug in time for $x$ and get growth.
+
+For example:
+
+* $e^2 \approx 7.389$. After two units of time, we end up with 7.389 times what we started with (assuming a 100% continuous growth rate).
+* $ln(7.389) \approx 2$. If we want growth of 7.389, we'd wait 2 units of time (assuming a 100% continuous growth rate).
+
+As a general formula:
+
+$growth = 2^x$
+
+Or said another way, doubling is 100% growth. We can rewrite the formula as:
+
+$growth = (1 + 100\%)^x$,
+
+where we're splitting 2 into its original value (1) plus 100%.
+
+You could also substitute any number (50%, 25%, etc.) for 100% and get the growth period for that rate. So the general formula for $x$ periods of return is:
+
+$growth = (1 + return)^x$.
+
+OK, let's break that down a little more.
+
+Let's look at some basic system that doubles after an amount of time. Let's say you invest \$20 at the start of the year, with a 100% interest rate:
+
+* After the first year (one doubling), you have $2^1$ or double the money you started with, or \$40.
+* After two years (another doubling), you have $2^2$ or quadruple the money you started with, since there was another doubling during the second year.
+* After three years, you have $2^3$ or eight time as much money as you started with, for a total of $20 \cdot 8 = \$160$. Not bad for a starting investment of \$20!
+
+
+But wait, we said that the interest rate was continuously compounding... that means that all of your interest doesn't appear on the last day of the year.
+
+What if you earn 50% of your interest in the first six months of the year, and the other 50% in the second six months?
+
+* You invest \$20 at the start of the year. Now in one year there are now two periods, and the return is 50%. The growth formula is: 
+
+$growth = (1 + 100\% / 2)^2 = 2.25$,
+
+which is better than doubling. You now have a total of \$45 at the end of the first year.
+* At the end of year 2, there have now been four total six-month periods, and the growth formula is:
+
+$growth = (1 + 100\% / 2) ^4 = 5.0624$, 
+
+which is definitely better than 4.
+
+But with continuous compounding, your money isn't starting to earn interest at the end of six months, but rather as soon as you earn a penny of interest it starts to earn interest of its own.
+
+So let's now try 364 times of compounding such that the growth rate after one year is now:
+
+$growth = (1 + 100\% / 364)^364 \approx 2.7145$,
+
+an even better growth rate after year one than before! And, even more importantly, as the number of times compounding get bigger and bigger, they start to converge around $e$, whose true value is approximately 2.718!
+
+So in math terms, $e$ is the rate of growth if we continually compound 100% return on smaller and smaller time periods:
+
+$perfect\ compound\ growth = e = \lim_{n \to \infty} (1 + \frac{1}{n})^n$
+
+So when you're writing $e^x$, $x$ is a combination of rate and time:
+
+$x = rate \cdot time$.
+
+Because when dealing with continuous compound growth, 10 years of 3% growth has the same overall impact as 1 year of 30% growth, with no growth afterward.
+
+### Natural Logarithm Rules
+
+Let's remember some log rules:
+
+* $ln(1) = 0$
+
+Makes sense, right? Since the question is: how long do I wait to get 1 times my current amount? And the answer is no time, since you're already at your current amount. It doesn't take any time to grow from 1 to 1.
+
+* $ln(1/x) = -ln(x)$
+
+What about a fractional value, like $ln(1/2)$ That means that, since we're growing continuously at 100%, we know that $ln(2)$ is the amount of time to double. If we reverse it, we'd have half: $ln(1/2) = -ln(2) = -0.693$. So if we go backwards $0.693$ units of time, we'd have half our current amount.
+
+* $ln(negative\ number) = undefined$
+
+This also makes sense, because it's impossible. You can't have a negative amount of bacteria, right? Undefined means there's no amount of time you can wait to get a negative amount.
+
+* $ln(a \cdot b) = ln(a) + ln(b)$
+
+Think of how long it would take to get to four times your current amount. We could think of this as doubling (taking $ln(2)$ units of time) and then doubling again (taking another $ln(2)$ units of time):
+
+Time to grow 4 times = $ln(4)$ = Time to double and double again = $ln(2) + ln(2)$
+
+So any growth number, like 12, could be 2 times growth followed by 6 times growth. Or 3 times growth followed by 4 times growth. Or 4 times growth followed by 3 times growth.
+
+* $ln(a/b) = ln(a) - ln(b)$
+
+Consider $ln(5/3) = ln(5) - ln(3)$. This is saying to grow 5 times and then "go back in time" until you have a third of that amount, so you're left with 5/3 growth.
+
+* $ln(x^y) = y ln(x)$
+
+Let's say we have $ln(2^3)$. We could write this as $ln(8)$, or if we want a growth of 8 times what we started with we'd wait about 2.08 units of time. We could also calculate $ln(2)$, or the time needed to double what we started with (approximately 0.693 units of time), and then multiply that amount of time by 3. This gives us the exact same answer as $ln(8)$.
+
+* $ln(e) = 1$
+
+So if the answer to $ln(x)$ gives us how long we have have to wait to reach $x$ times growth. In other words, we're trying to figure out how many times we have to multiply $e$ by $1$ to get $e$. So we're trying to find the value of $x$ in $e^x = e$.
+
+
+
+## Interpreting our model
+
+So after that digression about the natural logarithm, how do we interpret our model?
+
+**Interpreting slope:** Since $\hat{\beta_1}$ is the slope, it measures how much the y-variable changes when the x-variable increases by one unit. In this case, $\hat{\beta_1}$ is the estimate for the change in $ln(wage)$ given a one-year increase in $educ$. 
+
+Given our fitted model is:
+
+$\hat{ln(wage)} = 5.973 + 0.06 \cdot educ$
+
+Our coefficient for $\hat{\beta_1} = 0.06$, so we can say that an increase in one year of education is associated with a $100 \cdot (e^{\hat{\beta_1}} - 1) \approx 6.17$ percent change in wage.
+
+```{r}
+100 * (exp(mod1$coefficients[2])-1)
+```
+
+Let's take a look at why this is the case.
+
+Given our model $ln(y) = \beta_0 + \beta_1 x$, let's increase $x$ by one unit. We would then have $y_0$ and $y_1$, where $y_1$ is the value of $y$ after the increase in $x$.
+
+So:
+
+$ln(y_1) = \beta_0 + \beta_1 \cdot (x + 1)$
+
+$ln(y_0) = \beta_0 + \beta_1 \cdot x$
+
+
+Therefore:
+
+$ln(y_1) - ln(y_0) =  \beta_1$
+
+$\frac{ln(y_1)}{ln(y_0)} = \beta_1$
+
+$ln\left(\frac{y_1}{y_0}\right) = \beta_1$
+
+Exponentiating to get rid of the logarithm:
+
+$\frac{y_1}{y_0} = e^{\beta_1}$
+
+Because this gives us the multiplicative change, we subtract 1 and multiply by 100 to get the percent change.
+
+
+**Interpreting intercept:** Depending on the application, the vertical intercept sometimes has a useful intuitive meaning and sometimes it does not. It measures what value to be expected for the y-variable when the x-variable is equal to zero. In this case, $\hat{\beta_0}$ is the measure for the average income to be expected for individuals with zero years of education. If your data does not include any observations with a zero value for education, or if a zero value for the x-variable is unrealistic, then this coefficient has little meaning.
+
+Remembering that $\hat{\beta}_1$ is the slope that describes the relationship between *ln(wage)* and *educ*, what would you predict would be the wage if $educ = 0$? What about if $educ = 10$?
+
+Let's check!
+
+We can look at the available names from our model summary, and then grab the coefficients. 
+
+I first select the model summary results, then use $ to select the column. Finally, I use brackets [] to select the first item in the column for the intercept, and the second item for the slope.
+
+```{r}
+mod_intercept = mod1$coefficients[1]
+print(mod_intercept)
+
+mod_slope = mod1$coefficients[2]
+print(mod_slope)
+
+```
+
+We can then plug in our proposed values of *educ* to see what happens.
+
+Because our dependent variable is log transfoemd, we need to apply the inverse of the natural log (the exponential function) to the fited model.
+
+```{r}
+pred_wage_1 = exp(mod_intercept + mod_slope * 0)
+cat("The predicted monthly earnings when educ = 0 are", pred_wage_1)
+```
+
+```{r}
+pred_wage_2 = exp(mod_intercept + mod_slope * 10)
+cat("The predicted monthly earnings when educ = 10 are", pred_wage_2)
+```
+
+# Model Fit
+
+## The R^2
+
+If we look back at our model, we can look at the $R^2$ and adjusted $R^2$. 
+
+We'll go into more detail later about what "adjusted" actually means, so for now we'll only look at the $R^2$.
+
+Let's remind ourselves of what the $R^2$ is measuring.
+
+## Different sums of squares
+
+1. Sum of Squared Errors (SSE): represents the variability that your model does not explain -> smaller is good. This is what OLS is minimizing.
+
+2. Regression Sum of Squares (SSR): represents the variability that your model explains compared to a model with no variables -> higher is good
+
+3. Total Sum of Squares (SST): represents the variability inherent in your dependent variable around its mean.
+
+\* Note: You will see different initialisms for these terms (sometimes even from me!) but they represent the same thing.
+
+The $R^2 = \frac{SSE}{SST} = 1 - \frac{SSR}{SST}$. 
+
+It is the proportion proportion of the dependent variable's variance that's explained by the independent our linear model.
+
+
+```{r}
+cat("The R squared from our model is", summary(mod1)$r.squared)
+```
+
+So when we look at how *ln(wage)* and *educ* are related using regression, we see that our regression explains about 10% of the variance in *ln(wage)*.
+
+Is this a lot? A little? What do you think? Think about it and put a pin in it! This won't be the last time you have to think about the $R^2$.
+
+# Checking OLS Assumptions
+
+Let's remind ourselves of the simple linear regression assumptions we've covered so far:
+
+1. Linear in parameters. We’re using a linear model, so we’re assuming the relationship is linear!
+
+2. Random sampling. This is very important for unbiasedness, and we're going to have to take Wooldridge's word for it here and leave it aside.
+
+3. Zero conditional mean: $E(\epsilon|x) = 0$
+
+## Addressing Assumption 1
+
+Let's return to our plot and see if a linear model is the best one here. Do the points have a generally linear relationship, or is there curvature there? Does the spread of values of *wage* get bigger or smaller as the years of education change? Here we're first looking at *wage* instead of the log of wage.
+
+```{r, fig.alt = "Monthly Earnings vs. Years of Education Scatterplot with Regression Line"}
+theme_update(plot.title = element_text(hjust = 0.5))
+ggplot(wage2, aes(x = educ, y = wage)) + geom_point(color = "#E69F00") + labs(y= "Montly Earnings", x = "Years of Education") + ggtitle('Monthly Earnings and Years of Education') + geom_smooth(method = 'lm', color = "#56B4E9")
+```
+
+Does this look like a linear relationship? 
+
+Let's use the natural logarithm of *wage* and see if it's closer to linear.
+
+```{r, fig.alt = "Natural Log of Monthly Earnings vs. Years of Education Scatterplot with Regression Line"}
+theme_update(plot.title = element_text(hjust = 0.5))
+ggplot(wage2, aes(x = educ, y = lwage)) + geom_point(color = "#E69F00") + labs(y= "Log of Montly Earnings", x = "Years of Education") + ggtitle('Log of Monthly Earnings and Years of Education') + geom_smooth(method = 'lm', color = "#56B4E9")
+```
+
+When only the dependent variable is log transformed, we need to exponentiate the coefficient to get the multiplicative factor for every one-unit increase in the independent variable:
+
+Does this look more linear? What do you think? Do you think we were right to use the natural log transformation?
+
+
+## Addressing Assumption 3
+
+### Assumption description
+Our regression model is: 
+$y_i = E(Y_i) + \epsilon_i = \beta_0 + \beta_1 x_i + \epsilon_i$, 
+
+Including $\epsilon_i$, or the unobservables recognizes the fact that other factors will affect $y$ besides $x$.
+
+We can rewrite this a couple of ways. The first way is:
+
+Dependent Variable = Constant + Independent Variable + Error
+
+Or:
+
+Dependent Variable = Deterministic + Stochastic
+
+**Deterministic Component**
+
+This is the portion of the variation in the dependent variable that the independent variable explains. In a regression model, *all* of the explanatory power should be here.
+
+**Stochastic Error**
+
+Stochastic means unpredictable; the error is the unobservables, the difference between our predicted value and the value that we actually observed in our dataset.
+
+If we put these two things together, the gap between what we predicted and what we observed *should not be predictable!*
+
+That brings us back to our assumption $E(\epsilon|x) = 0$. This means that no matter which value we have for $X$ , the error term $\epsilon$ (or its estimator, $e$) must not show any systematic pattern and must have a mean of 0.
+
+### Failure of Assumption 3
+
+If Assumption 3 fails, our OLS estimators will be *biased*. The possibility that $x$ is correlated with the unobservables $e_i$ is almost always a concern in simple linear regression analysis with non-experimental data. 
+
+When we are doing simple linear regression analysis and $e_i$ contains factors affecting $y$ that are also correlated with $x$, we can run into the problem of spurious correlation. 
+
+Spurious correlation is when we find a relationship in our simple linear regression between $y$ and $x$ that is actually due to those unobservables $e_i$ that both affect $y$ and are also correlated with $x$.
+
+Let's say we're looking at the relationship between wages and years of education. Are there any unobservables that might affect the wage level *and* be correlated with years of education? Try to name two potential options. 
+
+### Residual plots
+
+So how do we check to see if Assumption 3 is reasonable? Residual plots!
+
+The residual data is the difference between the observed data $y_i$ and our predicted values $\hat{y}$:
+
+$Residual = y_i - \hat{y}$
+
+When looking at residual plots, you want to determine whether the residuals are consistent with random error. If the residuals are consistent with random error, they should be randomly scattered around 0 for the entire range of the data.
+
+If there are patterns in the errors, you can use one error to predict another and $E(\epsilon|x) = 0$ is probably not a reasonable assumption to make! 
+
+Patterns in our residual plot indicates that the independent variable do not capture the entire deterministic component, and some of the explanatory information has leaked over to the supposedly random error. The possibilities include missing:
+
+* Independent variable(s)
+* Polynomial term(s) to model curvature
+* Interaction term(s)
+* Time-order effect
+
+We will talk about ways to fix these in later classes!
+
+Let's return to the model we fit before. This time, we will pull the residuals from the model using resid().
+
+```{r}
+mod1 <- lm(lwage ~ educ, data = wage2)
+
+mod_res = resid(mod1)
+```
+
+We can now plot the residuals against our observed values of *educ*:
+
+```{r, fig.alt = "Residuals Plot: Education vs. Model Residuals Scatterplot"}
+theme_update(plot.title = element_text(hjust = 0.5))
+ggplot(wage2, aes(x = educ, y = mod_res)) + geom_point(color = "#E69F00") + labs(y= "Residuals", x = "Years of Education") + ggtitle('Residual Plot') + geom_hline(yintercept = 0,  color = "#56B4E9")
+```
+
+If you know the years of education rate, can you use it to predict the residuals? What does this mean for Assumption 3 in our regression model? 
+
+
+To knit to PDF, install and use the following packages:
+
+```{r}
+#install.packages('tinytex')
+#tinytex::install_tinytex()
+#install.packages('rmarkdown')
+
+#library(rmarkdown)
+#library(tinytex)
+```
+    

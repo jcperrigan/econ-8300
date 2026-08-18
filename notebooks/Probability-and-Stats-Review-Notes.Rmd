@@ -1,0 +1,1167 @@
+---
+title: "Probability and Statistics Review"
+output:
+  html_document:
+    toc: yes
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+```
+
+# Descriptive Statistics
+
+Descriptive statistics summarize a sample using a small number of interpretable quantities. Measures of **central tendency** describe the center of the data; measures of **spread** describe how dispersed the observations are.
+
+For observations $x_1,\ldots,x_n$, the sample mean is
+
+$$
+\bar{x}=\frac{1}{n}\sum_{i=1}^n x_i.
+$$
+
+The population-style variance (dividing by $n$) is
+
+$$
+\operatorname{Var}(x)=\frac{1}{n}\sum_{i=1}^n(x_i-\bar{x})^2.
+$$
+
+When estimating a population variance from a sample, we instead use the Bessel-corrected sample variance,
+
+$$
+s_x^2=\frac{1}{n-1}\sum_{i=1}^n(x_i-\bar{x})^2,
+$$
+
+and the sample standard deviation is $s_x=\sqrt{s_x^2}$. R's `var()` and `sd()` use the $n-1$ denominator.
+
+```{r descriptive-statistics}
+x <- 1:6
+
+tibble(
+  statistic = c("Mean", "Population-style variance", "Sample variance", "Sample SD"),
+  value = c(mean(x), mean((x - mean(x))^2), var(x), sd(x))
+)
+```
+
+# References and Resources
+
+This sample notebook is heavily indebted to [chapter 2](https://www.econometrics-with-r.org/2-pt.html) and [chapter 3](https://www.econometrics-with-r.org/3-arosur.html) of Introduction to Econometrics with R, especially the order and structure of how they addressed these topics.
+
+This will be a brief primer; for more detail, I recommend reading those two chapters and trying the R exercises for yourself!
+
+If you want to do a deeper review, I also really like the book [Introduction to Statistics and Data Analysis!](https://www.spps.org/cms/lib/MN01910242/Centricity/Domain/859/Statistics%20Textbook.pdf)
+
+For more details on proofs, I really like [The Book of Statistical Proofs.](https://statproofbook.github.io/)
+
+# Data Types
+
+Data are the information that you collect to learn, draw conclusions, and test hypotheses--after all, econometrics, using statistics, is the science of learning from data.
+
+However, there are different types of variables, and they record different types of information. The type of information determines what you **can** learn from it and what you **can't** learn from it.
+
+## Quantitative vs. Qualitative Data
+
+Is the characteristic something you can objectively measure with numbers or not?
+
+**Quantitative**: the information is recorded as numbers and represents an objective measure or a count. Temperature, income, and a count of transactions are quantitative data. Also referred to as numerical data.
+
+**Qualitative**: the information represents characteristics not measured with numbers. Instead, observations fall within a countable number of groups. This type of variable can capture information that isn't easily measured and can be subjective. Eye color, architectural style, and marital status are qualitative data.
+
+## Quantitative Data
+
+### Continuous and Discrete Data
+
+Within the two broad divisions of qualitative and quantitative data, there are various subtypes.
+
+When you are collecting quantitative data, you can have two categories.
+
+#### Continuous data
+
+Continuous variables can take on any numeric value, and the scale can be meaningfully divided into smaller increments. There are an infinite number of possible values between any two values, and differences between any two values are meaningful. Continuous variables are typically measured on a scale.
+
+Continuous data are divided into two types of scales.
+
+**Interval scales**
+
+On interval scales, the *interval*, or distance, between any two points is meaningful. For example, the 10-degree difference between 10 and 20 degrees Celsius is equivalent to the 10-degree difference between 50 and 60 degrees Celsius.
+
+However, these scales don't have a zero measurement that indicates the lack of the characteristic. For example, Celsius has a zero measure, but it does not mean there is no temperature.
+
+Because there is no true zero, measurement ratios aren't valid on interval scales. 30 degrees Fahrenheit is not three times the temperature of 10 degrees Fahrenheit.
+
+You can add and subtract values on an interval scale, but you can't multiply or divide them.
+
+**Ratio scales**
+
+On ratio scales, intervals are still meaningful. Plus, ratio scales have a zero measurement that represents a lack of the property. For example, zero kilograms indicates a lack of weight.
+
+This also means that we can use *ratios* for these data. 30 kg is three times the weight of 10 kg.
+
+You can add, subtract, multiply, and divide values on a ratio scale.
+
+With continuous variables, you can assess properties such as the mean, median, distribution, range, and standard deviation.
+
+#### Discrete Data
+
+Discrete quantitative data are a count of the presence of a characteristic, result, item, or activity. 
+
+These counts are nonnegative integers that cannot be divided into smaller increments. For example, a household can have one or two cars, but it can't have 1.6 cars.
+
+Other examples of discrete variables include class size and the number of deliveries made by a shipping company.
+
+With discrete variables, you can calculate a rate of occurrence or a summary of the count, such as the mean, sum, and standard deviation.
+
+## Qualitative Data: Categorical, Binary, and Ordinal
+
+When you have information that categorizes your observations, you have qualitative data.
+
+With these data types, you're often interested in the proportions of each category.
+
+### Categorical Data
+
+Categorical data have values that you can put into a countable number of distinct groups based on a characteristic.
+
+You can assign categories, but the categories have no natural order. These variables can define groups in your data that you want to compare.
+
+An example would be new car colors produced in 2023.
+
+
+### Binary Data
+
+Binary data can have only two values. For example, yes/no, pass/fail, or the presence/ absence of a characteristic are binary data.
+
+With binary data, you can calculate percentages or proportions.
+
+### Ordinal Data
+
+Ordinal data have at least three categories, and the categories have a natural order.
+
+Examples of ordinal variables are agreement (strongly disagree to strongly agree) and rank (like sports teams).
+
+Ordinal variables have a combination of qualitative and quantitative properties. You have a limited number of discrete values like categorical variables, but the differences between the values provides some information.
+
+However, the difference between adjacent values might not be consistent. For example, first, second, and third place in a race are ordinal data. The difference in time between first and second place might not be the same as the difference between second and third place.
+
+You can represent ordinal variables using numbers, such as a one-to-five Likert scale that measures satisfaction. However, arithmetic summaries should be interpreted cautiously because the differences between adjacent ranks might not be consistent.
+
+# Random variables and probability distributions 
+
+A **random experiment** is a process with an uncertain result, such as flipping a coin or drawing a card. An **outcome** is the result of that experiment. The **sample space**, usually denoted $S$ or $\Omega$, is the set of every possible outcome. An **event** is a subset of the sample space.
+
+For two coin flips,
+
+$$
+S=\{HH,HT,TH,TT\}.
+$$
+
+The event “exactly one head” is $A=\{HT,TH\}$.
+
+A **random variable** is a function that maps each outcome in the sample space to a numerical value. For example, $X$ might count the number of heads in two flips: $X(HH)=2$, $X(HT)=X(TH)=1$, and $X(TT)=0$.
+
+Random variables are usually denoted by capital letters like $X, Y, Z$.
+
+Random in this context indicates that you don't know the value of the next observation, but you do know the probability associated with values and ranges of values.
+
+A probability distribution describes the probabilities associated with every possible value of a random variable.
+
+## Probability rules
+
+For any events $A$ and $B$:
+
+1. $0\leq P(A)\leq 1$.
+2. $P(S)=1$.
+3. $P(A^c)=1-P(A)$.
+4. If $A$ and $B$ are mutually exclusive, $P(A\cup B)=P(A)+P(B)$.
+5. More generally, $P(A\cup B)=P(A)+P(B)-P(A\cap B)$.
+
+```{r probability-rules}
+# Two fair coin flips
+coin_experiment <- tibble(
+  outcome = c("HH", "HT", "TH", "TT"),
+  probability = rep(1 / 4, 4)
+)
+
+coin_experiment |>
+  mutate(exactly_one_head = outcome %in% c("HT", "TH")) |>
+  summarise(`P(exactly one head)` = sum(probability[exactly_one_head]))
+```
+
+Probability distributions are useful when you need to know which outcomes are more likely, the spread of potential values, and the likelihood of different results. They describe the dispersion of the values for a random variable, and the type of variable determines the probability distribution.
+
+Suppose you draw a random sample and measure the heights of the subjects. As you do so, you notice that some heights are more common while others are rare. A probability distribution will allow you to answer the question: what is the probability that the next height measurement will be taller than 78 inches?
+
+For a single random variable, we divide distributions into two types:
+
+* Discrete probability distributions for discrete variables
+
+* Probability density functions for continuous variables.
+
+## Probability distribution of discrete random variables
+
+Discrete probability functions are also known as probability mass functions and can assume a set of distinct values. For example, coin tosses are discrete functions between there are no in-between values. You can only have heads or tails in a coin toss.
+
+For discrete probability distribution functions, each possible value has a non-zero likelihood. The probabilities of all possible values must sum to one.
+
+If the discrete distribution has a finite number of values, you can display all the values with their corresponding probabilities in a table. 
+
+If we're rolling a fair die, the likelihood of rolling a specific number is the following:
+
+| Outcome | Probability | Cumulative probability |
+|:--------:|:-----------:|:----------------------:|
+| 1 | 1/6 | 1/6 |
+| 2 | 1/6 | 2/6 |
+| 3 | 1/6 | 3/6 |
+| 4 | 1/6 | 4/6 |
+| 5 | 1/6 | 5/6 |
+| 6 | 1/6 | 6/6 (i.e., 1) |
+
+### Types of Discrete Distribution
+
+There are a variety of discrete probability distributions that you can use to model different types of data, and the correct distribution depends on the properties of your data.
+
+For example, use the:
+
+* Binomial distribution to model binary data, such as coin tosses.
+
+* Poisson distribution to model count data, like the count of library book checkouts per hour.
+
+* Uniform distribution to model multiple events with the same probability, like rolling a die.
+
+We'll be seeing the discrete distributions for binary data more frequently, so let's dig into the binomial distribution a bit more.
+
+### Binomial Distributions
+
+To use the binomial distribution, you need to satisfy these assumptions:
+
+1. There are only two possible outcomes per trial.
+
+2. Each trial is independent (the result of one trial does not affect the result of another trial).
+
+3. The probability of success remains constant across trials.
+
+We can use the binomial distribution to calculate probabilities that an event occurs a certain number of times in a set number of trials.
+
+#### Bernoulli Trials
+
+A Bernoulli random variable is a variable with two possible distinct outcomes. It takes one value with probability p, which means it takes the other value with probability (1-p). 
+
+A single success/ failure test is called a Bernoulli trial or a Bernoulli experiment, and a series of outcomes is a Bernoulli process.
+
+If each Bernoulli trial is independent, then the number of successes in the trials has a binomial distribution. The Bernoulli distribution is the binomial distribution with $n=1$.
+
+A binomial distribution can be thought of as simply the probability of a SUCCESS or FAILURE outcome in an experiment or survey that is repeated multiple times. The binomial is a type of distribution that has two possible outcomes (the prefix “bi” means two, or twice). For example, a coin toss has only two possible outcomes: heads or tails. Taking a test could have two possible outcomes: pass or fail.
+
+For example, let’s suppose you wanted to know the probability of getting a 1 on a die roll. SUCCESS would be “roll a one” and FAILURE would be “roll anything else.” 
+
+You roll the die 10 times. This is an example of a Bernoulli process with $n = 10$ Bernoulli trials that are independent of each other. You want to know the likelihood of rolling a 1 four times--in other words, observing $k = 4$ successes that occur with a probability $p = \frac{1}{6}$.
+
+The binomial distribution is what happens when you run multiple independent Bernoulli trials with the same probability of success $p$, so the number of successes $k$ in a Bernoulli process follows a binomial distribution. This can be written as
+
+$k ~ B(n, p)$.
+
+Think of flipping a coin $n$ times, where the coin has a probability $p$ of landing on heads.
+
+The probability of observing $k$ successes in the experiment $B(n, p)$ is given by
+
+$f(k) = P(X=k) = {n \choose k}p^k(1-p)^{n-k} = \frac{n!}{k!(n-k)!}p^k(1-p)^{n-k}$.
+
+Let's test the formula out for coin flips using R. We will say that throwing heads is a success. We're going to use ```dbinom()```, and calculate the probability of getting nine heads in 10 coin flips.
+
+It requires the number of successes $k$, the number of trials $n$ (rather confusing called *size* in the documentation), and the probability of success for each trial. 
+
+For more information on the binomial distribution in R, [click here.](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/Binomial)
+
+```{r}
+dbinom(
+  # number of successes k
+  x = 9, 
+  # number of trials n
+  size = 10, 
+  # probability of success p
+  prob = 0.5)
+```
+
+We can simulate repeated Bernoulli trials in R using ```rbinom()```, which generates random variables with a binomial distribution. We will then plot the histograms of those generated variables.
+
+To use ```rbinom()```, you need to know the number of runs ($n$) of the total number of trials ($size$) plus the probability of success ($p$).
+
+For a coin flip example, ```rbinom(n = 20, size = 10, prob = 0.5)``` produces 20 observations from $B(10, 0.5)$. It gives the results of 20 runs of 10 coin flips each, and returns the number of successes in each run.
+
+So ```size``` is the total number of trials, of which ```size \cdot prob``` are expected to be successes.
+
+Let's test this out for coin flips.
+
+```{r}
+set.seed(4)
+# 10 runs of 1 die roll
+successes10 <- rbinom(n = 10, size = 10, prob = 0.5)
+
+# 100 runs of 1 die rolls
+successes100 <- rbinom(n = 100, size = 10, prob = 0.5)
+
+# 10,000 runs of 1 dice rolls
+successes10000 <- rbinom(n = 10000, size = 10, prob = 0.5)
+```
+
+Let's take a look at ```successes10```:
+
+```{r}
+successes10
+```
+
+Is our number of successes in each trial equal to ```size \cdot prob```?
+
+With a size of 12 Bernoulli trials, and a probability $p = 0.5$, we would expect to see $10 \cdot 0.5 = 5$ successes in each trial.
+
+Not exactly! It is different for each trial because ```rbinom()``` generates random observations. Let's create a histogram of these values, and then take a look at our successes if we do more runs of our trial.
+
+```{r, fig.alt = "10 random observations from 10 Bernoulli trials histogram"}
+hist(successes10,
+     col = "steelblue", 
+     main = "10 random observations from 10 Bernoulli trials",
+     xlab = "Sample proportion, 10 observations")
+
+```
+
+Now let's create histograms of our other draws of $n$ random observations from a binomial distribution.
+
+
+```{r, fig.alt = "100 random observations from 10 Bernoulli trials histogram"}
+hist(successes100,
+     col = "steelblue", 
+     main = "100 random observations from 10 Bernoulli trials",
+     xlab = "Sample proportion, 10 observations")
+
+```
+
+```{r, fig.alt = "1,000 random observations from 10 Bernoulli trials histogram"}
+hist(successes10000,
+     col = "steelblue", 
+     main = "1000 random observations from 10 Bernoulli trials",
+     xlab = "Sample proportion, 10 observations")
+
+```
+
+That's starting to look pretty normal! And in fact, if $x$ is a random variable with distribution ${B}(n, p)$, then for sufficiently large $n$, the random variable has a standard normal distribution approximation.
+
+Just be careful here--it's easy to get these two things confused:
+
+* distribution of number of successes
+* distribution of the *proportion* of successes
+
+The binomial distribution is the distribution of the total number of successes, while the distribution of $p$ is the distribution of the *mean* number of successes. Binomial probability describes the likelihood of getting a specific number of success outcomes when conducting an experiment with a set number of trials.  
+
+The mean is the total divided by the sample size, $n$. The sampling distribution of $p$ and the binomial distribution differ in that $p$ is the mean of the scores and the binomial distribution is dealing with the total number of successes.
+
+### Expected value, mean, and variance of discrete random variables
+
+#### Expected value and the mean
+
+The expected value of a random variable $X$ is denoted by $E[X]$. The expected value can be thought of as the "average" value attained by the random variable.
+
+In fact, the expected value of a random variable is also called its mean, in which case we use the notation $\mu_X$.
+
+The formula for an expected value of a discrete random variable is
+
+$E[X] = \sum_x x P(X = x)$.
+
+The expected value is the sum, over all possible values $x$, of $x$ times if probability $P(X = x)$.
+
+For example, the expected value of a roll of a die is 
+
+$1 \left(\frac{1}{6}\right) + 2 \left(\frac{1}{6}\right) + 3\left(\frac{1}{6}\right) + 4\left(\frac{1}{6}\right) + 5\left(\frac{1}{6}\right) + 6\left(\frac{1}{6}\right) = 3.5$.
+
+You can't roll a 3.5, but if you average the outcomes of a large number or rolls, the result approaches 3.5.
+
+So we know what the expected value is, but how does this compare to samples?
+
+```{r}
+set.seed(1)
+
+cat("We rolled values of ", sample(1:6, 5, replace = TRUE), "in 5 die throws with a mean of", mean(sample(1:6, 5, replace = TRUE)))
+```
+
+We see that we didn't roll any 3.5 values, and that each call of ```sample()``` gives different outcomes since we draw with replacement at random.
+
+What if we rolled the die 10,000 times instead of 5 times?
+
+```{r}
+set.seed(1)
+
+cat("In 10,000 die throws the mean value is", mean(sample(1:6, 10000, replace = TRUE)))
+```
+
+Very close to the expected value of 3.5!
+
+For a Bernoulli trial, where the probability of success $P(X = 1) = p$, the expected value is 
+
+$E(X) = 0 \cdot (1-p) + 1 \cdot p = p$,
+
+which is the same as the probability of success.
+
+If we repeat the Bernoulli trial $n$ times, and using linearity of expectations, the expected value is
+
+$E(X_1 + X_2 + \dots + X_n) = p + p + \dots + p = np$,
+
+If we take a look at our histogram from above again:
+
+```{r, fig.alt = "1000 random observations from 10 Bernoulli trials"}
+hist(successes10000,
+     col = "steelblue", 
+     main = "1000 random observations from 10 Bernoulli trials",
+     xlab = "Sample proportion, 10 observations")
+
+```
+
+We know that For a Bernoulli trial, where the probability of success $P(X = 1) = p$, the expected value is $E(X) = 0 \cdot (1-p) + 1 \cdot p = p$. 
+
+With a Bernoulli trial repeated $n$ times, the expected value is
+
+$E(X_1 + X_2 + \dots + X_n) = p + p + \dots + p = np$.
+
+So for our coin flip example with 10 Bernoulli trials, the expected value is $10 \cdot 0.5$.
+
+How does this stack up to what we found in our sample?
+
+```{r}
+mean(successes10000)
+```
+
+Very close to what we calculated!
+
+#### Variance
+
+The variance (and its square root, the standard deviation) are common measures of variability.
+
+Understanding variability is essential when analyzing data. We've discussed the expected value and the mean, but that's only part of the story.
+
+The mean is the center of a distribution, while the variability is the spread. When a distribution has lower variability, the values in a dataset are more consistent. When the variability is higher, the data points are more dissimilar and extreme values become more likely.
+
+Variability is everywhere. Your commute time to class varies a bit each week. When you order a favorite dish repeatedly at a restaurant, it isn't exactly the same each time. The parts that come off an assembly line might appear to be identical, but they have slightly different lengths and width.
+
+Distributions with greater variability produce observations with unusually large and small values more frequently than distributions with less variability.
+
+The variance is defined by:
+
+$\sigma_X^2 = E[(X - \mu_X)^2] = E[X^2] - (E[X])^2$;
+
+that is the expected value of the squared difference between X and its mean.
+
+#### Discrete
+
+The variance of a discrete distribution can be written as:
+
+$\sigma^2_X = \sum_x (x - \mu_X)^2P(X = x)$,
+
+where $x$ represents values of the random variable $X$, $\mu_X$ is the mean of $X$, and $P(X=x)$ is the corresponding probability.
+
+Let's find the variance and standard deviation for the roll of one die.
+
+We found previously that $E[X] = 3.5$ for rolling die, so now we need to find $E[X^2]$. This is given by
+
+$E[X^2] = \sum_{x=1}^6 x^2 P(X=x) = 1^2 \frac{1}{6} + 2^2 \frac{1}{6} + \dots + 6^2 \frac{1}{6} = 15.167$.
+
+Therefore,
+
+$\sigma^2_X = E[X^2] - (E[X])^2 = 15.167 - 3.5^2 = 2.917$.
+
+#### Bernoulli
+Let's calculate the variance of a Bernoulli random variable.
+
+The formula is the same as for a discrete distribution.
+
+We have already calculated that the expected value of a Bernoulli random variable $E[X] = p$, so $E[X]^2 = p^2$.
+
+All we need to do is find $E[X^2] = 1^2 \cdot p + 0^2 \cdot (1-p) = p$.
+
+Plugging the values into our formula:
+
+$\sigma^2_X = E[X^2] - E[X]^2 = p - p^2 = p(1-p)$.
+
+#### Binomial
+
+For a binomial distribution with $n$ independent trials of a Bernoulli experiment, we already found that $E[X] = np$.
+
+By definition, a binomial random variable is sum of $n$ independent Bernoulli trials with success probability $p$. The variance is therefore:
+
+$\sigma^2_X = \operatorname{Var}(X_1 + \dots + X_n)$.
+
+Because the variance is additive for independent random variables, this is equal to:
+
+$\sigma^2_X = \operatorname{Var}(X_1) + \dots + \operatorname{Var}(X_n) = \sum_{i=1}^n\operatorname{Var}(X_i)$.
+
+Using the variance of the Bernoulli distribution, we find:
+
+$\sigma^2_X = \sum_{i = 1}^n p(1-p) = np(1-p)$.
+
+The standard deviation of a random variable is the square root of its variance and is defined by $\sigma_X$.
+
+We'll return to the idea of variability again in this notebook. 
+
+## Probability distribution of continuous random variables
+
+Continuous probability functions are also known as probability density functions. You have a continuous distribution if the variable can assume an infinite number of values between any two values.
+
+Unlike discrete probability distributions, individual values in continuous distributions have probability zero. For example, the probability of measuring a temperature that is exactly 32 degrees, with infinite precision, is zero.
+
+Why? Consider that the current temperature can be an infinite number of other temperatures that are infinitesimally higher or lower than 32, so an individual value has an infinitesimally small probability that is equivalent to zero.
+
+Because of this, probabilities for continuous distributions are calculated for ranges of values rather than single points. A probability indicates the likelihood that a value will fall within an interval.
+
+On a probability density plot, the entire area under the distribution curve equals one. This corresponds to the requirement that the sum of all probabilities equals one for a discrete distribution. The area under the curve over a range of values represents the probability of falling within that range.
+
+Let $f_X(x)$ denote the probability density function of $X$. For the probability that $X$ falls between $a$ and $b$, where $a<b$, can be written as:
+
+$P(a\leq X \leq b) = \int_{a}^{b} f_X(x)\,dx$.
+
+As in the discrete case, the expected value of $X$ is the probability weighted average of its values. Because we're dealing with continuous variables, we use integrals instead of sums:
+
+$E(X) = \mu_X = \int_{-\infty}^{\infty}x f_X(x)\,dx$.
+
+The variance is the expected value of $(X - \mu_x)^2$, so
+
+$\sigma^2_X = \int_{-\infty}^{\infty}(x - \mu_X)^2 f_X(x)\,dx$.
+
+The cumulative distribution function (CDF) gives the probability that the random variable is less than or equal to a particular value:
+
+$$
+F_X(x)=P(X\leq x).
+$$
+
+Unlike a density, a CDF is a probability and therefore lies between zero and one. It is always nondecreasing.
+
+```{r pdf-and-cdf, fig.alt="Normal probability density function and cumulative distribution function"}
+x_grid <- seq(-3.5, 3.5, length.out = 500)
+normal_functions <- tibble(
+  x = x_grid,
+  PDF = dnorm(x_grid),
+  CDF = pnorm(x_grid)
+)
+
+normal_functions |>
+  pivot_longer(c(PDF, CDF), names_to = "function_name", values_to = "value") |>
+  ggplot(aes(x, value)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  facet_wrap(~function_name, scales = "free_y", ncol = 1) +
+  labs(x = "x", y = NULL) +
+  theme_minimal()
+```
+
+## Joint, marginal, and conditional probability
+
+The **joint probability** $P(X=x,Y=y)$ is the probability that both events occur. If $X$ and $Y$ are independent,
+
+$$
+P(X=x,Y=y)=P(X=x)P(Y=y).
+$$
+
+The **marginal probability** of $X=x$ is obtained by summing the joint probabilities over all possible values of $Y$:
+
+$$
+P(X=x)=\sum_y P(X=x,Y=y).
+$$
+
+For continuous variables, the corresponding operation uses an integral rather than a sum.
+
+The **conditional probability** of $Y=y$ given $X=x$ is
+
+$$
+P(Y=y\mid X=x)=\frac{P(X=x,Y=y)}{P(X=x)},
+$$
+
+provided $P(X=x)>0$. Rearranging gives the product rule,
+
+$$
+P(X=x,Y=y)=P(Y=y\mid X=x)P(X=x).
+$$
+
+### Joint and marginal probability in R
+
+Suppose we toss a fair coin and roll a fair die. The outcomes are independent, so every joint outcome has probability $1/12$.
+
+```{r joint-and-marginal-probability}
+joint_distribution <- expand_grid(
+  coin = c("Heads", "Tails"),
+  die = 1:6
+) |>
+  mutate(joint_probability = 1 / 12)
+
+joint_distribution |>
+  group_by(die) |>
+  summarise(marginal_probability = sum(joint_probability), .groups = "drop")
+```
+
+### Conditional probability in R
+
+In a group of 100 sports-car buyers, suppose 40 bought alarm systems, 30 bought bucket seats, and 20 bought both. The probability that a buyer bought bucket seats, conditional on having bought an alarm, is
+
+$$
+P(B\mid A)=\frac{P(A\cap B)}{P(A)}=\frac{20/100}{40/100}=0.5.
+$$
+
+```{r conditional-probability}
+n_buyers <- 100
+n_alarm <- 40
+n_both <- 20
+
+p_bucket_given_alarm <- (n_both / n_buyers) / (n_alarm / n_buyers)
+p_bucket_given_alarm
+```
+
+Independence is a special case in which conditioning does not change the probability: $P(Y=y\mid X=x)=P(Y=y)$.
+
+We will discuss the normal distribution today; we will return to other distributions (namely the chi-squared, student t, and F) in the future.
+
+## The normal distribution
+
+The most well-known continuous distribution is the normal distribution, which is also known as the Gaussian distribution or the "bell curve." This is a symmetric distribution that fits a wide variety of phenomena. 
+
+The normal distribution is characterized by its mean $\mu$ and variance $\sigma^2$, which we write as $N(\mu, \sigma^2)$.
+
+The normal distribution has the probability density function
+
+$f(x) = \frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{1}{2}\left(\frac{x - \mu}{\sigma}\right)^2}$.
+
+For the standard normal distribution, $\mu = 0$ and $\sigma = 1$. Standard normal variates are usually denoted by $Z$, the standard normal PDF by $\phi$, and the standard normal CDF by $\Phi$.
+
+Let's plot the standard normal density function:
+
+```{r, fig.alt = "Standard Normal Density Function"}
+curve(dnorm(x),
+      xlim = c(-3.5, 3.5),
+      ylab = "Density", 
+      main = "Standard Normal Density Function") 
+```
+Let's use ```pnorm()``` to find the probability that the variable X takes a value between -1.96 and 1.96.
+
+```{r}
+p_below = pnorm(-1.96,
+      mean = 0,
+      sd = 1,
+      # If TRUE, probabilities are P(X <= x), or P(X > x) otherwise
+      lower.tail = TRUE, 
+      # If TRUE, probabilities are given as log
+      log.p = FALSE)  
+p_above = pnorm(1.96,
+      mean = 0,
+      sd = 1,
+      # If TRUE, probabilities are P(X <= x), or P(X > x) otherwise
+      lower.tail = FALSE, 
+      # If TRUE, probabilities are given as log
+      log.p = FALSE)
+
+cat("The probability that X takes a value below -1.96 is", round(p_below, 3), "the probability that X takes a value above 1.96 is", round(p_above, 3), "and the probability of being between -1.96 and 1.96 is", round(1 - (p_below + p_above), 2))
+
+```
+
+We can also use the normal distribution to describe populations that do not have a mean of zero and standard deviation of one.
+
+# Random sampling and the distribution of sample averages
+
+## Samples from the normal distribution
+
+Let's say we have given population with a normal distribution of two-earner male-female couples. In this population, male earnings have a mean of \$60,000 per year and a standard deviation of \$15,000. Female earnings have a mean of \$55,000 per year and a standard deviation of \$21,000. 
+
+We can draw some random samples from a normal distribution like the one described above, with mean 60 and standard deviation 15. 
+
+What we're doing here is assuming that we actually know the population mean and standard deviation. What rnorm(n, mean, sd) is doing is generating a random sample in the space $X$, where we've specified $X$. 
+
+The sample will be a random dataset of the given class generated by a normal distribution with the given mean and variance (or standard deviation) in the given space. 
+
+
+```{r}
+set.seed(9)
+male_earnings = rnorm(1, mean = 60, sd = 15)
+
+```
+
+
+## Frequency histograms
+Let's plot our value with a histogram.
+
+```{r, fig.alt = "Male Earnings Frequency Histogram"}
+hist(male_earnings, 
+     main = 'Male Earnings Histogram',
+     xlab = 'Sample Earnings',
+     col = 'steelblue')
+```
+
+This is a frequency histogram. It's a visualization that uses vertical columns to count frequencies, or how many times values in a given bin occur.
+
+What if we want to look at a relative frequency histogram instead, so we can look at the probability that a person will fall in a certain earnings bin?
+
+## Relative frequency histograms
+
+To convert a frequency histogram to a density histogram, you could calculate relative frequencies by dividing the frequency of each division by the total. This could be viewed as a percentage of the total attributed to each division.
+
+The relative frequency is the probability that a randomly selected member of the sample will be from the ith earnings bin. If we sum up the relative frequencies we get one.
+
+We're going to use the lattice package in R.
+
+```{r}
+#install.packages("lattice")
+library(lattice)
+```
+
+What do you think the relative frequency histogram is going to look like, given our sample of one? 
+
+```{r, fig.alt = "Male Earnings Relative Frequency Histogram"}
+histogram(male_earnings,
+          main = "Male Earnings Relative Frequency Histogram",
+          xlab = "Sample Earnings",
+          col = "steelblue")
+```
+
+## Density histograms
+
+We can also look at the same sample using a probability density histogram. Here the height of the bars are the probability densities. 
+
+The probability density is the class probability (so the probability that a randomly selected member of the sample will be from the ith earnings bin) divided by the class width (in this case, the width of the earnings bin). In a probability density diagram it's the area of the bar that gives the total class probability, or the probability that a randomly selected member of the sample will be from the ith earnings bin.
+
+Let's take a look.
+
+```{r, fig.alt = "Male Earnings Probability Density Histogram"}
+histogram(male_earnings,
+          main = "Male Earnings Probability Density Histogram",
+          xlab = "Sample Earnings",
+          col = "steelblue",
+          type= "density")
+```
+
+### What happens as our sample size grows?
+
+But we have a problem with using just a sample of one draw from the distribution. What if we didn't know the population mean or standard deviation? How well would a sample size of one let us estimate them?
+
+Let's instead draw a larger sample. We'll first draw a sample of $10$, then $100$, $1,000$, and $10,000$. We'll plot our samples in relative frequency histograms. What do you think is going to happen to the sample mean? Do you think it will get closer to the population mean or further away? What about the sample standard deviation?
+
+#### Sample size 100
+
+```{r}
+male_earnings2 = rnorm(100, mean = 60, sd = 15)
+cat('The mean of the sample size of 100 is', mean(male_earnings2), 'and the standard deviation is', sd(male_earnings2))
+```
+
+```{r, fig.alt = "Male Earnings Frequency Histogram (Sample Size 100)"}
+histogram(male_earnings2, 
+     main = 'Male Earnings Frequency Histogram (Sample Size 100)',
+     xlab = 'Sample Earnings',
+     col = 'steelblue')
+```
+
+#### Sample size 1,000
+
+```{r}
+male_earnings3 = rnorm(1000, mean = 60, sd = 15)
+cat('The mean of the sample size of 1,000 is', mean(male_earnings3), 'and the standard deviation is', sd(male_earnings3))
+```
+
+```{r, fig.alt = "Male Earnings Frequency Histogram (Sample Size 1,000)"}
+histogram(male_earnings3, 
+     main = 'Male Earnings Frequency Histogram (Sample Size 1,000)',
+     xlab = 'Sample Earnings',
+     col = 'steelblue')
+```
+
+#### Sample size 10,000
+
+```{r}
+male_earnings4 = rnorm(10000, mean = 60, sd = 15)
+cat('The mean of the sample size of 10,000 is', mean(male_earnings4), 'and the standard deviation is', sd(male_earnings4))
+```
+
+```{r, fig.alt = "Male Earnings Frequency Histogram (Sample Size 10,000)"}
+histogram(male_earnings4, 
+     main = 'Male Earnings Frequency Histogram (Sample Size 10,000)',
+     xlab = 'Sample Earnings',
+     col = 'steelblue')
+```
+
+Let's also look at the density histogram of the largest sample.
+
+```{r}
+histogram(male_earnings4, 
+     main = 'Male Earnings Density Histogram (Sample Size 10,000)',
+     xlab = 'Sample Earnings',
+     col = 'steelblue',
+     type = 'density')
+```
+
+# The Central Limit Theorem and the Population Mean
+
+Larger samples make sample moments such as the mean and standard deviation more stable; this is the intuition behind the Law of Large Numbers. The Central Limit Theorem is a different statement: across repeated samples, the **sampling distribution of the sample mean** becomes approximately normal as the sample size grows, even when the population itself is not normal.
+
+
+## Sample Mean 
+
+The central limit theorem suggests that when the sample size $n$ is large, the distribution of the sample average $\bar{Y}$ is approximately $N (\mu_Y, \sigma^2_{\bar{Y}})$, with $\sigma^2_{\bar{Y}} = \sigma^2_Y / n$.
+
+```{r clt-simulation, fig.alt="Sampling distributions of the sample mean for samples of size 1, 5, 30, and 100 from an exponential population"}
+set.seed(123)
+
+sample_sizes <- c(1, 5, 30, 100)
+sampling_distributions <- map_dfr(sample_sizes, function(sample_size) {
+  tibble(
+    sample_size = factor(sample_size, levels = sample_sizes),
+    sample_mean = replicate(5000, mean(rexp(sample_size, rate = 1)))
+  )
+})
+
+ggplot(sampling_distributions, aes(sample_mean)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 40,
+                 fill = "steelblue", color = "white") +
+  facet_wrap(~sample_size, scales = "free", ncol = 2,
+             labeller = label_both) +
+  geom_vline(xintercept = 1, linetype = "dashed") +
+  labs(x = "Sample mean", y = "Density") +
+  theme_minimal()
+```
+
+
+We see as our sample grows larger that the sample mean gets closer to the population mean. We can use the sample mean to estimate the population mean.
+
+This is an important property of the consistency of the estimator $\hat{\mu}$ for the parameter $\mu$. We can write this as:
+
+$P(|\hat{\mu} - \mu | < \epsilon) \overset{p}{\longrightarrow} 1$ as $n \rightarrow \infty$.
+
+This means that the probability of observing a difference between the estimator and the true population value that is smaller than some arbitrary $\epsilon > 0$ converges to 1 as $n$ grows. 
+
+
+## Population Mean Hypothesis Tests 
+
+But now let's pretend we are drawing from that population, but we have to estimate $\bar{Y}$ and $s_Y$, the sample standard deviation. We have to pretend we don't know the population mean or standard deviation, because normally we don't!
+
+For an i.i.d. random sample, $\bar{Y}$ is unbiased for $\mu_Y$, consistent, and has variance $\sigma_Y^2/n$. Among linear unbiased estimators using equally informative i.i.d. observations, it has the smallest variance. Those assumptions matter and are not automatic in observational data.
+
+For now, let's do some comparisons between our sample means and the population means.
+
+In a population, $\mu_Y = 50$ and $\sigma^2_Y = 36$. In a random sample of size $n = 100$, find $Pr(\overline{Y} \leq 51)$.
+
+Given what we know about the population, let's start drawing some samples. First we'll draw samples from a population where we know the standard deviation--because it's given in the question! 
+
+Then we'll approach it as if we *didn't* know the population standard deviation or mean and we need to estimate it from a sample, because that's how we'll normally be working.
+
+Then we'll compare the two distributions at different sample sizes.
+
+```{r}
+data = rnorm(n = 100000, mean = 50, sd = sqrt(36))
+cat('The mean of our sample is', mean(data), 'and the standard deviation of our sample is', sd(data))
+```
+
+Let's take a look at the relative frequency histogram:
+
+```{r, fig.alt = "Data Sample Relative Frequency Histogram"}
+histogram(data,
+          main = 'Data Sample Relative Frequency Histogram',
+          col = "steelblue")
+
+```
+
+What if we were only drawing a sample of size $100$ from the population above? We can ask how likely it is that the sample mean falls below a specified value.
+
+We can use this to do some hypothesis testing on population means! But first, we need to discuss the *p-value*. 
+
+
+## The p-value
+
+A $p$-value is the probability, calculated under the null hypothesis, of obtaining a test statistic at least as adverse to the null as the statistic observed. What counts as “at least as adverse” depends on whether the alternative is lower-tailed, upper-tailed, or two-sided.
+
+A $p-value$, because it's a probability, is also a proportion. If our $p-value$ is $10\%$, it means that $10\%$ of the time we'd see a sample mean $\bar{y}$ at least as extreme as the one we found if the population mean is *actually* $\mu_Y$.  
+
+We can write the p-value as:
+
+$p\text{-value} = P_{H_0}\left(|\bar{Y} - \mu_{Y,0}| \geq |\bar{Y}^{act} - \mu_{Y,0}|\right)$,
+
+where $\bar{Y}^{act}$ is the sample mean for our sample.
+
+In most cases, we do not know the population distribution or $\sigma_Y^2$. For large samples, the CLT gives us an approximate sampling distribution, and we estimate $\sigma_Y$ with $s_Y$.
+
+## Standard Deviation vs. Standard Error
+
+We also need an estimator for $\sigma^2_Y$, the population variance. Why not just use the sample standard deviation? Let's review the difference between standard deviation and standard error:
+
+* The standard deviation describes variability within a single sample.
+* The standard error estimates the standard deviation of an estimator's sampling distribution.
+
+So the standard deviation is a descriptive statistic that can be calculated from sample data. In contrast, the standard error is an inferential statistic that can only be estimated (unless the real population parameter is known).
+
+In statistics, data from samples is used to understand larger populations. Standard error matters because it helps you estimate how well your sample data represents the whole population.
+
+With probability sampling, where elements of a sample are randomly selected, we can collect data that is likely to be representative of the population. However, even with probability samples, some sampling error will remain. That’s because a sample will never perfectly match the population it comes from in terms of measures like means and standard deviations.
+
+By calculating a standard error, we quantify the sampling uncertainty in an estimator.
+
+A high standard error means that the estimator would vary considerably across repeated samples.
+
+A low standard error means that the estimator would be relatively precise across repeated samples.
+
+What's great is we can decrease standard error by increasing sample size. 
+
+**Example: Standard error vs standard deviation**
+
+In a random sample of 200 students, the mean math SAT score is 575. In this case, the sample is the 200 students, while the population is all test takers in the region.
+
+The standard deviation of the math scores is 190. This number reflects on average how much each score *in that sample* differs from the sample mean score of 575.
+
+The standard error of the math scores, on the other hand, estimates how much the sample mean score of 575 differs from other sample mean scores, in samples of equal size, in the population of all test takers in the region.
+
+The sample standard deviation estimates variability among individual observations. The standard error estimates variability in the sample mean.
+
+Because the standard deviation of the sampling distribution of $\bar{Y}$ is $\sigma_{\bar{Y}} = \sigma_Y/\sqrt{n}$, we estimate it with
+
+$$
+SE(\bar{Y})=\frac{s_Y}{\sqrt{n}}.
+$$
+
+The standard error does **not** estimate the population standard deviation; $s_Y$ does.
+
+## Calculating the p-value when the standard deviation is unknown
+
+But now let's pretend we are drawing from that population, but we have to estimate $\bar{Y}$ and $s_Y$, the sample standard deviation. We have to pretend we don't know the population mean or standard deviation, because normally we don't!
+
+Under i.i.d. sampling, $\bar{Y}$ is unbiased and consistent for $\mu_Y$. We use $s_Y$ to estimate the unknown population standard deviation and $s_Y/\sqrt{n}$ to estimate the standard deviation of $\bar{Y}$.
+
+
+### Z-score Digression
+
+What is a Z-score? A Z-score is a way to compare our results from our sample to the population. It's a way to figure out how far below or above the population mean our sample mean is. And if our sample $Y_1, Y_2, ..., Y_n$ are i.i.d. draws from our normal distribution $N(\mu_Y, \sigma^2_Y)$, then our mean $\bar{Y}$ is distributed $N(\mu_Y, \sigma^2_Y / n)$
+
+We can use this: $P(Y \leq c) = P(Z \leq d) = \Phi(d)$.
+
+And this: $P(Y \geq c) = P(Z \geq d) = 1 - \Phi(d)$.
+
+And this: $P(c_1 \leq Y \leq c_2) = P(d_1 \leq Z \leq d_2) = \Phi(d_2) - \Phi(d_1)$.
+
+So how do we actually get the Z score? We take our estimates for the population values and put them into the Z score formula:
+
+$Pr(\bar{Y} \leq 51) = Pr(\frac{\bar{Y} - 50}{\sqrt{0.36}} \leq \frac{51 - 50}{\sqrt{0.36}}) \approx \Phi(1.\overline{66})$.
+
+So now we have our sample, we've got our sample mean and our sample standard error, and we've calculated the Z-score. How do we then get probabilities from that?
+
+You can look it up in a table, or you can use `pnorm()`. Let's use the sample mean and standard error from a sample drawn from $N(50,36)$. First we draw a sample of 100 observations.
+
+```{r}
+data = rnorm(n = 100, mean = 50, sd = sqrt(36))
+
+cat('The mean of our sample is', mean(data), 'and the standard deviation of our sample is', sd(data))
+```
+
+Pretty close to our population values (though not as close as the sample of 100,000, thanks to the Central Limit Theorem). Which makes sense, since we're drawing from the same distribution!
+
+Now let's get our Z-score and our $p-value$. How likely is it that we'll see the results we get from our sample, given that it's only a sample from a larger population? How well does our sample estimate the population?
+
+```{r}
+z1 <- (mean(data) - 50) / sqrt(var(data) / 100)
+lower_tail_probability <- pnorm(z1)
+two_sided_p_value <- 2 * pnorm(-abs(z1))
+
+cat('The z-statistic is', z1,
+    ', the lower-tail probability is', lower_tail_probability,
+    ', and the two-sided p-value is', two_sided_p_value)
+```
+
+The lower-tail probability is the probability of a sample mean this low or lower under the null. The two-sided $p$-value counts results at least this far from the null in either direction.
+
+We will be using the p-value in a lot of hypothesis testing, along with the t-statistic!
+
+## The t-statistic
+
+The $t$-statistic is a standardized sample average. It measures how many estimated standard errors the sample mean lies from the value specified by the null hypothesis.
+
+It has the same structure as a $z$-statistic, but uses the estimated standard error. With normally distributed observations, the statistic follows a Student $t$ distribution with $n-1$ degrees of freedom when the population standard deviation is unknown. For large samples, the $t$ and standard normal distributions are nearly identical.
+
+The formula for the t-statistic is:
+
+$t = \frac{\bar{Y} - \mu_{Y, 0}}{SE(\bar{Y})}$.
+
+The formula for the t statistic has the same structure as the formula for the z‐statistic, except that it uses the estimated standard error of the mean in the denominator.
+
+The t‐distribution approximates a normal curve in the same way that the t‐statistic approximates a z‐statistic. How well the t‐distribution approximates a normal distribution is determined by degrees of freedom (df). 
+
+Degrees of freedom are the maximum number of logically independent values, which may vary in a data sample. Degrees of freedom are calculated by subtracting one from the number of items within the data sample. If we are discussing the mean, the degrees of freedom would be $n - 1$.
+
+The larger the sample size, the larger the df, and the larger the df, the better job the t‐distribution does of approximating a normal distribution. 
+
+So, as df increases, the t distribution looks more and more “normal” in shape.
+
+Let's generate some more outputs of the t-distribution probability density function but at different degrees of freedom to illustrate this concept.
+
+```{r}
+set.seed(123)
+
+x = seq(from = -4, to = 4, length.out = 500)
+y_norm = dnorm(x)
+
+df = 1
+y1 = dt(x, df)
+
+df = 10
+y10 = dt(x, df)
+
+df = 30
+y30 = dt(x, df)
+
+df = 100
+y100 = dt(x, df)
+
+df = 1000
+y1000 = dt(x, df)
+
+df = data.frame(x, y_norm, y1, y10, y30, y100, y1000)
+```
+
+```{r, fig.alt = "Comparing t-distributions with different degrees of freedom"}
+ggplot(df, aes(x)) +   
+    geom_line(aes(y = y1, color = "t-distribution (df = 1)"), size = .5) +
+    geom_line(aes(y = y10, color = "t-distribution (df = 10)")) +
+    geom_line(aes(y = y30, color = "t-distribution (df = 30)"), size = .5) +
+    geom_line(aes(y = y100, color = "t-distribution (df = 100)")) +
+    geom_line(aes(y = y_norm, color = "normal distribution"), size = .5) +
+
+    scale_color_manual(
+                     breaks=c('t-distribution (df = 1)', 't-distribution (df = 10)', 't-distribution (df = 30)',
+                             't-distribution (df = 100)', 'normal distribution'),
+                     values=c('t-distribution (df = 1)'='red3', 't-distribution (df = 10)'='springgreen4', 't-distribution (df = 30)'='darkorange2',
+                              't-distribution (df = 100)' = 'magenta4', 'normal distribution' = 'navyblue'))+
+    theme_bw() +
+    theme(axis.line = element_line(color='black'),
+      plot.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.border = element_blank(),
+      legend.title= element_blank(),
+      plot.title = element_text(hjust = 0.5)) +
+  
+    labs(title = 'comparison', x = 'standard deviations', y = 'probability density')
+
+```
+
+
+## Steps in a hypothesis test
+
+For a two-sided test of a population mean,
+
+$$
+H_0:E(Y)=\mu_{Y,0}
+\qquad\text{versus}\qquad
+H_A:E(Y)\neq\mu_{Y,0},
+$$
+
+the workflow is:
+
+1. Compute $\bar{Y}$, $s_Y$, and $SE(\bar{Y})=s_Y/\sqrt{n}$.
+2. Compute $t=(\bar{Y}-\mu_{Y,0})/SE(\bar{Y})$.
+3. Compute the $p$-value from the appropriate reference distribution.
+4. Reject $H_0$ when the $p$-value is smaller than the prespecified significance level $\alpha$; otherwise, fail to reject $H_0$.
+
+```{r one-sample-t-test}
+set.seed(2026)
+wages <- rnorm(200, mean = 22.64, sd = 18.14)
+
+t.test(wages, mu = 20, alternative = "two.sided", conf.level = 0.95)
+```
+
+The significance level is selected before examining the result. The $p$-value is calculated from the observed sample and communicates how incompatible the data are with the null model; it is not the probability that the null hypothesis is true.
+
+## Confidence intervals
+
+A 95% confidence interval is produced by a procedure that contains the true parameter in 95% of repeated samples. It does **not** mean that a particular realized interval has a 95% probability of containing the fixed parameter.
+
+When $\sigma_Y$ is unknown, a confidence interval for the population mean is
+
+$$
+\bar{Y}\pm t_{1-\alpha/2,n-1}\frac{s_Y}{\sqrt{n}}.
+$$
+
+For large samples, the familiar critical values are approximately 1.64 for 90%, 1.96 for 95%, and 2.58 for 99% confidence.
+
+```{r confidence-interval}
+n <- length(wages)
+y_bar <- mean(wages)
+standard_error <- sd(wages) / sqrt(n)
+critical_value <- qt(0.975, df = n - 1)
+
+tibble(
+  estimate = y_bar,
+  lower_95 = y_bar - critical_value * standard_error,
+  upper_95 = y_bar + critical_value * standard_error
+)
+```
+
+A two-sided 95% confidence interval is also the set of null values that would not be rejected by corresponding two-sided hypothesis tests at the 5% significance level.
+
+
+# Sample covariance, and sample correlation
+
+## Sample Covariance
+
+Covariance measures how two random variables vary together. Variance describes the spread of one variable; covariance describes whether two variables tend to move in the same or opposite directions.
+
+For a sample, the covariance is:
+
+$\operatorname{Cov}(x,y) = \frac{\sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})}{n - 1}$
+
+where:
+$x_i = i^{th}$ data point of $x$
+$y_i = i^{th}$ data point of $y$
+$\bar{x} =$ mean of $x$
+$\bar{y} =$ mean of $y$
+$n =$ number of data points
+
+Let's generate two random samples of 1,000 observations and calculate their covariance.
+
+
+```{r}
+male_earnings = rnorm(1000, mean = 60, sd = 15)
+female_earnings = rnorm(1000, mean = 55, sd = 21)
+cov(male_earnings, female_earnings)
+```
+
+
+## Sample Correlation
+
+The correlation not only tells the direction of the linear relationship between two variables, it also tells us the strength of that relationship.
+
+Understanding the correlation is useful because we can use the value of one variable to predict the value of the other variable.
+
+Correlation is between -1 and 1. 
+
+* -1 indicates a perfectly linear negative relationship
+* 1 indicates a perfectly linear positive relationship
+* 0 indicates no linear relationship
+
+A correlation of zero does not rule out a nonlinear relationship, and correlation does not by itself establish causation.
+
+
+The formula for the Pearson correlation coefficient is:
+
+$r = \frac{\sum_{i=1}^n(x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^n(x_i - \bar{x})^2\sum_{i=1}^n(y_i - \bar{y})^2}}$
+
+where: 
+
+* $x_i = i^{th}$ data point of $x$
+* $y_i = i^{th}$ data point of $y$
+* $\bar{x} =$ mean of $x$
+* $\bar{y} =$ mean of $y$
+* $n =$ number of data points
+
+We can look at correlation in R using cor():
+
+```{r}
+cor(male_earnings, female_earnings)
+```
+
+There are some general guidelines for strength of correlation:
+
+| Strength of Association | Positive       | Negative     |
+|-------------------------|----------------|--------------|
+| Small                   | 0.1 to 0.3     | -0.1 to -0.3 |
+| Medium                  | 0.3 to 0.5     | -0.3 to -0.5 |
+| Large                   | 0.5 to 1.0     | -0.5 to -1.0 |

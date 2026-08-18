@@ -1,0 +1,485 @@
+---
+title: "A Very Brief R Introduction"
+output:
+  html_document:
+    toc: yes
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# R in Week One
+
+The goal for this document is to introduce you to R documentation and some ways to solve your R problems. It will also include some information on plotting and on exporting your notebooks to HTML and PDF formats.
+
+## Starting with R
+
+### Downloading R
+To start with, you need R! For a great walk-through of how to download R and RStudio (my preferred IDE), see this section of [Hands-On Programming with R.](https://rstudio-education.github.io/hopr/starting.html)
+
+If you are in the in-person section, R is available to use on the school computers. You can use the computers in the lab for your project and lab work.
+
+### R Resources
+You will need to become accustomed to using [R documentation;](https://www.rdocumentation.org/) no one can ever remember everything that can be done with R! You will often need to look things up.
+
+[Just Enough R's](https://benwhalley.github.io/just-enough-r/) stated goal is "to teach you just enough R to be confident to explore your data." While I hope you will learn more than just enough, this is a great starting point if you're new to using R.
+
+[YaRrr! The Pirate’s Guide to R](https://bookdown.org/ndphillips/YaRrr/) is a fun free book with a lot of great examples.
+
+[R for Data Science](https://r4ds.hadley.nz/) is fantastic as well. Its focus is more on, well, data science than econometrics, but the Explore, Wrangle, Program, and Communicate sections are well worth checking out.
+
+[RStudio produces cheat sheets](https://www.rstudio.com/resources/cheatsheets/) that are easy-to-follow resources on various topics, from data tidying to data visualization.
+
+[StackOverflow](https://stackoverflow.com/questions/tagged/r) is great. If you have a problem, chances are someone has had something similar happen to them and then asked about it on StackOverflow!
+
+Being able to problem solve when coding is an essential skill. It’s a rare day when I don’t get an error message. Become accustomed to looking at and understanding those error messages, and looking at the R documentation to figure out what could be going wrong.
+
+If you are having R problems, I will always ask you one thing that you’ve done to try to solve it on your own.
+
+## Reading Data into R
+
+There are many ways to read data into R. Here I will cover some of them; for details on how to import data from even more file types, [see here.](https://www.datacamp.com/tutorial/r-data-import-tutorial)
+
+### Importing CSV Data
+To read in .csv files, you can use the following:
+
+name = read.csv('Path where your .csv file is stored/File Name.csv').
+
+```{r}
+#df = read.csv('/Users/jessicaperrigan/Desktop/ECON-8300/FAKE_FILE_NAME.csv')
+```
+
+If I tried to run this I'd get an error because there isn't a .csv file named "FAKE_FILE_NAME.csv" in that folder, but all you need to do is replace that with a real file name!
+
+For more information on read.csv(), you can use "?read.csv" (as shown below; to run, remove the #). You can also go to the [R documentation.](https://www.rdocumentation.org/packages/utils/versions/3.6.2/topics/read.table)
+
+```{r}
+?read.csv
+```
+
+### Importing Data from GitHub
+
+Importing a .csv file from Github is done as the same way as reading a .csv file that you saw above, but this time you're using the URL from Github.
+
+1. Go to the github repository link where you have the CSV file
+
+2. Click on the raw option present on the top right of the data. 
+
+3. This will open a new window in the browser.
+
+4. The link should be like https://raw.githubusercontent.com/...
+
+5. You will use this link in the ```read.csv()``` function. 
+
+```{r}
+beer <- read.csv('https://raw.githubusercontent.com/SepAlex/AlexSepe-Project-/main/Beers%20and%20Breweries%2C%20a%20Data%20Analysis/Beers.csv')
+```
+
+### Importing .xlsx Data
+You can use the read.table() option from R base (it's the same thing the read.csv() runs on), or you can use a special package called "readxl."
+
+To install readxl, you can use ```install.packages()```. To use, delete the "#".
+
+```{r}
+#install.packages('readxl')
+```
+
+If you also have readxl installed, you can use ```library()``` to make it available.
+
+```{r}
+library(readxl)
+```
+
+Then the format to read in .xlsx files is ```name = read_excel('Path where your .xlsx file is stored/File Name.xlsx')```.
+
+### Importing Data from Packages
+
+This is how you will import the data you need for homework assignments. To import data from a package, you first need to install the package if it isn't already.
+
+You can install a package by typing the function ```install.package(“package_name”)```. 
+
+To install the Wooldridge package, you can use ```install.packages()```. To use, delete the "#".
+
+```{r}
+#install.packages('wooldridge')
+```
+
+If you aren't sure if the package is installed, you can use ```installed.packages()``` to get a full list. Or, if you would prefer to check whether a specific package is installed, you can do the following (just replace the "wooldridge" and "AER" package names with the one(s) you're looking for):
+
+```{r}
+packages_to_find <- c("wooldridge", "AER") 
+
+ip <- as.data.frame(installed.packages()[,c(1, 3)]) 
+rownames(ip) = NULL 
+
+ip[is.element(ip$Package, packages_to_find), ]
+```
+Once you've installed the package or made sure it's installed, it's simple to import data from that package.
+
+First you add the package to your library using ```library()``` then add the data to your R session by using ```data()```.
+
+```{r}
+library(wooldridge)
+data('alcohol')
+```
+
+Now we have data on beer (the ```beer``` dataframe from above) and data from the ```alcohol``` dataframe available to use!
+
+
+# Data Types and Structures in R
+
+Once you've read your data into R, it's important to know how it's stored.
+
+## Objects in R
+Everything in R is an object. It has six basic data types (character, numeric, integer, logical, complex), and then each of these data types can be combined to form data structures, like lists and data frames.
+
+To see what type of object your dataset is stored as, you can use "class()" or "typeof()". "Class()" identifies what type an object is from R's object-oriented-programming point of view. It determines how generic functions operate with it, and it's not a mutually exclusive classification. "Typeof()" the type of an R object. 
+
+
+```{r}
+class(4)
+class('econometrics')
+class(beer)
+typeof(beer)
+```
+
+So why is the class "data.frame" and the type "list"? Data.frame and data.table are both collections (lists) of items, each item of the same length (so R considers each column as an item in the list). 
+
+### Lists
+
+Lists are the R objects which contain elements of different types like numbers, strings, vectors and another list inside it. A list can also contain a matrix or a function as its elements.
+
+Basically, a list is a generic vector that contains other objects.
+
+Lists are the most flexible data structure in R. They are a collection of elements without any restriction on the class, length, or structure of each element.
+
+We can make a list of names:
+
+```{r}
+names <- list(c('Monet', 'Renoir', 'Degas'))
+names
+```
+
+We can make a list of matrices:
+
+```{r}
+matrices <- list(matrix(c(1, 2, 3, 4, 5, 6), nrow = 2), matrix(c(7, 8, 9, 10, 11, 12), nrow = 2))
+matrices
+```
+
+We can create a list with mixed data types:
+
+```{r}
+mixed_list <- list(c("Jan","Feb","Mar"), matrix(c(1,2,3,4,-1,9), nrow = 2),list("Red",12.3))
+mixed_list
+```
+### Vectors
+
+* You can create vectors, which can consist of multiple types (numeric, character, or logical), but all elements must be the same type. 
+
+* To create a vector, you use c() for concatenate.
+
+* You can get a subset of a vector: use my_vector[i] to get the ith element. You can also index a data frame.
+  
+  
+```{r}
+ages <- c(27, 28, 29, 30, 31)
+ages[2]
+
+
+ages[2:4]
+```
+
+* You can add, subtract, multiply, and divide vectors with numeric data.
+
+```{r}
+ages_sq <- ages^2
+ages_sq
+
+ages2 <- c(1, 3, 4, 6, 8)
+age_diff = ages - ages2
+age_diff
+
+```
+
+* You can do calculations with vectors: max(my_vector), min(my_vector), range(my_vector), length(my_vector), sum(my_vector), mean(my_vector), sort(my_vector), prod(my_vector) for the product of the elements, sd(my_vector) for the standard deviation, var(my_vector) for the variance.
+
+```{r}
+min(ages)
+mean(ages)
+prod(ages)
+sd(ages)
+```
+
+### Data frames
+
+Data frames are lists with restrictions. 
+
+* You can't use the same name for two different variables. This is a good thing--you can give two elements the same name in lists, which can be confusing. R won't let you know that you've done it!
+* All elements of a data frame are vectors.
+* All elements of a data frame **have an equal length.** We will often have null values in our data; we will need to pay attention here. But we'll get into that more later!
+
+The nice thing about data frames if you can select and do operations on rows, something you can't do with lists. You should use data frames whenever a column coincides with a variable and a row coincides with a single observation.
+
+### More Data Structures
+
+There are many more data structures in R, from vectors to matrices! [Here is an overview.](https://swcarpentry.github.io/r-novice-inflammation/13-supp-data-structures/)
+
+# R Basics
+
+In R, as in any coding language, certain symbols or combinations of symbols correspond to specific actions.
+
+## Adding Notes to Your Code
+
+* On any one line of code, anything after a "#" won't be executed. This is great for adding comments and notes to your code, or for preventing execution of lines without having to delete them.
+
+```{r}
+# This code won't be executed
+# 2 + 2
+
+# This code will be executed
+2 + 2
+```
+
+## Arithmetic Operations
+
+* You can do basic arithmetic operations, like addition, subtraction, multiplication, division, and exponentiation.
+
+```{r}
+# The expression below returns the value 0
+4 - 4
+
+# The expression below returns the value 8
+4 + 4
+
+# The expression below returns the value 16
+4 * 4
+
+# The expression below returns the value 1
+4 / 4
+
+# The expression below returns the value 256
+4 ^ 4
+```
+
+* You can also do other functions, like logarithms, absolute values, or square roots.
+
+```{r}
+log(4) # This returns the natural log
+
+exp(4)
+
+abs(-4)
+
+sqrt(4)
+```
+
+## Assigning Values to Variable Names
+
+* You can assign numeric, character, and or logical values to variables.
+
+```{r}
+# Numeric variable
+age <- 28 
+
+# Character variable
+name <- 'Fran' 
+
+# Logical variable
+# Is Fran a pilot?: (yes/no) <==> (TRUE/ FALSE)
+is_pilot <- TRUE
+```
+
+## Functions on Vectors
+
+* Parentheses are used to call functions. 
+
+Basically everything in R is either an object or a function.
+
+A function is a procedure that typically takes one or more objects as inputs, does something with those objects, then returns a new object. 
+
+For example, below we will run the ```mean()``` function on the ```ages``` vector we created earlier. This function takes that vector object of numeric data, calculates the arithmetic mean of the numeric data, and then returns a scalar (a single number) as a result.
+
+So when we used the ```ages``` vector and ran code like ```min(ages)```, we were calling a function. R has a ton of built-in functions to take use!  
+
+Though it's archived, I really like [this overview](https://hbctraining.github.io/Intro-to-R/lessons/03_introR-functions-and-arguments.html) of functions in R.
+
+```{r}
+sum(ages)
+mean(ages)
+```
+
+## Custom Functions
+
+A function is a procedure that typically takes one or more objects as arguments (aka, inputs), does something with those objects, then returns a new object. 
+
+For example, the ```mean()``` function we used above takes a vector object, like ages, of numeric data as an argument, calculates the arithmetic mean of those data, then returns a single number (a scalar) as a result. Squaring and adding vectors are other examples of functions.
+
+But what about custom functions? These are very useful! While they may seem more complicated, just keep what you're trying to do in mind as you write them.
+
+[For more detail on custom functions, see this chapter in YaRrr!](https://bookdown.org/ndphillips/YaRrr/functions.html). 
+
+From YaRrr!:
+
+Your custom functions will have the following 4 attributes:
+
+1. Name: What is the name of your function? You can give it any valid object name. However, be careful not to use names of existing functions or R might get confused.
+
+2. Arguments: What are the inputs to the function? Does it need a vector of numeric data? Or some text? You can specify as many inputs as you want.
+
+3. Actions: What do you want the function to do with the inputs? Create a plot? Calculate a statistic? Run a regression analysis? This is where you’ll write all the real R code behind the function.
+
+4. Output: What do you want the code to return when it’s finished with the actions? Should it return a scalar statistic? A vector of data? A dataframe?
+
+Here’s how your function will look in R. When creating functions, you’ll use two new functions (Yes, you use functions to create functions! Very Inception-y), called function() and return(). You’ll put the function inputs as arguments to the function() function, and the output(s) as argument(s) to the return() function.
+
+```
+# The basic structure of a function
+NAME <- function(ARGUMENTS) {
+
+  ACTIONS
+
+  return(OUTPUT)
+
+}
+```
+
+Let's create a simple function using our ```ages``` vector.
+
+```{r}
+age_in_days_func <- function(age) {
+  months <- age * 365
+  return(months)
+}
+```
+
+Let's give the function an age in years, and let it give us back the age in (approximate) days (ignoring leap years for simplicity):
+
+```{r}
+age_in_days_func(63)
+```
+
+But we had that whole list of ages--what if we wanted to get the ages in days for all of them?
+
+# Loops
+
+Again, big thank you to YaRrr! [Check out this chapter for more information.](https://bookdown.org/ndphillips/YaRrr/loops.html)
+
+A loop is code that tells a program like R to repeat a certain chunk of code several times with different values of a loop object that changes for every run of the loop. In R, the format of a for-loop is as follows:
+
+```
+# General structure of a loop
+for(loop.object in loop.vector) {
+
+  LOOP.CODE
+
+  }
+
+```
+
+As you can see, there are three key aspects of loops: The loop object, the loop vector, and the loop code:
+
+1. Loop object: The object that will change for each iteration of the loop. This is usually a letter like i, or an object with subscript like column.i or participant.i. You can use any object name that you want for the index. 
+
+2. Loop vector: A vector specifying all values that the loop object will take over the loop. You can specify the values any way you’d like (as long as it’s a vector). 
+
+3. Loop code: The code that will be executed for all values in the loop vector. You can write any R code you’d like in the loop code - from plotting to analyses. R will run this code for all possible values of the loop object specified in the loop vector.
+
+Let's write a loop to give us the age in months for everyone in our ages vector, and put all of those new ages in a new vector. We will  use the function we defined above inside of our loop.
+
+```{r}
+# create an empty vector
+ages_in_days <- c()
+
+for (i in ages) {
+  age_in_days <- age_in_days_func(i)
+  ages_in_days <- c(ages_in_days, age_in_days)
+}
+
+ages_in_days
+
+```
+
+# R Markdown
+
+## Why use R Markdown?
+R Markdown files are perfect for sharing. 
+
+You can use them to both:
+
+* save and execute code, and
+* generate high quality reports that can be shared with an audience.
+
+R Markdown was designed for easier reproducibility, since both the computing code and narratives are in the same document, and results are automatically generated from the source code. R Markdown supports dozens of static and dynamic/interactive output formats." (From [R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/)--another fantastic resource!).
+
+You will need to save your problem sets as either HTML or PDF documents for submission.
+
+### Opening an R Markdown file
+
+I usually do my work in R Markdown. To open a new R Script, go to File, New File, R Markdown.
+
+
+### Markdown syntax
+
+Markdown is a lightweight markup language that you can use to add formatting elements to plaintext text documents. 
+
+You can use Markdown to make your documents look nice. You can add links, equations, or even images!
+
+[Click here for a guide on formatting and math expressions in Markdown](https://bookdown.org/yihui/rmarkdown/markdown-syntax.html)
+
+
+### Code chunks in R Markdown file
+
+Within an R Markdown file, you will need to let R know which bits are writing and which bits are code to execute. To have a code chunk, you put:
+
+" ```{r} "
+
+INSERT CODE HERE
+
+" ``` "
+
+Only without the quotation marks, of course! Then R will execute whatever is in between the "``` {r}" and the closing "```".
+
+### Including Plots in R Markdown files
+
+You can also embed plots, for example. Just put plot() in your code chunk.
+
+```{r, fig.alt = "A scatterplot of temperature vs. pressure"}
+plot(pressure)
+```
+
+
+### Saving as HTML
+
+If you have an R Markdown file open, you need to go to "Knit" (it's at the top of the window), and choose "Knit to HTML". That's it!
+
+It will save to the same folder where you've saved your R file.
+
+But be careful--if you knit a new HTML file without changing the name of your R file, it will overwrite what you've done before! If you want to keep track of different versions, you will need to change the name of your R file before knitting.
+
+### Saving as PDF
+
+Knitting to a PDF requires a little extra work. To save this R Markdown file as a PDF, you can use TinyTeX. It's a lightweight LaTeX distribution. 
+
+If you don't have TinyTeX installed, you can use the first three lines of the following code to then save your R Markdown file as a PDF:
+
+```{r}
+#install.packages('tinytex')
+#tinytex::install_tinytex()
+#install.packages('rmarkdown')
+
+#library(rmarkdown)
+#library(tinytex)
+```
+
+Then once you're ready, go to "Knit" again. This time, choose "Knit to PDF." Your PDF will be saved in the same folder where your R file is saved.
+
+For this class, I will provide sample notebooks in .html and .Rmd formats. But knitting to PDF using LaTeX is a great way to write your paper!
+
+

@@ -390,10 +390,16 @@
    ========================================================= */
 
 .reveal .slide-image {
-  display: block;
-  max-width: 75%;
-  max-height: 500px;
   margin: 1em auto;
+  text-align: center;
+}
+
+.reveal .slide-image img {
+  display: block;
+  max-width: 100%;
+  max-height: 500px;
+  height: auto;
+  margin: 0 auto;
   object-fit: contain;
 }
 
@@ -446,7 +452,7 @@
   object-fit: contain;
 }
 
-.reveal .slide-logo {
+.slide-logo {
   position: fixed;
   right: 24px;
   bottom: 24px;
@@ -482,6 +488,7 @@
 .reveal .source {
   position: absolute;
   bottom: 0;
+  left: 0;
   left: 0;
 }
 

@@ -1,0 +1,437 @@
+---
+title: "ECON-8300"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages('ggplot2')
+library(ggplot2)
+```
+
+# Big Picture
+
+As we start to estimate regressions (different sorts, but starting with Ordinary Least Squares), it's useful to remind ourselves why we care!
+
+The goal of econometrics is to quantify economic reality. It lets us quantify the actions or firms, people, governments...
+
+It also allows us to test hypotheses about economic theory and policy, or forecast future economic activity. 
+
+We use regression to make these quantitative estimates, by explaining movements in the dependent variable as a function or movements in the set of independent variables (or one independent variable, in the case of simple linear regression).
+
+Though many economic relationships are causal by nature, a regression result on its own cannot prove causality. That requires assumptions, economic theory, common sense, and an understanding of the context. 
+
+# Relationship between the Population and the Data Model
+
+## Deterministic Model
+
+Let's consider a deterministic population model, where $Y$ is explained perfectly by $X$:
+
+$Y = \beta_0 + \beta_1 X$.
+
+This deterministic model is systematic and contains no error. The parameters $\beta_0$ and $\beta_1$ determine the coordinates of the straight line at any point, and are constant terms.
+
+Play around with the values for $\beta_0$ and $\beta_1$ to see how the line changes.
+
+```{r}
+x.var = seq(1, 10, by = 2)
+y.var = c()
+
+for (i in x.var) {
+  beta_0 = 5
+  beta_1 = 1
+  y = beta_0 + beta_1 * i
+  y.var = c(y.var, y)
+}
+
+df = data.frame(x.var, y.var)
+```
+
+```{r, fig.alt = "Plotting the deterministic regression model results in a perfectly straight line described by the regression formula"}
+ggplot(df, aes(x = x.var, y = y.var)) + 
+  geom_point(color = 'blue', linewidth = 3) + 
+  geom_smooth(method = 'lm', color = "red", size = .5)
+
+```
+
+## Stochastic Model
+
+The stochastic model has both the deterministic component $Y = \beta_0 + \beta_1$, as well as a random error component. The error term is the difference between the expected value of $Y$ and the observed value of $Y_i$.
+
+We can then express the model as $Y_i = \beta_0 + \beta X_i + u_i$,
+
+where $u_i$ is the error term. In a stochastic model the expected value of $Y$ is conditioned by the value of $X$:
+
+```{r}
+curves <- lapply(seq_len(NROW(df)), function(i) {
+  mu <- df$y.var[i]
+  range <- mu + c(-3, 3)
+  seq <- seq(range[1], range[2], length.out = 100)
+  data.frame(
+    x.var = dnorm(seq, mean = mu) + df$x.var[i],
+    y.var = seq,
+    grp = i
+  )
+})
+
+curves = do.call(rbind, curves)
+```
+
+```{r, fig.alt = "Plotting the regression model, but now with the conditional population distributions of Y for different values of X layered on top."}
+ggplot(df, aes(x = x.var, y = y.var)) + 
+  geom_point(color = 'blue', size = 3) + 
+  geom_smooth(method = 'lm', color = "red", size = .5) +
+  geom_path(data = curves, aes(group = grp))
+```
+
+Here we see the conditional population distributions of $Y$ for different values of $X$, $p(Y|X)$.. The conditional means of $Y$ given $X$ are:
+
+$E(Y_i) = E(Y|X_i) = \beta_0 + \beta_1 X_i$,
+
+where $\beta_0 = E(Y)$ when $X = 0$. Each 1 unit increase in $X$ increase $E(Y)$ by $\beta_1$. 
+
+In the stochastic linear model, the expected value of $Y$ is conditioned by values of $X$, but the variation in $Y$ is caused by not just $X$ but also by the error term $u$. We can write the error term as: 
+
+$u_i = Y_i - E(Y_i)$
+
+$= Y_i - (\beta_0 + \beta_1X_i)$
+
+$= Y_i - \beta_0 - \beta_1X_i$.
+
+# Summation and Expected Value 
+
+A quick review of summation and expected value rules that we need before deriving our estimators.
+
+## Summation 
+
+### 1. For any constant $c$: $\sum_{i=1}^n c = nc$.
+
+For example: $\sum_{i=1}^3 5 = 5 + 5 + 5 = 3 \cdot 5$.
+
+### 2. For any constant $c$: $\sum_{i=1}^n c x_i = c \sum_{i=1}^n x_i$.
+
+For example: $\sum_{i=1}^3 5 x_i = 5 x_1 + 5 x_2 + 5 x_3 = 5(x_1 + x_2 + x_3) = 5 \sum_{i=1}^n x_i$.
+
+### 3. For constant $a$ and $b$: $\sum_{i=1}^n (a x_i + b y_i) = a \sum_{i=1}^n x_i + b \sum_{i=1}^n y_i$.
+
+For example: $\sum_{i=1}^3 (5 x_i + 4 y_i) = 5(x_1 + x_2 + x_3) + 4(y_1 + y_2 + y_3) = 5 \sum_{i=1}^3 x_i + 4 \sum_{i=1}^3 y_i$.
+
+### 4. The sample mean $\bar{x}$:
+
+$\bar{x} = \frac{1}{n}\sum_{i=1}^n x_i$, so
+$n\bar{x} = \sum_{i=1}^n x_i$.
+
+For x_1 = 3, x_2 = 4, and x_3 = 5, 
+
+$\bar{x} = \frac{1}{n}\sum_{i=1}^3 x_i = \frac{1}{n}(3 + 4 + 5) = 4$
+
+$3 \cdot 4 = (3 + 4 + 5)$.
+
+### 5. For $\sum_{i=1}^2 x_i \sum_{i=1}^2 y_i$:
+
+$\sum_{i=1}^2 x_i \sum_{i=1}^2 y_i = x_1 y_1 + x_2 y_1 + x_2 y_1 + x_2 y_2$
+
+$= x_1(y_1 + y_2) + x_2(y_1 + y_2)$
+
+$= y_1(x_1 + x_2) + y_2(x_1 + x_2)$
+
+$= \sum_{i=1}^2 x_i (y_1 + y_2)$
+
+$= \sum_{i=1}^2 y_i (x_1 + x_2)$
+
+## Expected Value
+
+In order to calculate an expected value, you use a summation operator. The summation operator is used to indicate that a set of values should be added together. 
+
+The formulas used to compute moments for a probability distribution are based on the summation operator. This is because each calculation must be repeated for each possible value of a random variable and the results must be summed.
+
+### 1. For any constant $c$: $E(c) = c$.
+
+### 2. For any constants $a$ and $b$: $E(aX + b) = E(aX) + E(b) = aE(X) + b$.
+
+### 3. For $a_i$ and $x_i$: $E(a_1 x_1 + \cdots a_n x_n) = a_1 E(x_1) + \cdots + a_n E(x_n) = E(\sum_{i=1}^n a_i x_i) = \sum_{i=1}^n a_i \cdot E(x_i)$
+
+
+# OLS Assumptions and Estimation
+
+## The Model
+
+If we have a population model $Y = \beta_0 + \beta_1 X + u$, we need to estimate the $\beta$ parameters using our data.
+
+
+$\beta_0$ and $\beta_1$ are ideas that don't exist in practice, but we can estimate their values. 
+
+We then rewrite the equation we will use to estimate our population model as:
+
+$Y_i = \beta_0 + \beta_1 X_i + u_i$.
+
+The subsripts indicate that this is the model we will estimate using our data sample.
+
+The idea is that you are working with a sample from a population. One of the dimensions corresponds to the dependent variable, and you try to fit the line that minimizes the error terms 
+
+In Ordinary Least Squares regression, the goal is to minimize the squared error term $u_i$:
+
+$\min_{\hat\beta_0, \hat\beta_1}\sum_{i = 1}^n u_i^2$.
+
+Based on our definition above, we can also write this as:
+
+$\min_{\beta_0, \beta_1}\sum_{i = 1}^n (y_i - \hat\beta_0 - \hat\beta_1x_i^2$
+
+Once the parameters put on their hats, it indicates that they are estimates of those values based on a sample. 
+
+When we plug in our data, we get $\hat{y_i} = \hat\beta_0 + \hat\beta_1 x_i$, where $\hat{y_i}$ is our predicted values of $y_i$.
+
+## Assumptions
+
+The assumptions we will start with are:
+
+### 1. $E(u) = 0$
+
+### 2. $E(u|x) = 0$
+
+If we group the first and second assumptions: $E(u) = E(u|X) = 0$.
+
+This is a key identifying assumption that implies $E(Y|X) = \beta_0 + \beta_1 X$.
+
+This other assumptions we will use are:
+
+### 3. Linear in parameters
+
+### 4. There is variation in $x_i$.
+
+We need this to get a value for $\beta_1$, because otherwise we end up with a value of zero in the denominator.
+
+## Estimation (without calculus)
+
+Let's start with the population model $Y = \beta_0 + \beta_1X + u$.
+
+$E(u) = 0$ so $E(Y - \beta_0 - \beta_1 X) = 0$.
+
+$E(u|x) = 0$ so $E(y - \beta_0 - \beta_1 X) = 0$.
+
+We can take this from the population to our sample:
+
+1. $\frac{1}{n}\sum_{i = 1}^n(y_i - \hat\beta_0 - \hat\beta_1 x_i) = 0$.
+
+2. $\frac{1}{n}\sum_{i = 1}^n([y_i - \hat\beta_0 - \hat\beta_1 x_i] x_i) = 0$.
+
+**Deriving $\hat\beta_0$:**
+
+Let's start with equation 1. Using summation rules and the definition of the sample mean:
+
+$\frac{1}{n}\sum_{i = 1}^n(y_i - \hat\beta_0 - \hat\beta_1 x_i) = \frac{1}{n}\sum_{i = 1}^n y_i - \frac{1}{n}n\hat\beta_0 - \hat\beta_1\left(\frac{1}{n} \sum_{i = 1}^n x_i \right) = 0$.
+
+$\bar{y} - \hat\beta_0 - \beta_1 \bar{x}$
+
+$\hat{\beta_0} = \bar{y} - \hat\beta_1 \bar{x}$.
+
+**Deriving $\hat\beta_1$:**
+
+Let's start with our original equation 2:
+
+$\frac{1}{n}\sum_{i = 1}^n([y_i - \hat\beta_0 - \hat\beta_1 x_i] x_i) = 0$
+
+And then plug in our value for $\hat\beta_0$:
+
+$\frac{1}{n}\sum_{i = 1}^n([y_i - (\bar{y} - \hat\beta_1 \bar{x}) - \hat\beta_1 x_i] x_i) = 0$
+
+We'll multiply both sides by $n$ and start with distributing what is inside the brackets:
+
+$\sum_{i = 1}^n(y_i x_i - \bar{y}x_i + \hat\beta_1 \bar{x} x_i - \hat\beta_1 x_i^2) = 0$.
+
+We'll then use the summation on each term:
+
+$\sum_{i = 1} y_ix_i - \bar{y}\sum_{i = 1} x_i + \hat\beta_1\bar{x}\sum_{i = 1} x_i - \hat\beta_1\sum_{i = 1}x_i^2 = 0$.
+
+Using our definition of the sample mean:
+
+$\frac{1}{n}\sum_{i = 1}x_i = \bar{x}$ and $\sum_{i = 1} x_i = n\bar{x}$,
+
+$\sum_{i = 1} y_i x_i - n \bar{y}\bar{x} + \hat\beta_1 n \bar{x}^2 - \hat\beta_1 \sum_{i = 1} x_i^2 = 0$,
+
+$\sum_{i = 1} y_i x_i - n \bar{y}\bar{x} = \hat\beta_1 \sum_{i = 1} x_i^2  - \hat\beta_1 n \bar{x}^2$,
+
+$\frac{\sum_{i = 1} y_i x_i - n \bar{y}\bar{x}}{\sum_{i = 1}^n x_i^2 - n \bar{x}^2} = \hat\beta_1$.
+
+Let's make this look like the "normal" definition. Starting with the numerator on the left side of the equation:
+
+$\sum_{i = 1} y_i x_i - n \bar{y}\bar{x}$
+
+$\sum_{i = 1}^n x_i y_i - 2 n\bar{y}\bar{x} + n\bar{y}\bar{x}$
+
+$\sum_{i = 1}^n x_i y_i - \bar{y}\sum_{i = 1}^n x_i - \bar{x}\sum_{i = 1}^n y_i + \sum_{i = 1}^n \bar{x}\bar{y}$
+
+$\sum_{i = 1}^n(x_iy_i - x_i \bar{y} - y_i \bar{x} + \bar{x}\bar{y})$
+
+$\sum_{i = 1}^n(x_i - \bar{x})(y_i - \bar{y})$.
+
+Not let's go to the denominator.
+
+$\sum_{i = 1}^n x_i^2 - n \bar{x}^2$.
+
+$\sum_{i = 1}^n x_i^2 - 2 n \bar{x}^2 + n \bar{x}^2$
+
+$\sum_{i = 1}^n (x_i^2-\bar{x}\sum_{i = 1}^n x_i - \bar{x}\sum_{i = 1}^n x_i + \sum_{i = 1}^n \bar{x}^2$
+
+$\sum_{i = 1}^n (x_i^2 - 2 x_i \bar{x} + \bar{x}^2)$
+
+$\sum_{i = 1}^n (x_i - \bar{x})^2$.
+
+This brings us to our final definition of 
+
+$\hat\beta_1 = \frac{\sum_{i = 1}^n(x_i - \bar{x})(y_i - \bar{y})}{\sum_{i = 1}^n (x_i - \bar{x})^2}$.
+
+The sample covariance is in the numerator and the sample variance in the denominator.
+
+
+
+# Unbiasedness and Consistency
+
+## Unbiasedness
+
+The idea of unbiasedness is, if you take out several samples, keep recording the values of the estimates, and then take an average, you will get very close to the correct population value. If your estimator is biased, then the average will not equal the true parameter value in the population.
+
+The unbiasedness property of OLS in Econometrics is the basic minimum requirement to be satisfied by any estimator. However, it is not sufficient for the reason that most times in real-life applications, you will not have the luxury of taking out repeated samples. In fact, only one sample will be available in most cases.
+
+For unbiasedness, we need our original assumptions plus one more:
+
+### 1. $E(u) = 0$
+
+### 2. $E(u|x) = 0$
+
+If we group the first and second assumptions: $E(u) = E(u|X) = 0$.
+
+This is a key identifying assumption that implies $E(Y|X) = \beta_0 + \beta_1 X$.
+
+This other assumptions we will use are:
+
+### 3. Linear in parameters
+
+### 4. There is variation in $x_i$.
+
+### 5. Random sampling (i.i.d.)
+
+The goal for unbiasedness is $E(\hat\beta_1) = \beta_1$.
+
+Let's start with our formula:
+
+$\hat\beta_1 = \frac{\sum_{i = 1}^n(x_i - \bar{x})(y_i - \bar{y})}{\sum_{i = 1}^n (x_i - \bar{x})^2}$.
+
+Looking first at the numerator, let's do some rearranging:
+
+$\sum_{i = 1}^n(x_i - \bar{x})(y_i - \bar{y})$
+
+$\sum_{i = 1}^n(x_i - \bar{x}) y_i - \sum_{i = 1}^n (x_i - \bar{x}) \bar{y})$
+
+$\sum_{i = 1}^n(x_i - \bar{x}) y_i - \bar{y} \sum_{i = 1}^n (x_i - \bar{x})$
+
+$\sum_{i = 1}^n(x_i - \bar{x}) y_i - \bar{y} (\sum_{i = 1}^n x_i - \sum_{i = 1}^n \bar{x})$
+
+Using our definition $n\bar{x} = \sum_{i = 1}^n x_i$ and summation rule 1,
+
+$\sum_{i = 1}^n(x_i - \bar{x}) y_i - \bar{y} (n\bar{x} - n \bar{x})$,
+
+we are left with the term
+
+$\sum_{i = 1}^n(x_i - \bar{x}) y_i - \bar{y} \cdot 0 = \sum_{i = 1}^n(x_i - \bar{x}) y_i$
+
+in the numerator.
+
+Let's rewrite our new expression for $\hat\beta_1$:
+
+$\hat\beta_1 = \frac{\sum_{i = 1}^n(x_i - \bar{x}) y_i}{\sum_{i = 1}^n (x_i - \bar{x})^2}$.
+
+Using the model we want to estimate (pre-party hats):
+
+$y_i = \beta_0 + \beta_1 x_i + u_i$
+
+we can plug this formula in for $y_i$:
+
+$\hat\beta_1 = \frac{\sum_{i = 1}^n(x_i - \bar{x}) (\beta_0 + \beta_1 x_i + u_i)}{\sum_{i = 1}^n (x_i - \bar{x})^2}$.
+
+Starting again with the numerator:
+
+$\sum_{i = 1}^n(x_i - \bar{x}) (\beta_0 + \beta_1 x_i + u_i)$
+
+$\sum_{i = 1}^n[(x_i - \bar{x})\beta_0 + (x_i - \bar{x})\beta_1 + (x_i - \bar{x})u_i]$.
+
+Distributing the summation and using our summation rule 2:
+
+$\beta_0 \sum_{i = 1}^n(x_i - \bar{x}) + \beta_1\sum_{i = 1}^n(x_i - \bar{x})x_i + \sum_{i = 1}^n(x_i - \bar{x})u_i$.
+
+Starting with the first term and using our definition of the sample mean and summation rule 1:
+
+$\beta_0 \sum_{i = 1}^n(x_i - \bar{x}) = \beta_0 (\sum_{i = 1}^n x_i - \sum_{i = 1}^n \bar{x}) = \beta_0 (n\bar{x} - n\bar{x}) = 0$
+
+We can now rewrite our equation for $\hat\beta_1$ as:
+
+$\hat\beta_1 = \frac{\beta_1\sum_{i = 1}^n(x_i - \bar{x})x_i + \sum_{i = 1}^n(x_i - \bar{x})u_i}{\sum_{i = 1}^n (x_i - \bar{x})^2}$.
+
+Separating the terms, we get:
+
+$\hat\beta_1 = \beta_1 \frac{\sum_{i = 1}^n(x_i - \bar{x})x_i}{\sum_{i = 1}^n (x_i - \bar{x})^2} + \frac{\sum_{i = 1}^n(x_i - \bar{x}u_i)}{\sum_{i = 1}^n(x_i - \bar{x})^2}$.
+
+Taking the denominator of the terms, we can rearrange it as:
+
+$\sum_{i = 1}^n(x_i - \bar{x})^2 = \sum_{i = 1}^n[(x_i - \bar{x})(x_i - \bar{x})]$.
+
+$= \sum_{i = 1}^n (x_i^2 - x_i \bar{x} - \bar{x} x_i + \bar{x}^2)$
+
+$= \sum_{i = 1}^n [(x_i - \bar{x})x_i - (x_i - \bar{x})\bar{x})]$
+
+$= \sum_{i = 1}^n (x_i - \bar{x})x_i - \sum_{i = 1}^n(x_i - \bar{x})\bar{x})$
+
+$= \sum_{i = 1}^n (x_i - \bar{x})x_i - (n\bar{x} - n\bar{x})$
+
+$= \sum_{i = 1}^n (x_i - \bar{x})x_i$.
+
+We can now go back to our equation for $\hat\beta_1$ with our new denominator:
+
+$\hat\beta_1 = \beta_1 \frac{\sum_{i = 1}^n(x_i - \bar{x})x_i}{\sum_{i = 1}^n (x_i - \bar{x})x_i} + \frac{\sum_{i = 1}^n(x_i - \bar{x})u_i}{\sum_{i = 1}^n(x_i - \bar{x})^2}$, 
+
+and we're left with:
+
+$\hat\beta_1 = \beta_1 + \frac{\sum_{i = 1}^n(x_i - \bar{x})u_i}{\sum_{i = 1}^n(x_i - \bar{x})^2}$.
+
+Let's turn to our expected value of $E(\hat\beta)$, which we want to show is equal to $\beta$:
+
+$E(\hat\beta_1) = E(\beta + \frac{\sum_{i = 1}^n(x_i - \bar{x})u_i}{\sum_{i = 1}^n(x_i - \bar{x})^2})$.
+
+Using our expected value rules:
+
+$E(\hat\beta_1) = E(\beta) + E \left(\frac{\sum_{i = 1}^n(x_i - \bar{x})u_i}{\sum_{i = 1}^n(x_i - \bar{x})^2} \right)$.
+
+If our assumption that $E(u)$ holds, the expectation of the second term is zero and we are left with unbiasedness.
+
+
+## Consistency
+
+An estimator is said to be consistent if its value approaches the actual, true parameter (population) value as the sample size increases. An estimator is consistent if it satisfies two conditions:
+
+a. It is asymptotically unbiased
+
+b. Its variance converges to 0 as the sample size increases.
+
+We will return to variance shortly, but at least we can show it is asymptotically unbiased!
+
+$plim \hat\beta_1 = \beta_1 + \frac{plim \sum_{i = 1}^n(x_i - \bar{x})u_i}{plim \sum_{i = 1}^n(x_i - \bar{x})^2}$
+
+$= \beta_1 + \frac{Cov(x, u)}{Var(x)}$
+
+$= \beta_1$
+
+
+
+
+
+

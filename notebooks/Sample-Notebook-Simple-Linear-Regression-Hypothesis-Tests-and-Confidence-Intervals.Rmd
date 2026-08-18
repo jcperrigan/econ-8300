@@ -1,0 +1,728 @@
+---
+title: "Sample Notebook - Simple Linear Regression: Hypothesis Tests and Confidence Intervals"
+output:
+  html_document:
+    toc: yes
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Loading and exploring the data
+
+## Loading the data
+In this sample notebook, I will be using the "birthweight" data from the Wooldridge package.
+
+```{r}
+library(wooldridge)
+data('bwght')
+?bwght
+```
+
+This data is from the 1989 linked National Mortality Detail files, which contains a census of infant births and deaths. Here we are looking at births in Pennsylvania in 1989.
+
+Our goal is to examine the relationship between *bwght* (birth weight of infant in grams) and *cigs* (the number of cigarettes smoked daily while pregnant).
+
+You can find more information about the dataset here: https://rdrr.io/cran/wooldridge/man/bwght.html
+
+### Packages needed
+
+To group our data, we will be using the dplyr package, which is inside the ```tidyverse``` package. ```tidyverse``` also includes very useful packages like ```ggplot```, which we will be using a lot. If you do not have ```tidyverse``` installed, use "install packages('tidyverse')".
+
+[Here is a great summary](https://datacarpentry.org/R-genomics/04-dplyr.html) of common dplyr functions. It's a very useful package!
+
+```{r}
+#install.packages('tidyverse')
+library(tidyverse)
+```
+
+# Regression with a binary explanatory variable
+
+## The Math
+
+Simple linear regression can be used in cases where *x* is a binary variable (also called a dummy variable). Here, *x* can take on two values: zero and one. These two values are used to put each unit in the population into one of two groups represented by $x = 0$ and $x = 1$. 
+
+Let's create a new variable in our data: $smoker = 1$ indicates that a person smokes, $smoker = 0$ indicates that a person does not. 
+
+```{r}
+bwght <- bwght %>%
+  mutate(smoker = case_when(cigs > 0 ~ 1,
+                           cigs == 0 ~ 0 ))
+```
+
+Let's check and make sure the new $smoker$ variable was added to the dataframe. To install the ```kableExtra``` package, remove the "#" from the front of that line of code.
+
+```{r}
+#install.packages('kableExtra')
+library(kableExtra)
+bwght_head <- head(bwght, n = 10)
+
+kbl(
+  bwght_head,
+  caption = "First 10 Rows of Birthweight Dataframe",
+  align = "lcc"
+) |>
+  kable_classic(full_width = FALSE) |>
+  row_spec(0, bold = TRUE)
+```
+
+
+In our dataset, we can add an *i* subscript, so $smoker_i$ indicates smoking status for a randomly drawn person *i*.
+
+What does it mean to have a simple regression equation when *x* is binary?
+
+We have our regression equation:
+
+$y = \beta_0 + \beta_1 x + u$
+
+but where *x* is not a binary variable. If we impose our zero conditional mean assumption, we get:
+
+$E(y | x) = \beta_0 + \beta_1 x + E(u|x) = \beta_0 + \beta_1 x$,
+
+just like we've seen before. The only difference now is *x* can take on only two values. If we plug zero and one into the previous equation, we can see that:
+
+$\beta_1 = E(y | x = 1) - E(y | x = 0)$.
+
+The mechanics and assumptions of OLS do not change when *x* is binary. The definition of the $R^2$ is unchanged, residuals have zero mean, etc.
+
+## The Interpretation
+
+With continuous variables, you can see how one variable changes as you increase the value in the other variable. But with categorical variables, we're dealing with groups in the data that you can't incrementally increase. Because of this, we interpret categorical variables differently in regression.
+
+$\beta_1$ is the difference in the average value of *y* between the subpopulation where $x = 1$ and where $x = 0$. 
+
+In the case of categorical variables, regression estimates the mean differences between these groups and determines whether the differences are statistically significant.
+
+
+### Visualizing the relationship
+
+Let's take a look at a plot of our data. Box plots are a good way to look at differences between subpopulations.
+
+Here we will use a box plot to look at the difference in *bwght* compared to whether someone is a smoker or not. We will be using ```ggplot```
+
+
+```{r}
+theme_update(plot.title = element_text(hjust = 0.5))
+```
+
+```{r, fig.alt = "Smoker and Birthweight box plot"}
+ggplot(bwght, aes(x = smoker, y = bwght, fill = factor(smoker))) + 
+  geom_boxplot() + 
+  labs(y= "Birthweight", x = "Smoker") + 
+  ggtitle('Smoker and Birthweight')
+```
+
+As we see from the boxplot, it looks like there might be a difference. But how do we test if the difference is statistically significant? For that, we need to use a hypothesis test.
+
+# Hypothesis Tests
+
+A hypothesis test evaluates two mutually exclusive statements about the population and determines which statement the data support. These two statements are the hypotheses.
+
+Our hypothesis test for this example is to test whether *birthweight* is the same, no matter the value for *smoker*, or whether there is a difference in *birthweight* depending on whether *smoker* = 1 or *smoker* = 0.
+
+We can write this as:
+
+$H_0: \mu_{1, smoker = 1} - \mu_{1, smoker = 0} = 0$
+$H_1: \mu_{1, smoker = 1} - \mu_{1, smoker = 0} \neq 0$,
+
+where $\mu_1$ is the population mean.
+
+To test this hypothesis, we need to find the *t*-statistic of the difference. The general formula for the *t*-statistic of the difference between means is:
+
+$t = \frac{\bar{x_1} - \bar{x_2}}{SE_p}$,
+
+where $SE_p$ is the pooled standard error. 
+
+Let's start with the standard error in the denominator, and come back to the numerator.
+
+## Standard Error of the Means
+
+### Definition of Standard Error of the Mean 
+The standard error of the mean (SEM) is the variability of sample means in a sampling distribution of means.
+
+Inferential statistics uses samples to estimate the properties of entire populations. The standard error of the mean involves fundamental concepts in inferential statistics—namely repeated sampling and sampling distributions. SEMs are a crucial component of that process.
+
+Imagine you draw a random sample of 50 from a population, measure a property, and calculate the mean. Now, suppose you repeat that study many times. You repeatedly draw random samples of the same size, calculate the mean for each sample, and graph all the means on a histogram. 
+
+Then let's say you do the same thing, but for a random sample of 100. You draw samples of the same size, calculate the mean for each sample, and graph all the means on a histogram.
+
+These histograms represent the sampling distribution of the mean. There’s a different sampling distribution for each sample size: 50 and 100. 
+
+The variability of the sampling distributions is the standard error of the mean! More specifically, the SEM is the standard deviation of the sampling distribution.
+
+The equation for the standard error of the mean is:
+
+$SEM_N = \sqrt{\frac{\sigma^2}{N}} = \frac{\sigma}{\sqrt{N}}$,
+
+* The numerator $\sigma^2$ is the variance and $\sigma$ is the sample standard deviation. This represents the variability present in the data. 
+* The denominator $\sqrt{N}$ is the square root of the sample size, and adjusts for the amount of data.
+
+### Standard Error of the Difference between Means
+
+We can use the standard error of the difference between means to test whether there is a statistically significant difference in *birthweight* when $smoker = 1$ vs. when $smoker = 0$. 
+
+To find the standard error of the difference, we need to add our standard errors together to get the pooled standard error. This pooled standard error assumes that the variances are equal (homoskedasticity):
+
+$SE_p = \sqrt{s^2_{p}(\frac{1}{n_1} + \frac{1}{n_2})}$, 
+
+where 
+
+$s^2_{p} = \frac{(n_2 - 1)s^2_2 + (n_1 - 1)s^2_1}{n_2 + n_1 - 2}$
+
+where $s_1^2$ is the sample variance of group one, $n_1$ is the number of observations in group one, $s_2^2$ is the sample variance of group two, and $n_2$ is the number of observations in group two.
+
+Let's break down what we need to do to find the standard error of the difference in means:
+
+1. Find the sample variance of *birthweight* when *smoker* = 1.
+2. Find the number of observations in our data where *smoker* = 1.
+3. Find the sample variance of *birthweight* when *smoker* = 0.
+4. Find the number of observations in our data where *smoker* = 0.
+5. Plug those values into the equation for SEM.
+
+#### Step 1
+
+We need to get the sample variance of *birthweight* when *smoker* = 1. To do that, we can filter our data based on the value of *smoker*, then use that filtered data to find the sample standard deviation.
+
+
+```{r}
+smoker_true <- filter(bwght, smoker == 1)
+var_smoker_true <- var(smoker_true$bwght)
+var_smoker_true
+```
+
+#### Step 2
+
+Next we need to find the number of observations where *smoker = 1*. We can use our filtered data to do so.
+
+```{r}
+n_smoker_true <- length(smoker_true$bwght)
+n_smoker_true
+```
+
+#### Step 3
+
+We need to get the sample variance of *birthweight* when *smoker* = 0. To do that, we can filter our data based on the value of *smoker*, then use that filtered data to find the sample standard deviation.
+
+```{r}
+smoker_false <- filter(bwght, smoker == 0)
+var_smoker_false <- var(smoker_false$bwght)
+var_smoker_false
+```
+
+#### Step 4
+
+Next we need to find the number of observations where *smoker = 0*. We can use our filtered data to do so.
+
+```{r}
+n_smoker_false <- length(smoker_false$bwght)
+n_smoker_false
+```
+
+#### Step 5
+
+Finally, we plug those values into the equation for the standard error of the difference. We are using the standard error of the pooled two-sample t-test, which assumes homoeskedasticity, or equal variance, between the two samples. 
+
+The reason we're doing this is because this is one of the Gauss-Markov assumptions and is an assumption made when using ```lm()``` in R, unless we specify otherwise. We will return to more questions around homoskedasticity later!
+
+$SE = \sqrt{s^2_{p}(\frac{1}{n_1} + \frac{1}{n_2})}$, 
+
+where 
+
+$s^2_{p} = \frac{(n_2 - 1)s^2_2 + (n_1 - 1)s^2_1}{n_2 + n_1 - 2}$
+
+```{r}
+s2_pooled <- ((n_smoker_true - 1) * var_smoker_true + (n_smoker_false - 1) * var_smoker_false) / (n_smoker_true + n_smoker_false - 2)
+
+SE_diff <- sqrt(s2_pooled * (1/n_smoker_true + 1/n_smoker_false))
+SE_diff
+```
+
+### The *t*-statistic of the difference
+
+Now that we have our standard error of the difference in means, we can return back to the numerator term of the *t*-statistic:
+
+As we will be comparing the mean for *birthweight* when *smoker* = 1 and when *smoker* = 0, we will use the two-sample *t*-test:
+
+$t = \frac{(\bar{x}_1 - \bar{x}_2)}{SE_{\bar{x}_1 - \bar{x}_2}}$,
+
+where:
+
+* $\bar{x}_1$ is the sample mean of *birthweight* where *smoker* = 1,
+* $\bar{x}_2$ is the sample mean of *birthweight* where *smoker* = 0,
+* $SE_{\bar{x}_1 - \bar{x}_2}$ is the standard error of the difference.
+
+Let's remind ourselves of our hypothesis test:
+
+$H_0: \mu_1 - \mu_2 = 0$
+$H_1: \mu_1 - \mu_2 \neq 0$
+
+We are using the sample means $\bar{x}_1$ and $\bar{x}_2$ to test for the population means $\mu_1$ and $\mu_2$.
+
+So is there a significant difference between the birthweight when *smoker* = 1 vs. when *smoker* = 0?
+
+```{r}
+mean_smoker_true <- mean(smoker_true$bwght)
+mean_smoker_false <- mean(smoker_false$bwght)
+cat("The mean birthweight when smoker = 1 is", mean_smoker_true, 'and the mean birthweight when smoker = 0 is', mean_smoker_false)
+```
+
+```{r}
+mean_diff <- mean_smoker_true - mean_smoker_false
+t_stat <- mean_diff / SE_diff
+
+cat('The difference between the means is', mean_diff, '; the standard error of the difference is', SE_diff, '; the t-statistic of the difference is', t_stat)
+```
+
+The *t*-statistic is greater than the two-sided critical value of 1.96 (note, using the normal distribution, we'll also check using the t-distribution); the difference between the means of *birthweight* is therefore statistically significant at 95%.
+
+# Confidence Intervals
+
+Another way to look at hypothesis testing is by constructing confidence intervals. Confidence intervals incorporate the uncertainty and sample error to create a range of values the actual population value is likely to fall within.
+
+For a 95% confidence interval (meaning we're 95% confident that the true value of the difference in *birthweight* lies in this range of values), we can use the standard error of the difference in means plus the 95% critical value.
+
+```{r}
+alpha <- .05
+p <- 1 - .05/2
+df <- n_smoker_false + n_smoker_true - 2
+t_critical_value <- qt(p, df)
+
+lower_ci_t <- mean_diff - t_critical_value * SE_diff
+upper_ci_t <- mean_diff + t_critical_value * SE_diff
+
+cat('The t-distribution critical value is', t_critical_value, 'and we are 95% confidence the difference in birthweight is between', lower_ci_t, 'and', upper_ci_t)
+```
+
+The confidence interval does not include zero, which tells us we can be 95% confident that there is a difference in birthweight in the population (that the difference in birthweight does not equal zero). 
+
+We could also use the critical value from the normal distribution for an approximation that does not take the degrees of freedom from our data into account. If we do that, we get the following confidence interval:
+
+```{r}
+lower_ci <- mean_diff - 1.96 * SE_diff
+upper_ci <- mean_diff + 1.96 * SE_diff
+
+cat('The normal distribution critical value is 1.96 and we are 95% confidence the difference in birthweight is between', lower_ci, 'and', upper_ci)
+```
+
+As you can see, they're quite similar! 
+
+## Doing it the shorter way
+
+Of course, this whole calculating the *t*-statistic and confidence intervals by hand was a lot of work. But there's a shorter and easier way!
+
+To make reporting your results easier, use the following steps:
+
+### How to use reporting.R in your .Rmd
+
+#### 1. Put the file in the right place
+
+* Download or copy reporting.R
+
+* Save it in the same folder as your .Rmd file (your lab/notebook)
+
+Your folder should look like:
+
+week-03/
+  week-03.Rmd
+  reporting.R
+
+#### 2. Load the functions at the top of your .Rmd
+
+Add this code chunk near the top (after your setup chunk):
+
+```{r load-reporting}
+source("reporting.R")
+```
+
+If you get an error like *“cannot open file reporting.R”*, it means the file is not in the same folder as your `.Rmd`.
+
+You also need to make sure you have all the necessary packages loaded. Along with ```tidyverse```, which we loaded above, you will need ```knitr``` and ```kableExtra```.
+
+```{r}
+#install.packages('knitr')
+#install.packages('kableExtra')
+library(knitr)
+library(kableExtra)
+```
+
+
+#### 3. Fit your model 
+
+Example:
+
+```{r}
+mod1 <- lm(bwght ~ smoker, data = bwght)
+
+#For a simple summary, remove the "#" in front of the code line below
+#summary(mod1)
+```
+
+#### 4. Print an accessible model summary table
+
+**Important:** the chunk that prints the table must include `results='asis'`.
+
+**Option A: Simple table (recommended)**
+
+```{r, results='asis'}
+mk_coeftab(
+  mod1,
+  mode = "simple",
+  term_labels = c(
+    smoker = "Smoker (1 = yes, 0 = no)"
+  ),
+  caption = "Model: Birthweight on Smoking Status"
+)
+```
+
+
+**Option B: Full table (adds t/z and confidence intervals)**
+
+
+```{r, results='asis'}
+mk_coeftab(
+  mod1,
+  mode = "full",
+  term_labels = c(
+    smoker = "Smoker (1 = yes, 0 = no)"
+  ),
+  caption = "Model (full): Birthweight on Smoking Status"
+)
+
+```
+
+
+#### 5) Compare multiple models (fit statistics)
+Fit two models, then compare:
+
+```{r}
+
+mod1 <- lm(bwght ~ smoker, data = bwght)
+mod2 <- lm(bwght ~ log(faminc), data = bwght)
+```
+
+```{r, results='asis'}
+mk_fit(
+  `Model 1: birthweight ~ smoker` = mod1,
+  `Model 2: birthweight ~ ln(family income)` = mod2,
+  caption = "Model comparison"
+)
+```
+
+
+Going back to the simple regression results, let's take a look at the coefficients only: 
+
+```{r, results='asis'}
+mk_coeftab(
+  mod1,
+  mode = "simple",
+  term_labels = c(
+    smoker = "Smoker (1 = yes, 0 = no)"
+  ),
+  caption = "Model: Birthweight on Smoking Status"
+)
+```
+
+
+What do you see? What is the intercept equal to, and what is the coefficient on *smoker* equal to? What about the standard error on *smoker*, what do you see there?
+
+The intercept is equal to the mean birthweight when *smoker* = 1! Then the coefficient on *smoker* is equal to the difference, the standard error on *smoker* is equal to the standard error of the difference in means, and the *t*-statistic is equal to the *t*-statistic we found before!
+
+We can also find our confidence intervals:
+
+```{r}
+confint(mod1)
+```
+
+Those look familiar as well, as they are the same ones we found when using the t-distribution to find our confidence interval. Awesome! 
+
+Quick note: if we were to calculate the standard error of the difference "by hand" using the estimates in the regressions, we would not have to divide by *n* because our estimators have already taken care of this!
+
+# Repeated Samples to Assess Regression Coefficients
+
+We want to remember that our estimated regression coefficients are random variables, because they depend on the sample that we used to estimate them. If we had a different sample, we'd have estimated different values for $\hat{\beta_0}$ and $\hat{\beta_1}$. 
+
+So in order to conduct a hypothesis test on an individual regression coefficient $\beta_i$, we need to use the distribution of its estimator $\hat{\beta_i}$:
+
+*The mean of the distribution of the sample regression coefficient is the population regression coefficient $\beta_i$.
+*The standard deviation of the distribution of the sample regression coefficient is $\sigma_{\hat{\beta_i}}$. Because we do not know the population standard deviation we must estimate $\sigma_{\hat{\beta_i}}$ with the sample standard deviation $\hat{\sigma}_{\hat{\beta_i}}$.
+*The distribution of the sample regression coefficient follows a normal distribution.
+
+Let's construct a number of random subsamples from our data and re-calculate $\hat{\beta_0}$ and $\hat{\beta_1}$. We'll then take the mean of these calculated values and see how close they are to our original regression coefficient estimates.
+
+A random subsample can be constructed using the function sample().
+
+```{r}
+N <- nrow(bwght) # returns the number of observations in the dataset
+Sub_S <- 50         # desired number of subsamples
+S <- 60         # desired sample size to draw from the dataset in each subsample
+
+sumb1 <- 0 # here is where we will add up all the estimated beta coefficients
+
+for (i in 1:Sub_S){   # a loop over the number of subsamples
+  set.seed(3*i)   # a different seed for each subsample  
+  subsample <- bwght[sample(1:N, size = S, replace = TRUE), ] #drawing the random sample of size S from the bwght dataset
+  mod2 <- lm(bwght ~ smoker, data = subsample) #estimating the model
+  #sum b1 for all subsamples:
+  sumb1 <- sumb1 + coef(mod2)[[2]] #adding the beta coefficient to our total
+}
+print(sumb1/Sub_S, digits = 3) #printing out the average value of the beta 1 coefficients from the 50 models estimated from the 50 subsamples
+```
+
+```{r}
+N <- nrow(bwght) # returns the number of observations in the dataset
+Sub_S <- 50         # desired number of subsamples
+S <- 60         # desired sample size to draw from the dataset in each subsample
+
+sumb0 <- 0 # here is where we will add up all the estimated beta coefficients
+
+for (i in 1:Sub_S){   # a loop over the number of subsamples
+  set.seed(3*i)   # a different seed for each subsample  
+  subsample <- bwght[sample(1:N, size = S, replace = TRUE), ] #drawing the random sample of size S from the bwght dataset
+  mod2 <- lm(bwght ~ smoker, data = subsample) #estimating the model
+  #sum b0 for all subsamples:
+  sumb0 <- sumb0 + coef(mod2)[[1]] #adding the beta coefficient to our total
+}
+print(sumb0/Sub_S, digits = 3) #printing out the average value of the beta 0 coefficients from the 50 models estimated from the 50 subsamples
+```
+
+We see that we get averages of 50 estimates of $\hat{\beta_0}$ and $\hat{\beta_1}$ that are pretty close to what we estimated from our data. Try changing the number of subsamples and the sample size to draw in each subsample, and see what happens to the averages of the estimates!
+
+# A Monte Carlo Simulation
+
+A Monte Carlo simulation generates random values for the dependent variable when the regression coefficients and the distribution of the random term are given. 
+
+Besides our point estimates themselves, we want to know how close our estimates are to the true values of $\beta_i$, or its "accuracy" or "precision." An estimator is a function of random variables, and is therefore itself a random variable.
+
+The properties of an estimator are fully described by its probability distribution (the sampling distribution). We can use this sampling distribution to perform tests against hypotheses. We're usually especially interested in some moments of the sampling distribution, like the mean and the variance. Sometimes, especially for finite (small) samples, its difficult to calculate the sampling distribution from the econometric model, and the Monte Carlo simulation method can be used to get more information about the sampling distribution. It can also be used to get more information about the "quality" of an estimator.
+
+"Monte Carlo" refers to processes where information is approximated by generated random realizations of a stochastic (random) process and averaging them in some way. 
+
+A Monte Carlo experiment involves the following steps:
+
+1. Assume values for the exogenous parts of the model, or draw them from their distribution function
+2. Draw a (pseudo) random sample of size *N* for the error term in the statistical model from their respective probability distribution functions
+3. Calculate the endogenous parts of the statistical model
+4. Calculate the value (in our case, the regression estimators and standard errors) that we are interested in
+5. Replicate steps 1 to 4 *R* times
+6. Examine the empirical distribution of the *R* values
+
+## OLS Example
+
+The goal of the example below is to check the distribution of the independent variable in our model:
+
+$bwght_i = \beta_0 + \beta_1 smoker_i + e_i$ 
+
+Remember that $smoker$ can take the value $0$ or $1$.
+
+So here we have a bivariate OLS model, with $e_i \sim N(0, \sigma^2)$. The stochastic (random) element in the model is our error term $e_i$; the exogenous bit is $smoker_i$, and is either fixed or stochastic. 
+
+Assuming values and plugging them in for the true regression parameters, we can simulate the endogenous variable $bwght_i$. The values of interest are then the least squares estimates $\hat{\beta_0}$ and $\hat{\beta_1}$ that we get in the simulated data set.
+
+
+The core of Monte Carlo experiments is the random number generator. A random number generator produces a sequence of numbers that are draws from some specified identically and independently distributed random variable. 
+
+In practice, this is an algorithm that produces a sequence of pseudo random numbers, and these numbers aren't really random since the algorithm describes the deterministic relationship between the numbers. However, with a good generator, they still pass usual independence tests. 
+
+There is a really important thing to remember about Monte Carlos: we have to **completely** specify the Statistical Model (Data Generating Process). This means that we have to assume the deterministic parts of the model, the form of the model, and the exact parameters of the distribution of the random error term and the distribution of exogenous variables. 
+
+This means that the results of our Monte Carlo experiment apply only to our assumptions made, so this results in a is a loss of general applicability to other situations where these assumptions have not been made. 
+
+
+```{r}
+N <- 100 # size of sample
+x1 <- 0 # smoker = 0
+x2 <- 1 # smoker = 1
+b0 <- 120 # approximate estimate of beta 0 from regression
+b1 <- -9 # approximate estimate of beta 1 from regression
+mu = 0 # mean of the error term
+var <- 1000 # variance 
+sigma <- sqrt(var) # standard deviation
+
+yhat1 <- b0 + b1 * x1  # first predicted value of y
+yhat2 <- b0 + b1 * x2 # second predicted value of y
+```
+
+```{r, fig.alt = "Plotting the probability density function of birthweight means"}
+# plotting the probability density function 
+curve(dnorm(x, mean = yhat1, sd = sigma), 0, 250, col="blue", xlab = 'birthweight mean', ylab = 'density')
+curve(dnorm(x, yhat2, sigma), 0, 300, add = TRUE, col="red")
+abline(v = yhat1, col="blue", lty = 2)
+abline(v = yhat2, col="red", lty = 2)
+legend("topright", legend=c("bwght |smoker = 0", 
+                            "bwght |smoker = 1"), lty=1,
+       col=c("blue", "red"))
+```
+
+
+We see now that we have a theoretical (true) probability distribution of birthweight, given whether $smoker = 0$ or $smoker = 1$.
+
+Let's calculate the variance of $\hat{\beta_1}$:
+
+$var(\hat{\beta_1}) = \frac{\sigma^2}{\Sigma(x_i - \bar{x})}$
+
+and plot the density function.
+
+```{r}
+N <- 50 # size of sample
+x1 <- 0 # smoker = 0
+x2 <- 1 # smoker = 1
+b0 <- 120 # approximate estimate of beta 0
+b1 <- -9 # approximate estimate of beta 1
+mu <- 0 # mean of the error term
+var <- 1000 # variance 
+sigma <- sqrt(var) # standard deviation
+
+x <- c(rep(x1, N/2), rep(x2,N/2)) #rep replicates the values in x
+# each value of x (0 or 1) is being replicated N/2 times
+
+xbar <- mean(x) # mean of x
+sumx2 <- sum((x-xbar)^2) # the variance denominator
+varb1 <- sigma / sumx2 #variance of beta 1
+sdb1 <- sqrt(varb1) #standard deviation of beta 1 (square root of variance)
+leftlim <- b1 - 3 * sdb1 #left limit for curve
+rightlim <- b1 + 3 * sdb1 #right limit for curve
+```
+
+```{r, fig.alt = "Plotting the theoretical (true) probability density function of beta 1"}
+curve(dnorm(x, mean = b1, sd = sdb1), leftlim, rightlim, col = 'blue', xlab = 'beta 1 estimate', ylab = 'density')
+abline(v = b1, lty=2)
+```
+
+Here is the theoretical (true) probability density function of $\hat{\beta_1}$.
+
+Now, with the same values of $\hat{\beta_0}$, $\hat{\beta_1}$, and error standard deviation, we'll generate a set of values for $y$, regress $y$ on $x$, and calculate estimated values for our coefficient $\hat{\beta_1}$ and its standard error. Only this time, we'll use the real values of $x$ from our dataset.
+
+
+```{r}
+N <- length(bwght$smoker)
+var <- 1000
+sigma <- sqrt(var_smoker_true)
+x <- bwght$smoker
+nrsim <- 10000
+b0 <- 120
+b1 <- -9
+
+vb1 <- numeric(nrsim) #stores the estimates of b1
+
+for (i in 1:nrsim){
+  set.seed(12345+10*i) #makes the seed random
+  y <- b0 + b1 * x + rnorm(N, mean=0, sd=sigma)
+  mod4 <- lm(y ~ x)
+  vb1[i] <- coef(mod4)[[2]] #adds the estimate of b1 to vb1
+}
+
+mb1 <- mean(vb1) #gets the means of vb1
+seb1 <- sd(vb1) #gets the standard error of vb1
+```
+
+Let's take a look at the means of our coefficients from our regressions, as well as the means of the standard errors from our regressions:
+
+```{r}
+cat('The mean of the coefficients from our ', nrsim, ' simulations is ', mb1)
+cat('The mean of the standard errors from our ', nrsim, ' simulations is', seb1)
+```
+
+```{r, fig.alt = "Plotting beta 1's density from the Monte Carlo simulation compared to the estimation from the data"}
+plot(density(vb1), main = 'beta 1 density')
+curve(dnorm(x, mb1, seb1), col="red", add=TRUE)
+abline(v = mb1, lty=2)
+legend("topright", legend=c("true", "simulated"), 
+       lty=1, col=c("red", "black"))
+hist(vb1, prob=TRUE, ylim=c(0,.4))
+curve(dnorm(x, mean=mb1, sd=seb1), col="red", add=TRUE)
+```
+
+We see that the value of $\hat{\beta_1}$ from our Monte Carlo simulation isn't too far off from what we initially estimated with the data. The graphs show the simulated distributions and the theoretical true distributions, and they look like they line up quite nicely.
+
+# Estimated Variances and Covariance of Regression Coefficients
+
+Speaking of variances, we will often want to access the variances and covariances from our models. R helpfully stores them in a matrix for us, which we can access using `vcov`.
+
+Let's take a look. For an easy way to code this, remove the '#' in front of `vcov(mod1)`. 
+
+```{r}
+#vcov(mod1)
+```
+
+For an accessible version of the variance-covariance matrix using the `reporting.R` notebook, use the following instructions.
+
+## Instructions for using `reporting.R` for Variance-Covariance Matrices
+
+### 1. Put reporting.R in the same folder as your .Rmd.
+
+Your folder should look like:
+
+week3
+-Sample_Notebook.Rmd
+-reporting.R
+
+### 2. Load the reporting script near the top of your .Rmd notebook 
+
+```{r}
+source("reporting.R")
+```
+
+### 3. Fit your model
+
+```{r}
+mod1 <- lm(bwght ~ smoker, data = bwght)
+```
+
+### 4. Print the variance–covariance matrix (accessible table):
+
+Use a chunk with `results='asis'`:
+
+**Most readable (recommended):**
+
+```{r, results='asis'}
+mk_vcov_table(
+  mod1,
+  format = "long",
+  term_labels = c(smoker = "Smoker (1 = Yes, 0 = No)"),
+  caption = "Variance–covariance table for model coefficients"
+)
+```
+
+**Classic square matrix (harder to read, but standard):**
+
+```{r, results='asis'}
+mk_vcov_table(mod1, format = "matrix")
+```
+
+
+**Correlation matrix of estimates (often easier to interpret):**
+
+```{r, results='asis'}
+mk_vcov_table(mod1, format = "cor")
+```
+
+
+
+
+Linear algebra isn't a prerequisite for this class, and we won't go too far into regression in matrix form. However, we will be using some of this for heteroskedasticity and panel data, so I wanted to show you what it looked like when we had a simple, one-variable regression!
+
+
+# Summary
+
+Hypothesis testing is a statistical procedure that allows you to use a sample to draw conclusions about an entire population. It evaluates two mutually exclusive statements about the population and determines which statement the data support.
+
+The hypothesis testing procedure is as follows:
+
+1. Draw a sample from the population of interest.
+2. State your null and alternative hypotheses about the population. Usually, the null is that there is no effect ($\beta_1 = 0$), and the alternative is that there *is* an effect ($\beta_1 \neq 0$).
+3. Determine your significance level $\alpha$. The significance level defines how strong the sample evidence must be to conclude an effect exists in the population. In economics, $\alpha$ is usually set to 0.05, which signifies a 5% risk of deciding an effect exists when it does not.
+4. Run a regression to determine the coefficient (the estimated value $\hat{\beta_1}$) and the standard error. 
+5. Look at the *t*-statistic and *p*-value of the coefficient. The difference between the estimator $\hat{\beta_1}$ and the hypothesized value $0$ is in the numerator of the *t*-statistic; the standard error is in the denominator. If the *t*-statistic is greater than the critical value, you can reject the null hypothesis.
+6. Look at the p-value associated with the *t*-statistic. Remember, the p-value is the probability that you would obtain the effect observed in your sample (or larger) if the null hypothesis is correct. Lower p-values represent stronger evidence against the null. If the p-value is less than or equal to $\alpha$, you can reject the null hypothesis.
+7. Look at the confidence intervals. A 95% confidence interval tells us that we can be 95% sure that the true population value falls in that interval. If 0 is not included in the confidence interval, you can reject the null hypothesis at the 5% significance level.
+8. With small or finite samples (or for robustness checks), simulation procedures like Monte Carlo experiments can be useful. Monte Carlo simulations test how sensitive the results of a regression model are to changes in the data or assumptions, essentially checking how robust the model's conclusions are to potential variations or uncertainties in the input data. This can also help us know how robust the conclusions of our hypothesis tests are.
+
+
+
+
+

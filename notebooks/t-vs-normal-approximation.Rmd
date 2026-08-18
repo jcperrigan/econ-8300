@@ -1,0 +1,135 @@
+---
+title: "Normal vs. t-distribution"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+```
+
+# The normal distribution
+
+Here I'm getting a sequence for x that consists of 500 evenly-spaced values between -4 and 4. I then get y, which is the value of the normal distribution probability density function for each value of x. Finally, I graph x and y together to visualize the normal distribution.  
+
+```{r}
+set.seed(123)
+
+x = seq(from = -4, to = 4, length.out = 500)
+y_norm = dnorm(x)
+
+data <- data.frame(x, y_norm)
+```
+
+```{r, fig.alt = "Normal distribution probability density function"}
+ggplot(data, aes(x)) +   
+    geom_line(aes(y = y_norm), color = "magenta4", linewidth = 1) +
+
+    theme_bw() +
+    theme(axis.line = element_line(color='black'),
+      plot.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.border = element_blank(),
+      legend.title= element_blank(),
+      plot.title = element_text(hjust = 0.5)) +
+  
+    labs(title = 'normal distribution', x = 'standard deviations', y = 'probability density')
+
+```
+
+
+
+# The t-distribution
+
+Now let's do the t-distribution at one degree of freedom. We'll leave x the same, but y will now be the output of the t-distribution probability density function at the values of x and given the specified degrees of freedom.
+
+```{r}
+set.seed(123)
+
+df <- 1
+y1 <- dt(x, df)
+
+
+data <- data.frame(x, y1)
+```
+
+```{r, fig.alt = "T-distribution probability density function, degrees of freedom = 1"}
+ggplot(data, aes(x)) +   
+    geom_line(aes(y = y1), color = "red3", size = 1) +
+
+    theme_bw() +
+    theme(axis.line = element_line(color='black'),
+      plot.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.border = element_blank(),
+      legend.title= element_blank(),
+      plot.title = element_text(hjust = 0.5)) +
+  
+    labs(title = 't-distribution (df = 1)', x = 'standard deviations', y = 'probability density')
+```
+
+# Comparing the normal to the t-distribution
+
+Let's generate some more outputs of the t-distribution probability density function but at different degrees of freedom.
+
+```{r}
+df <- 10
+y10 <- dt(x, df)
+
+df <- 30
+y30 <- dt(x, df)
+
+df <- 100
+y100 <- dt(x, df)
+
+df <- 1000
+y1000 <- dt(x, df)
+```
+
+Now let's put them all in a dataframe and do some comparison plots.
+
+```{r}
+df <- data.frame(x, y_norm, y1, y10, y30, y100, y1000)
+```
+
+
+```{r, fig.alt = "Normal distribution probability density function compared to t-distrubitons with various degrees of freedom"}
+ggplot(df, aes(x)) +   
+    geom_line(aes(y = y1, color = "t-distribution (df = 1)"), size = .5) +
+    geom_line(aes(y = y10, color = "t-distribution (df = 10)")) +
+    geom_line(aes(y = y30, color = "t-distribution (df = 30)"), size = .5) +
+    geom_line(aes(y = y100, color = "t-distribution (df = 100)")) +
+    geom_line(aes(y = y_norm, color = "normal distribution"), size = .5) +
+
+    scale_color_manual(
+                     breaks=c('t-distribution (df = 1)', 't-distribution (df = 10)', 't-distribution (df = 30)',
+                             't-distribution (df = 100)', 'normal distribution'),
+                     values=c('t-distribution (df = 1)'='red3', 't-distribution (df = 10)'='springgreen4', 't-distribution (df = 30)'='darkorange2',
+                              't-distribution (df = 100)' = 'magenta4', 'normal distribution' = 'navyblue'))+
+    theme_bw() +
+    theme(axis.line = element_line(color='black'),
+      plot.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.border = element_blank(),
+      legend.title= element_blank(),
+      plot.title = element_text(hjust = 0.5)) +
+  
+    labs(title = 'comparison', x = 'standard deviations', y = 'probability density')
+
+```
+
+I've satisfied myself that I'm still fine with the using the normal instead of the t-distribution when the sample size is large enough since at higher degrees of freedom, the t-distribution approximates the normal well. If the sample size is large enough the different between using the t-distribution vs. using the normal distribution is negligible, but it becomes more important to use the t-distribution as the sample size decreases.
+

@@ -1,0 +1,136 @@
+---
+title: 'Why $\hat{p}$ Uses $n$ Twice: Proportion as an Average & the 1/n Variance Rule'
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Average vs. Variance: Is it double counting?
+
+In a survey of 600 likely voters, 272 preferred the incumbent and 328 preferred the challenger. Let $\hat{p}$ be the fraction of all likely voters who preferred the incumbent at the time of the survey.
+
+- Sample size: $n=600$
+- Count for incumbent: $272$  
+- Sample proportion: $\hat{p} = \frac{272}{600}$
+
+
+We want the standard error of $\hat{p}$ using the usual plug-in estimator.
+
+# Two Roles for $n$: Definition vs. Variability
+
+## 1. $\hat{p}$ is a sample average
+Define indicator variables $(Y_i\in {0,1}): 1$ if voter $i$ prefers the incumbent, 0 otherwise. Then
+
+$\hat{p} = \frac{1}{n}\Sigma_{i=1}^n Y_i$
+
+Here, the $n$ in the denominator is only used as a definition, it’s how we form an average.
+
+## 2. Averages are $1/n$ as variable as single draws
+Because $\hat{p}$ is the average of $n$ independent draws, its variance is reduced by a factor of $1/n$:
+
+${Var}(\hat{p})$
+$={Var}\left(\frac{1}{n}\Sigma_{i=1}^n Y_i\right)$
+$=\frac{1}{n^2}\Sigma_{i=1}^n{Var}(Y_i)$
+
+Since each $Y_i$ has variance $p(1-p)$:
+
+$Var(\hat{p}) = \frac{1}{n^2} \cdot n \cdot p(1-p) = \frac{p(1-p)}{n}$.
+
+When $n$ shows up again it has a statistical role, since it captures how when we average across more observations it makes the estimator $\hat{p}$ less noisy. 
+
+A single Bernoulli draw is very noisy, since it can only take on the values of 0 or 1. But when we average across a lot of independent draws the ups and downs tend to cancel out and the more observations we have, the less variability in the average.
+
+# Plug-in Estimator and Numerical SE
+
+Since $p$ is unknown, we use $\hat{p}$ in its place:
+$\widehat{\mathrm{Var}}(\hat p)=\frac{\hat p(1-\hat p)}{n}, \qquad \mathrm{SE}(\hat p)=\sqrt{\frac{\hat p(1-\hat p)}{n}}.$
+
+
+```{r compute-se}
+n <- 600
+x <- 272
+p_hat <- x / n
+var_hat <- p_hat * (1 - p_hat) / n
+se_hat <- sqrt(var_hat)
+
+list(
+  n = n,
+  x = x,
+  p_hat = p_hat,
+  var_hat = var_hat,
+  se_hat = se_hat
+)
+```
+
+**Interpretation.** 
+
+$\mathrm{SE}(\hat p)$ is the standard deviation of the sampling distribution of $\hat{p}$ (how much $\hat{p}$ would fluctuate across repeated samples of size $n$). It is not the population standard deviation of $Y$, which is $\sqrt{p(1-p)}$.
+
+# Averaging dice rolls
+
+Rolling one die is noisy but averaging 600 rolls is much calmer. When we average many independent outcomes it's about $1/n$ as variable (in variance) as a single outcome. 
+
+Each $Y_i$ is like a “0/1 die” with mean $p$ and variance $p(1-p)$.  
+
+The sample proportion $\hat p$ is the average, so its variance is $p(1-p)/n$, and its standard deviation (the standard error) is $\sqrt{p(1-p)/n}$.
+
+## Quick Simulation 
+
+Let's simulate many repeated samples under a Bernoulli model with probability equal to our observed $\hat p$.  
+We can compare the empirical variance of $\hat p$ across repetitions to the plug-in estimator $\hat p(1-\hat p)/n$.
+
+```{r}
+# reminding ourselves of the values from before
+list(
+  n = n,
+  x = x,
+  p_hat = p_hat,
+  var_hat = var_hat,
+  se_hat = se_hat
+)
+```
+
+
+```{r simulate}
+set.seed(123)
+
+p_sim <- p_hat          # use the observed proportion as the true p for simulation
+n <- 600
+R <- 20000              # repetitions
+
+# simulate R sample proportions of size n
+p_hats <- replicate(R, mean(rbinom(n, size = 1, prob = p_sim)))
+
+emp_var <- var(p_hats)
+theory_var <- p_sim * (1 - p_sim) / n
+
+c(
+  empirical_variance_of_p_hat = emp_var,
+  theoretical_variance_of_p_hat = theory_var,
+  ratio_empirical_to_theoretical = emp_var / theory_var
+)
+
+```
+
+The empirical variance closely matches the theoretical $\hat p(1-\hat p)/n$, and the ratio hovers near 1.
+
+## Key Takeaways
+
+* The first $n$ in $\hat p = \frac{1}{n}\sum Y_i$ is definitional: a proportion is an average of 0 and 1’s.
+
+* The second $n$ in $\mathrm{Var}(\hat p)=\frac{p(1-p)}{n}$ is statistical since averaging $n$ independent observations reduces variance by $1/n$.
+
+* The plug-in estimator gives $\widehat{\mathrm{Var}}(\hat p)=\frac{\hat p(1-\hat p)}{n}, \quad \mathrm{SE}(\hat p)=\sqrt{\frac{\hat p(1-\hat p)}{n}}.$
+
+* ${SE}(\hat{p})$ is the standard deviation of the sampling distribution of the estimator, not the population standard deviation of $Y$.
+
