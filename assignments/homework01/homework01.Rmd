@@ -5,8 +5,8 @@ output:
     toc: true
     toc_float: true
     highlight: tango
-#    includes:
-#      in_header: wcag-overrides.html
+    includes:
+      in_header: wcag-overrides.html
 ---
 
 ```{r setup, include=FALSE}
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Homework01
 
 Grading Rubric (per question):  
-3 points if complete and correct  
+2 points if complete and correct  
 0 points otherwise 
 
 

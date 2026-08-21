@@ -1,0 +1,376 @@
+---
+title: "In-Class Activity: Exploring Data with R"
+author: "ECON 8300"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+# Purpose
+
+In this activity, you will work with a partner to explore the built-in `mtcars`
+data. The goal is not to memorize R commands. The goal is to practice reading
+code, writing small pieces of code, interpreting output, and solving problems
+together.
+
+
+## Pair-programming roles
+
+- **Driver:** controls the keyboard and writes the code.
+- **Navigator:** reads the instructions, checks the code, predicts results, and
+  searches the notebook or R help when the pair gets stuck.
+
+Both partners should explain what the code is doing. Switch roles whenever the notebook tells you to switch. If one person has more R experience, that person should begin as the navigator.
+
+**Pair members:**  
+Driver (starting): 
+Navigator (starting): 
+
+# Part 1: Meet the data (10--15 minutes)
+
+The `mtcars` data frame is included with R. Each row represents a car model and each column contains a characteristic of that car.
+
+```{r load-data}
+cars <- mtcars
+```
+
+## Task 1.1: Inspect the object
+
+Before running each command, the navigator should predict what kind of information it will return. Then run the code and briefly describe the result.
+
+```{r inspect-data}
+class(cars)
+typeof(cars)
+dim(cars)
+names(cars)
+head(cars)
+```
+
+1. What is the class of `cars`? How is that different from its type?
+
+**Answer:**
+
+
+2. How many observations and variables are in the data?
+
+**Answer:**
+
+
+3. In this data frame, what does one row represent? What does one column represent?
+
+**Answer:**
+
+
+## Task 1.2: Use R help
+
+Run `?mtcars` in the Console. Find the definitions and units of the following variables.
+
+- `mpg`:
+- `wt`:
+- `hp`:
+- `am`:
+
+Why would it be risky to analyze a variable without first checking its definition and units?
+
+**Answer:**
+
+
+> **Switch roles.** The navigator becomes the driver.
+
+# Part 2: Vectors, indexing, and functions (15--20 minutes)
+
+The `$` operator selects a column from a data frame. A single column is a vector.
+
+```{r make-vectors}
+mpg <- cars$mpg
+hp <- cars$hp
+```
+
+## Task 2.1: Examine vectors
+
+Write code to answer each question. Use the examples in the introduction notebook if you need a reminder.
+
+1. What is the class of `mpg`?
+
+```{r vector-class}
+# YOUR CODE HERE
+```
+
+2. Display the first value in `mpg`.
+
+```{r first-value}
+# YOUR CODE HERE
+```
+
+3. Display the fifth through tenth values in `mpg`.
+
+```{r vector-subset}
+# YOUR CODE HERE
+```
+
+4. Calculate the mean, median, minimum, maximum, and standard deviation of `mpg`.
+
+```{r summary-functions}
+# YOUR CODE HERE
+```
+
+5. Create a new vector called `mpg_centered` by subtracting the mean of `mpg` from every value in `mpg`. Then calculate the mean of the new vector.
+
+```{r vector-operation}
+# YOUR CODE HERE
+```
+
+Why is the mean not necessarily displayed as exactly zero? If needed, try `round(mean(mpg_centered), 10)`.
+
+**Answer:**
+
+
+## Task 2.2: Diagnose an error
+
+The following code contains an error. Run it, read the error message, and fix the code.
+
+```{r error-practice, error=TRUE}
+mean(mpg_data)
+```
+
+What did the error message tell you? Write the corrected command below.
+
+```{r error-fix}
+# YOUR CORRECTED CODE HERE
+```
+
+> **Switch roles.** The navigator becomes the driver.
+
+# Part 3: Ask a question with a data frame (20--25 minutes)
+
+We will investigate this question:
+
+> **How does fuel economy differ between cars with automatic and manual transmissions?**
+
+In `mtcars`, `am = 0` indicates an automatic transmission and `am = 1` indicates a manual transmission.
+
+## Task 3.1: Select observations
+
+The code below creates separate data frames for automatic and manual cars.
+
+Read it together before running it. Explain what appears on each side of the comma inside the brackets.
+
+```{r subset-data}
+automatic <- cars[cars$am == 0, ]
+manual <- cars[cars$am == 1, ]
+```
+
+Use `nrow()` to determine how many cars are in each group.
+
+```{r group-counts}
+# YOUR CODE HERE
+```
+
+## Task 3.2: Calculate and interpret group means
+
+Calculate mean `mpg` separately for automatic and manual cars. Give the results clear object names.
+
+```{r group-means}
+# YOUR CODE HERE
+```
+
+Report the difference as:
+
+$$
+\text{mean MPG for manual cars} - \text{mean MPG for automatic cars}.
+$$
+
+```{r mean-difference}
+# YOUR CODE HERE
+```
+
+Interpret the difference in one sentence. Be precise about its direction and units.
+
+**Answer:**
+
+
+Does this comparison establish that changing a car from automatic to manual would *cause* its fuel economy to change by that amount? Why or why not?
+
+**Answer:**
+
+
+## Task 3.3: Make and improve a plot
+
+Start with a scatterplot of vehicle weight and fuel economy.
+
+```{r first-plot}
+plot(cars$wt, cars$mpg)
+```
+
+Modify the plot so that it has:
+
+- a descriptive title;
+- informative axis labels that include units;
+- filled plotting points (`pch = 19`); and
+- a color of your choice.
+
+```{r improved-plot}
+# YOUR CODE HERE
+```
+
+Describe the relationship shown in the plot. Comment on its direction, strength, and whether it appears approximately linear.
+
+**Answer:**
+
+
+> **Switch roles.** The navigator becomes the driver.
+
+# Part 4: Write a custom function (15--20 minutes)
+
+A custom function has a name, one or more arguments, actions, and an output. The function below converts miles per gallon to liters used per 100 kilometers.
+
+```{r conversion-function}
+mpg_to_l100km <- function(mpg_value) {
+  liters_per_100km <- 235.215 / mpg_value
+  return(liters_per_100km)
+}
+```
+
+## Task 4.1: Test and explain the function
+
+1. Predict the result of `mpg_to_l100km(20)`, then run it.
+
+```{r test-function}
+# YOUR CODE HERE
+```
+
+2. Use the function on the entire `mpg` vector. Store the result as `liters_per_100km` and display its first six values.
+
+```{r vectorized-function}
+# YOUR CODE HERE
+```
+
+3. In your own words, identify the function's argument, action, and output.
+
+**Answer:**
+
+
+## Task 4.2: Write your own function
+
+Write a function called `standardize()` that takes a numeric vector `x` and returns
+
+$$
+z_i = \frac{x_i - \bar{x}}{s_x}.
+$$
+
+```{r standardize-function}
+# YOUR CODE HERE
+```
+
+Test your function on `hp`. A correctly standardized vector should have a mean of approximately 0 and a standard deviation of 1.
+
+```{r test-standardize}
+# YOUR CODE HERE
+```
+
+If your check does not work, use `?mean`, `?sd`, or the error message to help diagnose the problem before asking for help.
+
+# Part 5: Loop and compare (10--15 minutes)
+
+The function in Part 4 works directly on a vector, so a loop is not the most efficient solution here. We will nevertheless use a short loop to practice its logic.
+
+## Task 5.1: Trace a loop
+
+Before running this code, predict what will be stored in `first_five_l100km`.
+
+```{r conversion-loop}
+first_five_l100km <- c()
+
+for (i in 1:5) {
+  converted_value <- mpg_to_l100km(mpg[i])
+  first_five_l100km <- c(first_five_l100km, converted_value)
+}
+
+first_five_l100km
+```
+
+Explain the role of each component.
+
+- **Loop object (`i`):**
+- **Loop vector (`1:5`):**
+- **Loop code:**
+
+Compare the loop result with the vectorized command below. Are they the same?
+
+```{r compare-loop}
+mpg_to_l100km(mpg[1:5])
+```
+
+Why might the vectorized version generally be preferable in R?
+
+**Answer:**
+
+
+# Part 6: Knit and reflect (5--10 minutes)
+
+Before knitting, check that:
+
+- every code chunk runs from top to bottom;
+- every written response is complete;
+- your plot has a title and labeled axes; and
+- both partners' names appear at the top.
+
+Use **Knit > Knit to HTML**. If knitting gives you an error, read the message, find the named chunk, and run the notebook from the beginning. Remember that knitting starts a fresh R session: it can't use objects that exist only in your console.
+
+## Final reflection
+
+1. What is one R command or idea that became clearer during this activity?
+
+**Answer:**
+
+
+2. What is one question you still have?
+
+**Answer:**
+
+
+3. Give one specific example of how your partner helped you solve a problem or understand the code.
+
+**Answer:**
+
+
+# Optional extensions
+
+Complete these only if your pair finishes early.
+
+## Extension A: A second comparison
+
+Choose one additional variable (`hp`, `wt`, or `qsec`). Compare its mean for automatic and manual cars. Create an appropriate plot and write a two-sentence interpretation.
+
+```{r extension-comparison}
+# YOUR CODE HERE
+```
+
+## Extension B: Improve the function
+
+By default, `mean()` and `sd()` return `NA` if a vector contains a missing value. Modify `standardize()` so it works when `x` contains missing values.
+
+Use `?mean` to identify the needed argument, then test the function on:
+
+```{r extension-missing, eval=FALSE}
+x_with_missing <- c(1, 2, NA, 4, 5)
+```
+
+## Extension C: Add a fitted line
+
+Use `lm()` to estimate a linear relationship between `mpg` and `wt`, then add the fitted line to your scatterplot with `abline()`. Use `?lm` or `?abline` if needed. Does the line summarize the visual pattern reasonably well?
+
+```{r extension-line}
+# YOUR CODE HERE
+```

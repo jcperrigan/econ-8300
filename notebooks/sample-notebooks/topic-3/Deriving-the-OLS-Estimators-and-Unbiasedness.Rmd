@@ -1,5 +1,5 @@
 ---
-title: "ECON-8300"
+title: "Deriving the OLS Estimators and Unbiasedness"
 output:
   html_document:
     toc: yes

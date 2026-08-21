@@ -1,0 +1,311 @@
+---
+title: "Topic 3 In-Class Notebook"
+output: 
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(wooldridge)
+#install.packages('sandwich')
+library(sandwich)
+library(lmtest)
+#install.packages('kableExtra')
+library(kableExtra)
+
+data("pntsprd")
+```
+
+## Dataset + variables
+
+We will use `pntsprd` from **wooldridge** (NCAA men's basketball games).
+
+Key variables:
+
+* `scrdiff`: actual score difference (favored team score − underdog score)
+* `spread`: Las Vegas point spread (favored team by how many points?)
+* `favhome`: 1 if the favored team is at home, 0 otherwise
+
+(If you want to see all variables: `?pntsprd`.)
+
+```{r}
+?pntsprd
+```
+
+
+---
+
+## Problem 1 — Model, notation, and interpretation (warm-up, pntsprd)
+
+We’ll study how well the Las Vegas point spread predicts the actual score difference.
+
+### 1a. Fit the SLR model in R
+
+```{r}
+mod1 <- lm(scrdiff ~ spread, data = pntsprd)
+summary(mod1)
+```
+
+```{r}
+source('reporting.R')
+```
+
+```{r}
+mk_coeftab(mod1, #model
+           mode = 'simple', #modes are simple and full
+           term_labels = c(
+             spread = "Las Vegas Point Spread"
+           ),
+           caption = "Model: Score Difference on Point Spread")
+```
+
+
+### 1b. Write the population model and the sample (estimated) model
+
+In math notation:
+
+- Population model:
+
+
+$scrdiff_i = \beta_0 + \beta_1 spread_i + u_i$
+
+- Estimated (sample) model:
+
+
+$\widehat{scrdiff}_i = \hat\beta_0 + \hat\beta_1 spread_i$
+
+
+### 1c. Interpret the slope in context
+
+In one sentence, interpret your estimated slope $\hat\beta_1$ from `summary(mod1)`.
+
+The value of $\hat\beta_1 = 1.002$
+
+A one point increase in the Vegas spread (the x variable) is associated with an average increase of $\hat\beta_1$ (1.002) points in the actual score difference.
+
+### 1d. What does the error term contain?
+
+In one sentence: what kinds of things are in $u_i$ here?
+
+$u_i$ includes everything affecting game score differences besides the spread: playing at home, semi finals/ finals, injuries, travel, measurement noise, weather.
+
+---
+
+## Problem 2 — OLS by hand 
+
+Given 5 observations:
+
+| i | X | Y |
+|---|---:|---:|
+|1|1|2|
+|2|2|3|
+|3|3|5|
+|4|4|4|
+|5|5|6|
+
+1) Compute $\bar X$, $\bar Y$.  
+
+2) Compute the OLS slope $\hat\beta_1 = \frac{\sum (X_i-\bar X)(Y_i-\bar Y)}{\sum (X_i-\bar X)^2}$. 
+
+3) Compute $\hat\beta_0 = \bar Y - \hat\beta_1 \bar X$.
+
+```{r}
+# put your work in this code chunk
+x <- c(1, 2, 3, 4, 5)
+y <- c(2, 3, 5, 4, 6)
+
+xbar <- mean(x)
+ybar <- mean(y)
+
+b1 <- sum((x - xbar)*(y - ybar))/sum((x - xbar)^2)
+b0 <- ybar - b1 * xbar
+
+b1
+b0
+
+coef(lm(y ~ x))
+```
+
+
+---
+
+## Problem 3 — Fitted values, residuals, and “fit” measures 
+
+Using your fitted line from Problem 2:
+
+1) Compute $\hat Y_i$ and residuals $\hat u_i = Y_i - \hat Y_i$ for all 5 points.  
+
+$\hat y_i = 1.3 + 0.9 x$
+
+2) Compute $SSE =\sum \hat u_i^2$. 
+Sum of squared errors. Proportion of variability that the model does not explain.
+
+$\hat u_i = y_i - \hat y_i$
+
+
+3) Compute $R^2 = SSR/TSS = 1 - SSE/TSS$
+TSS (SST): represents the variation in y around its mean.
+
+$TSS = \Sigma^n_{i=1} = (y_i - \bar y)^2$
+
+SSR: Regression sum of squares, the variability that the model explains compared to a model with no variables.
+
+$SSR = \Sigma^n_{i=1}(\hat y_i - \bar y)^2$
+
+R squared is the proportion of variation in y explained by the regression.
+
+NOTE: be consistent between Residual / Error sum of squares!
+
+.  
+4) Compute $SER = \sqrt{SSE/(n-2)}$.
+
+```{r}
+# put your work in this code chunk
+yhat <- b0 + b1 * x
+uhat <- y - yhat
+SSE <- sum(uhat^2)
+TSS <- sum((y - ybar)^2)
+SSR <- sum((yhat - ybar)^2)
+
+rsq <- SSR / TSS  
+rsq
+
+rsq_2 <- 1 - SSE / TSS
+rsq_2
+
+SER <- sqrt(SSE / (length(y) - 2))
+SER
+
+test_mod <- lm(y ~ x)
+
+c(SSE = sum(resid(test_mod)^2), 
+  TSS = sum((y - ybar)^2), 
+  R2 = summary(test_mod)$r.squared, 
+  SER = sqrt(sum(resid(test_mod)^2) / (length(y) - 2))
+  )
+```
+
+---
+
+## Problem 4 — The big 4 SLR assumptions (pntsprd)
+
+Considering the model
+
+$scrdiff_i = \beta_0 + \beta_1 spread_i + u_i$
+
+
+State each assumption in a sentence and give one example where it might fail.
+
+1) Linear in parameters
+
+2) i.i.d. sampling 
+
+3) Sampling variation in the explanatory variables
+
+4) $E(u_i\mid spread_i)=0$
+
+
+
+---
+
+## Problem 5 — Reading regression output / testing a specific null hypothesis
+
+Using your `mod1` estimates, test the null $H_0:\beta_1 = 1$
+
+Compute the t-stat for the null that the slope equals 1.
+
+You can do this by hand using the estimate and standard error from `summary(mod1)`:
+
+
+$t = \frac{\hat\beta_1 - 1}{SE(\hat\beta_1)}$
+
+```{r}
+# compute your t-stat here
+mod1 <- lm(scrdiff ~ spread, data = pntsprd)
+coef(mod1)
+b1 <- coef(mod1)["spread"]
+se1 <- sqrt(vcov(mod1)["spread", "spread"])
+
+t_stat <- (b1 - 1) / se1
+
+alpha <- 0.05
+
+df <- mod1$df.residual
+nrow(pntsprd) - 2
+
+# 5 % two sided critical value
+t_crit <- qt(1 - alpha/2, df)
+
+# if abs(t_stat) > t_crit, then reject the null
+abs(t_stat) > t_crit
+
+?qt
+
+```
+
+
+You can also use `linearHypothesis`, but we'll stick to the "by-hand" method for today.
+
+---
+
+## Problem 6 — Confidence intervals / test equivalence
+
+### 6a. 95% confidence interval for $\beta_1$
+
+```{r}
+confint(mod1)
+```
+
+Does the CI include 1? Use that to decide whether you’d reject $H_0:\beta_1=1$ at 5%.
+
+Since the confidence interval includes 1, we fail to reject the null hypothesis. We can reject the null that $H_0:\beta_1=0$.
+
+---
+
+## Problem 7 — Dummy regressor = difference in means 
+
+Fit:
+
+```{r}
+mod2 <- lm(scrdiff ~ favhome, data = pntsprd)
+summary(mod2)
+```
+
+1) What is the predicted mean `scrdiff` when `favhome=0`? When `favhome=1`? 
+
+2) What is the difference in means (home − not home)?
+
+
+
+---
+
+## Problem 8 — Robust standard errors (sandwich + lmtest)
+
+Compare usual vs robust standard errors for `mod1`
+
+```{r}
+# Usual (homoskedastic) SEs:
+coeftest(mod1)
+
+# Robust (HC1) SEs:
+coeftest(mod1, vcov. = vcovHC(mod1, type = "HC1"))
+```
+
+1) Do the *coefficients* change?  
+
+2) Do the *standard errors* change?  
+
+3) What happens to the t-stat / p-value for `spread`?
+
+4) If robust SEs are different, how would that change your CI intuition?
+
+
+
+

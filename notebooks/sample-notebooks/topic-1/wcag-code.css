@@ -1,0 +1,19 @@
+/* Base: high-contrast on white */
+pre, code { background: #fff; color: #111; }
+
+/* Pandoc token classes (highlighting-kate) */
+code span.kw, code span.cf { color:#0B3B8C; font-weight:600; }   /* keywords/control */
+code span.dt, code span.ty { color:#8B005A; font-weight:600; }   /* types */
+code span.dv, code span.bn, code span.fl { color:#003D99; }      /* numbers */
+code span.st, code span.ch, code span.vs { color:#6A2E00; }      /* strings/chars */
+code span.co, code span.do { color:#4A4A4A; font-style:italic; } /* comments/doc */
+code span.fu { color:#004D40; }                                  /* functions */
+code span.va, code span.bu, code span.at { color:#163300; }      /* vars/builtins/attrs */
+code span.op { color:#111; }                                     /* operators */
+code span.er { color:#A40000; background:#FFECEC; }              /* errors */
+
+/* Also cover highlight.js-style classes just in case */
+pre code .hl-keyword { color:#0B3B8C; font-weight:600; }
+pre code .hl-number  { color:#003D99; }
+pre code .hl-string  { color:#6A2E00; }
+pre code .hl-comment { color:#4A4A4A; font-style:italic; }

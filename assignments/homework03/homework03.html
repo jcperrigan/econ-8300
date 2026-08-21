@@ -349,6 +349,47 @@ table thead th { padding-right: 1rem !important; white-space: nowrap; }
   });
 </script>
 
+<style>
+
+.text-muted,
+.help-block,
+.dropdown-header,
+.navbar-default .navbar-nav > li > a,
+.navbar-default .navbar-text,
+.navbar-default .navbar-brand {
+color: #444 !important;
+}
+
+.form-control::placeholder { color: #555 !important; opacity: 1 !important; }
+.form-control::-webkit-input-placeholder { color: #555 !important; }
+.form-control::-moz-placeholder { color: #555 !important; opacity: 1 !important; }
+.form-control:-ms-input-placeholder { color: #555 !important; }
+.form-control::-ms-input-placeholder { color: #555 !important; }
+</style>
+
+<style>
+table caption,
+p.caption,
+.caption,
+.table caption {
+color: #111 !important;
+opacity: 1 !important;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll("table").forEach(function (tbl) {
+    tbl.querySelectorAll("thead th").forEach(function (th) {
+      if (!th.hasAttribute("scope")) th.setAttribute("scope", "col");
+    });
+    tbl.querySelectorAll("tbody th").forEach(function (th) {
+      if (!th.hasAttribute("scope")) th.setAttribute("scope", "row");
+    });
+  });
+});
+</script>
+
 <style type="text/css">
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -569,7 +610,7 @@ display: none;
 <div id="homework03" class="section level1">
 <h1>Homework03</h1>
 <p>Grading Rubric (per question):<br />
-3 points if complete and correct<br />
+2 points if complete and correct<br />
 0 points otherwise</p>
 <div id="retrieving-your-work" class="section level2">
 <h2>Retrieving your work</h2>

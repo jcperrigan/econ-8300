@@ -1,0 +1,270 @@
+---
+title: "In-Class Exercises 1-21"
+output: 
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(123)
+```
+
+# 1. Random Variables & Distributions
+
+Warm‑up (no code)
+
+1. In your own words, what is a random variable?
+
+
+2. What does it mean to say a variable follows a normal distribution?
+
+
+
+```{r}
+# Draw 1,000 observations from a normal distribution
+
+```
+
+
+## Task 1: Compute the mean and standard deviation of your observations manually using mean() and sd().
+
+* How close are they to the values we specified (50 and 10)?
+
+
+
+```{r}
+# calculate the mean and standard deviation
+```
+
+
+Discussion:
+
+* Why aren’t the sample values exactly 50 and 10?
+
+
+
+## Task 2: Visualizing the Distribution
+
+```{r}
+# create a histogram of your simulated data
+
+```
+
+Group discussion questions:
+
+* Is the distribution symmetric?
+
+* Where is most of the mass concentrated?
+
+
+# 2. Probability & Events
+
+
+Concept check
+
+Suppose:
+
+* $P(A) = 0.4$
+
+* $P(B) = 0.3$
+
+* $P(A \cap B) = 0.1$
+
+* Compute $P(A \cup B)$.
+
+
+
+* Are A and B independent? Why or why not?
+
+
+
+
+## Task 3: Empirical Probabilities via Simulation
+
+```{r}
+# Roll a die 10,000 times and save the sample
+
+
+
+# Calculate the probability of rolling a 6 from your sample
+
+```
+
+
+Next:
+
+* Estimate the probability of rolling an even number from your sample.
+
+* Estimate P(roll ≥ 4).
+
+```{r}
+# probability of rolling an even number
+
+# probability P(roll >= 4)
+
+```
+
+
+Discussion:
+
+* Why do these values get closer to the theoretical probabilities as sample size increases?
+
+
+
+# 3. Law of Large Numbers
+
+## Task 4: Convergence of Sample Means
+
+Generate two samples, one of size 10 and one of size 5,000.
+
+Each of these samples should draw from the 
+
+```{r}
+# Generate increasing sample sizes
+n <- seq(10, 5000, by = 10)
+means <- sapply(n, function(i) mean(rnorm(i, 50, 10)))
+
+
+
+plot(n, means, type = "l",
+main = "Law of Large Numbers",
+xlab = "Sample size",
+ylab = "Sample mean")
+abline(h = 50, col = "red")
+```
+
+
+Questions
+
+1. What happens to the sample mean as n grows?
+
+
+
+2. Why does this matter for empirical research?
+
+
+
+# 4. Central Limit Theorem
+
+## Task 5: Sampling Distribution of the Mean
+
+```{r}
+# Draw 1000 sample means from a skewed distribution
+sample_means <- replicate(1000, mean(rexp(40)))
+
+# create a histogram of the sample means
+
+```
+
+
+Group discussion
+
+* Is the original distribution normal?
+
+
+* Is the sampling distribution approximately normal?
+
+
+* Why is this result important for inference?
+
+
+
+# 5. Descriptive Statistics
+
+## Task 6: Working with Real Data
+
+```{r}
+# add the mtcars data to your R session
+
+```
+
+Next:
+
+* Compute mean, median, and standard deviation of `mpg`.
+
+* Interpret each statistic.
+
+```{r}
+# mean
+
+# median
+
+# sd
+```
+
+
+
+## Task 7: Group Comparisons
+
+```{r}
+# Compare the mean mpg for automatic vs manual transmission
+
+```
+
+Questions:
+
+* Which group has higher fuel efficiency?
+
+
+
+* Is this a causal claim? Why or why not?
+
+
+# 6. Covariance & Correlation
+
+## Task 8: Correlation in Practice
+
+```{r}
+# calculate the correlation between horsepower (hp) and mpg
+
+```
+
+Questions:
+
+* Is this relationship positive or negative?
+
+
+* How strong is it using the correlation guidelines?
+
+
+
+## Task 9: Visualizing Correlation
+
+```{r}
+# create a scatterplot with horsepower on the x-axis and mpg on the y-axis
+# draw a regression line through the scatterplot
+
+```
+
+Discussion:
+
+* Does the plot match the correlation sign?
+
+
+
+* What patterns do you see?
+
+
+# 7. Reflection & Wrap‑Up
+
+
+* **What did simulation help you understand today?**
+
+
+* **Which concept (LLN, CLT, correlation, etc.) still feels fuzzy?**
+
+
+
+* **How could these tools apply to your own research questions?**
+
+
+
+
+
+

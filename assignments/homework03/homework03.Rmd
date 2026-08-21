@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Homework03
 
 Grading Rubric (per question):  
-3 points if complete and correct  
+2 points if complete and correct  
 0 points otherwise 
 
 
