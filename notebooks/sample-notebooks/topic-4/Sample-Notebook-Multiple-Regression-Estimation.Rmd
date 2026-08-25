@@ -1,0 +1,981 @@
+---
+title: "Sample Notebook - Multiple Regression: Estimation"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Loading and exploring the data
+
+In this sample notebook, I will be using the "Housing" data from the EcDat package.
+
+To install this package, remove the "#" from the following line of code:
+
+```{r}
+#install.packages("Ecdat", repos="http://R-Forge.R-project.org")
+```
+
+```{r}
+library(effects) # for plotting partial effects
+library(Ecdat)
+data(Housing)
+?Housing
+```
+
+This data is a cross-section from 1987. It contains 546 observations from Windsor, Ontario and has data about the price of houses, along with information about the house's characteristics.
+
+Our goal is to examine the relationship between *price* (sale price of a house) and other variables in our dataset.
+
+You can find [more information about the dataset here.](https://cran.r-project.org/web/packages/Ecdat/Ecdat.pdf)
+
+
+# Descriptive statistics
+
+Descriptive statistics help us to categorize and describe the information. These summary statistics help us answer three questions: Where is the distribution located? How spread out are the values? And, what does the distribution of our dataset look like? These are referred to as center, spread, and shape.
+
+A simpler way is to use `summary()` in base R to look at summary statistics, though I will be creating an accessible .html table below using `reporting.R`.
+
+```{r}
+#summary(Housing)
+```
+
+## To create the .html table version: 
+
+### 1. Have `reporting.R` installed in the same folder as your .Rmd file.
+
+econometrics-folder/
+├── sample-notebook.Rmd
+└── reporting.R
+
+### 2. Have `tidyverse` and `kableExtra` installed and added to your R session.
+
+These need to be installed and added to your R session before using `reporting.R`, because the code used to create the tables uses both of them.
+
+```{r}
+library(tidyverse)
+library(kableExtra)
+```
+
+### 3. Load `reporting.R` and run that chunk once.
+
+```{r}
+source("reporting.R")
+```
+
+And you're ready!
+
+### 4. Getting summary statistics for all variables:
+
+`mk_dataset_summary(dataset_name)`
+
+Make sure to use `{r, results='asis'}` at the top of any code chunk where you're referencing `reporting.R`!
+
+```{r, results='asis'}
+mk_dataset_summary(
+  Housing,
+  captions = list(
+    numeric = "Housing data summary statistics (numeric variables)",
+    factor  = "Housing data summary statistics (categorical variables)"
+  )
+)
+```
+
+
+### 5. Getting summary statistics for some variables:
+
+#### For a subset of variables
+
+```{r, results='asis'}
+mk_dataset_summary(
+  Housing,
+  numeric_vars = c("price", "lotsize"),
+  factor_vars  = c("driveway", "prefarea"),
+  captions = list(
+    numeric = "Housing data summary statistics (price and lotsize)",
+    factor  = "Housing data summary statistics (driveway and preferred area)"
+  )
+)
+```
+
+
+#### For just numeric variables
+
+```{r, results='asis'}
+mk_numeric_summary(Housing, caption = "Housing dataset summary (numeric variables)")
+```
+
+#### For just factor variables
+
+```{r, results='asis'}
+mk_factor_summary(Housing, caption = "Housing dataset summary (factor variables)")
+```
+
+
+
+# Visualizing the dataset
+
+It's also useful to visualize the relationships in our dataset. Let's create some visualizations between our dependent variable of interest, *price*, and our other variables. We'll use the `ggplot` package from `tidyverse`.
+
+First, let's create our plots and name them. We can then look at the plots individually and also put them in a grid later.
+
+```{r, fig.alt = "Lot size vs. price scatter plot"}
+ggplot(Housing, aes(x = lotsize, y = price)) + geom_point(color = '#56B4E9') + labs(x = 'lot size', y = 'price')
+```
+
+```{r, fig.alt = "Number of bedrooms vs. price box plot"}
+ggplot(Housing, aes(x = factor(bedrooms), y = price, fill = factor(bedrooms))) + 
+  geom_boxplot(color = 'black') + 
+  labs(x = 'bedrooms', y = 'price')
+```
+
+```{r, fig.alt = "Number of bathrooms vs. price box plot"}
+ggplot(Housing, aes(x = factor(bathrms), y = price, fill = factor(bathrms))) + 
+  geom_boxplot(color = 'black') + 
+  labs (x = 'bathrooms', y = 'price')
+```
+
+```{r, fig.alt = "Number of stories vs. price box plot"}
+ggplot(Housing, aes(x = as.factor(stories), y = price, fill = as.factor(stories))) +
+  geom_boxplot(color = 'black') + 
+  labs(x = 'stories', y = 'price')
+```
+
+```{r, fig.alt = "Number of garage places vs. price box plot"}
+ggplot(Housing, aes(x = as.factor(garagepl), y = price, fill = as.factor(garagepl))) +
+  geom_boxplot(color = 'black') + 
+  labs(x = 'garage places', y = 'price')
+```
+
+```{r, fig.alt = "Preferred area or not vs. price box plot"}
+ggplot(Housing, aes(x = prefarea, y = price, fill = prefarea)) + 
+  geom_boxplot(color = 'black') + 
+  labs(x = 'preferred area', y = 'price')
+```
+
+Then we'll use the ```patchwork``` package because I think it's the easiest when putting graphs in grids. ```facet_wrap()``` in ```ggplot2``` is also intuitive, but when you're splitting the plots based on a group within the data.
+
+With patchwork, you adjust the verticle using "/" and the horizontal using "|".
+
+```{r}
+#install.packages('patchwork')
+library(patchwork)
+```
+
+```{r, fig.alt = "Nested visualizations (all previous visualizations in one grid)"}
+nested <- (
+  # lotsize plot
+  (
+    (ggplot(Housing, aes(x = lotsize, y = price)) + 
+      geom_point(color = '#56B4E9') + 
+      labs(x = 'lot size', y = 'price')) |
+  
+  # bedrooms plot
+  (ggplot(Housing, aes(x = as.factor(stories), y = price)) +
+  geom_boxplot(color = '#FF4136') + 
+  labs(x = 'stories', y = 'price')) |
+  
+  # bathrooms plot
+  (ggplot(Housing, aes(x = factor(bathrms), y = price)) + 
+  geom_boxplot(color = '#0074D9') + 
+  labs (x = 'bathrooms', y = ''))
+  
+  )/
+  
+  # stories plot
+  (
+  (ggplot(Housing, aes(x = as.factor(stories), y = price)) +
+  geom_boxplot(color = '#B10DC9') + 
+  labs(x = 'stories', y = '')) |
+  
+  # garage plot
+  (ggplot(Housing, aes(x = as.factor(garagepl), y = price)) +
+  geom_boxplot(color = '#85144b') + 
+  labs(x = 'garage places', y = '')) |
+  
+  # preferred area plot
+    
+  (ggplot(Housing, aes(x = prefarea, y = price)) + 
+  geom_boxplot(color = '#FF851B') + 
+  labs(x = 'preferred area', y = ''))
+  )
+)
+nested
+```
+
+
+It's also useful to look at the distributions of our variables. We can do that using histograms for our continuous variables like *price* and *lotsize*. We can also look at the distributions of our discrete variables like bedrooms and bathrooms. It can also be useful to use bar charts to compare the proportion of binary variables like *prefarea*, whether or not a home is located in the preferred neighborhood of the city.
+
+```{r, fig.alt = "House price histogram"}
+ggplot(Housing, aes(x = price)) + 
+  geom_histogram(binwidth = 4000, col = 'black', fill = '#cc79a7') + 
+  labs(x = 'sale price in CAD', y = 'count')
+
+```
+```{r, fig.alt = "Lot size histogram"}
+ggplot(Housing, aes(x = lotsize)) + 
+  geom_histogram(binwidth = 500, col = 'black', fill = '#56B4E9') + 
+  labs(x = 'lotsize in square feet', y = 'count')
+```
+
+```{r, fig.alt = "Bedrooms histogram"}
+ggplot(Housing, aes(x = bedrooms)) + 
+  geom_histogram(binwidth = 1, col = 'black', fill = '#009E73')+ 
+  labs(x = 'bedrooms', y = 'count')
+```
+
+
+```{r, fig.alt = "Bathrooms histogram"}
+ggplot(Housing, aes(x = bathrms)) + 
+  geom_histogram(binwidth = 1, col = 'black', fill = '#0072b2') + 
+  labs(x = 'bathrooms', y = 'count')
+```
+
+```{r, fig.alt = "Garage places histogram"}
+ggplot(Housing, aes(x = garagepl)) + 
+  geom_histogram(binwidth = 1, col = 'black', fill = '#e69f00') + 
+  labs(x = 'garage places', y = 'count')
+```
+
+```{r, fig.alt = "Preferred area bar chart"}
+ggplot(Housing, aes(x = prefarea)) + 
+  geom_bar(col = 'black', fill =  '#d55e00') + 
+  labs(x = 'preferred area', y = 'count')
+```
+
+```{r, fig.alt = "Nested visualizations (all previous histogram visualizations in one grid)"}
+nested2 <-
+  (
+    (
+    # price histogram
+    (ggplot(Housing, aes(x = price)) + 
+  geom_histogram(binwidth = 4000, col = 'black', fill = '#cc79a7') + 
+  labs(x = 'sale price in CAD', y = 'count')) |
+    
+    # lot size histogram
+    (ggplot(Housing, aes(x = lotsize)) + 
+  geom_histogram(binwidth = 500, col = 'black', fill = '#56B4E9') + 
+  labs(x = 'lotsize in square feet', y = '')) |
+    
+    # bedrooms histogram
+    (ggplot(Housing, aes(x = bedrooms)) + 
+  geom_histogram(binwidth = 1, col = 'black', fill = '#009E73')+ 
+  labs(x = 'bedrooms', y = ''))
+    
+    )/
+  (
+  # bathrooms histogram
+  (ggplot(Housing, aes(x = bathrms)) + 
+  geom_histogram(binwidth = 1, col = 'black', fill = '#0072b2') + 
+  labs(x = 'bathrooms', y = 'count')) |
+  
+  # garage places histogram
+    
+  (ggplot(Housing, aes(x = garagepl)) + 
+  geom_histogram(binwidth = 1, col = 'black', fill = '#e69f00') + 
+  labs(x = 'garage places', y = '')) |
+    
+  # preferred area bar chart
+    
+  (ggplot(Housing, aes(x = prefarea)) + 
+  geom_bar(col = 'black', fill =  '#d55e00') + 
+  labs(x = 'preferred area', y = ''))
+    )
+    
+)
+
+
+nested2 
+```
+
+# Transforming the data
+
+We see from the distributions that both the *price* and *lotsize* variables are skewed to the right. Skewness defines the asymmetry of a distribution, and a skewed distribution happens when one tail is longer than the other.
+
+A right skewed distribution occurs when the long tail is on the right of the distribution; you may also hear them referred to as positively skewed. This condition happens because probabilities taper off more slowly for higher values, so you'll find extreme values far from the peak on the high end more frequently than on the low. In a right skewed distribution, the mean is higher than the median, so the mean overestimates the most common values. The opposite is true for left skewed distributions.
+
+Skewed distributions have logical reasons for occurring. One reason is when natural limits skew the results away from the boundary. In this case, we can't have negative prices or negative lot sizes. In our dataset, there is no upper limit and we have some unusually large values (high sales prices and big lot sizes), but most sales prices and most lot sizes are more modest.
+
+So how do we deal with skewed distributions? For a moderate right skewed distribution, a square root transformation can help. For a highly right skewed distribution, taking the natural logarithm is a natural starting point. A more extreme right skewed distribution will call for an inverse transformation, also known as a reciprocal transformation. Let's focus on the natural log transformation, as that will be the most common transformation that we will perform. 
+
+An important note here: a log transformation should still make sense **regardless** of distributional considerations! 
+
+## Why does a log transformation work?
+
+Let's plot *price* compared to the log of *price*. We'll also add a vertical line at the median value of the *price* variable.
+
+```{r}
+Housing$lprice <-log(Housing$price)
+```
+
+```{r, fig.alt = "Graph of price on the x-axis and the natural log of price on the y-axis."}
+ggplot(Housing, aes(x = price, y = lprice)) + 
+  geom_point(col = 'dodgerblue3') + 
+  geom_vline(xintercept = median(Housing$price)) + 
+  labs(y = 'log of price')
+```
+
+Taking logs pulls in the more high extreme values on the right relative to the median. It also pulls the lower values on the left lower, further away from the median.
+
+Let's take the maximum value in our original dataset. In the original data, it's:
+
+```{r}
+
+iqr_above_median <- function(x, data) {
+  median_value = median(data)
+  iqr_value = IQR(data)
+  (x - median_value) / iqr_value
+}
+
+iqr_above_median(max(Housing$price), Housing$price)
+```
+
+interquartile ranges above the median. Try putting in different values for *x* into the function and see what happens!
+
+But after taking logs, we see:
+
+```{r}
+
+iqr_above_median_logs <-function(x, data) {
+  median_value = median(log(data))
+  iqr_value = IQR(log(data))
+  (log(x) - median_value) / iqr_value
+}
+
+iqr_above_median_logs(max(Housing$price), Housing$price)
+```
+
+interquartile ranges above the median.
+
+Let's see what happens with the minimum values.
+
+```{r}
+iqr_below_median <- function(x, data) {
+  median_value = median(data)
+  iqr_value = IQR(data)
+  (median_value - x) / iqr_value
+}
+
+iqr_below_median(min(Housing$price), Housing$price)
+```
+
+
+```{r}
+iqr_below_median_logs <- function(x, data) {
+  median_value = median(log(data))
+  iqr_value = IQR(log(data))
+  (median_value - log(x)) / iqr_value
+}
+
+iqr_below_median_logs(min(Housing$price), Housing$price)
+```
+
+The minimum value has now been pulled down, further away from the median.
+
+Taking the natural log compresses large values much more than small ones, so high observations get pulled closer to the median. But values below the median are stretched out because the log function is steeper near zero, which can increase their distance from the center.
+
+But I'd mentioned the square root transformation earlier, and that would pull in large values too. Why use the log specifically?
+
+Logs are great because constant ratios have constant differences. That means logs have easy interpretations. For example, in a log-linear model where only *y* has been log-transformed, a coefficient of 0.20 would mean:
+
+```{r}
+exp(0.2) - 1
+```
+
+a 22.1% increase in *y* given a unit change in x, no matter the starting point of *x*. This is really useful in economics, since a lot of economic data behaves this way. For example, a change in a house price might not be an exact number of dollars, but rather a percentage change based on different amenities.
+
+Given this, we'll use the log of price as our dependent variable for our regressions. We'll also take the log of the lot size, since it also exhibits a right skewed distribution. 
+
+## Looking at a simple linear regression
+Before we get into our multiple regression, let's create a simple linear regression that looks at *log(price)* and *lotsize*. 
+
+The basic model we will be estimating first is:
+
+$ln(price) = \beta_0 + \beta_1 ln(lotsize) + e$
+
+I'll be using `reporting.R` to report my model results. For a simpler way to look at your results, remove the # from in front of `summary(mod1)`.
+
+If you are using `reporting.R`, make sure to have already run 
+
+```{r}
+source("reporting.R")
+```
+
+And make sure to have `{r, results='asis'}` at the top of your code chunk.
+
+```{r, results='asis'}
+Housing$llotsize <- log(Housing$lotsize)
+
+mod1 <- lm(lprice ~ llotsize, data = Housing)
+
+#summary(mod1)
+
+
+mk_coeftab(
+  mod1,
+  mode = "simple",
+  term_labels = c(
+    llotsize = "ln(lot size)"
+  ),
+  caption = "Model (simple): ln(price) on ln(lot size)"
+)
+
+```
+
+
+How to interpret this? Since both the independent and dependent variables, this is interpreted as an elasticity. The coefficient is the percent increase in the dependent variable (*price*) given a 1% increase in the independent variable (*lotsize*). If lot size increases by 1%, we expect the price of the home to increase by 0.542%.
+
+Let's graph a plot of our two log-transformed variables and a plot of our model effect.
+
+```{r, fig.alt = "Scatter plot of ln(lot size) on the x axis and ln(price) on the y axis, with the regression line added."}
+ggplot(Housing, aes(x = llotsize, y = lprice)) + 
+  geom_point(color = '#56B4E9') + 
+  labs(x = 'ln(lotsize)', y = 'ln(price)') + 
+  stat_smooth(method = 'lm', formula = y~x, col = '#cc79a7', se = FALSE) 
+```
+
+
+```{r}
+eff_lotsize <- effect('llotsize', mod1)
+eff_df <- data.frame(eff_lotsize)
+```
+
+Let's take a look at what the `effects` package is doing.
+
+The effects package in R takes a fitted regression model and computes partial (or marginal) effects. So it takes the model’s predicted values for one predictor while “holding” the others at typical values (the default is the mean but you can specify) so you can see how that predictor alone influences the outcome. In this case we only have one independent variable but you can see how this will be useful!
+
+Specifically:
+
+It evaluates one predictor over a grid of values (or factor levels) and averages or fixes all other predictors at typical values (like their means or specified values), so it effectively isolates that predictor’s contribution to the value of the dependent variable.
+
+It then uses the model’s coefficients to compute predicted responses across that grid, producing “partial effect” estimates you can put in a table or plot to visualize the relationship between that predictor and the outcome variable.
+
+This lets you interpret how changes in one predictor (with others held fixed) affect the predicted outcome in the dependent variable according to the model.
+
+```{r, fig.alt = "Plotting partial effects of the natural log of lot size on the log of price"}
+plot(eff_lotsize, color = 'dodgerblue2')
+```
+
+We can put these same values in a table and take a look:
+
+```{r, results='asis'}
+kbl(
+  eff_df,
+  caption = "Partial effects dataframe, ln(price) on ln(lot size)",
+  align = "lcc"
+) |>
+  kable_classic(full_width = FALSE) |>
+  row_spec(0, bold = TRUE)
+```
+
+In the graph we see the price and its 95% confidence interval band for sample values of the independent variable lotsize. This is a simple regression, but for more complex functional forms ```effect()``` plots the partial effect of a variable for given levels of other independent variables in the model. We'll return to this once we add more variables to our model.
+
+# Omitted variable bias
+
+When $\beta_1$ is a causal effect, the least squares conditional error mean assumption must hold: $E(e|X ) = 0$.
+
+The error $e$ arises because of factors that influence $Y$ but are not included in the regression function--these are called confounding variables.
+
+This condition forces the model to attribute the effects of omitted variables to variables that are in the model, which biases the coefficient estimate. If the omission of those variables means that $E(e | X ) \neq 0$, then the OLS estimator will be biased.
+
+This problem occurs because your linear regression model isn’t specified correctly, either because the confounding variables are not included, are unknown, or because the data do not exist.
+
+These are important variables that our model doesn’t include and therefore can’t control, and if this bias affects your model, it’s a pretty severe condition because it means you can’t trust your results.
+
+Imagine trying to figure out if the gas pedal affects the speed of a car. We observe how far the gas pedal is pressed and how fast the car is going at various times and see no correlation, so we conclude there's no causal effect between them. However, what we're missing is the fact that the car is going up and down hills and the gas often has to be floored when the car is going slowly up a hill. If we knew the slope of the road, we could control for that and find the true causal relationship.
+
+When we omit confounding variables from our regression model, it can bias the coefficient estimates and cause the following problems:
+
+* Overestimate or underestimate the strength of an effect
+* Change the sign of an effect
+* Mask an effect that actually exists
+
+
+For omitted variable bias to occur, the omitted variable $O$ must satisfy the two conditions:
+
+* $O$ is a determinant of $Y$ (i.e., $O$ is a part of $e$)
+* $O$ is correlated with the regressor $X$ -> $corr(O, X) \neq 0$
+
+
+Both conditions must hold for the omission of $O$ to result in omitted variable bias, and the amount of bias depends on the strength of the correlations. Strong correlations produce greater bias, while weaker correlations produce lesser bias. 
+This correlation structure causes confounding variables that are not in the model to bias the estimates that appear in your regression results.
+
+Do you think that only including *ln(lotsize)* in a simple linear regression can result in omitted variable bias?
+
+Consider the variables and their descriptions, and think through any of them might be correlated with both *ln(lotsize)* and *ln(price)*.
+
+I will consider two. Larger homes with more bedrooms are more like to be on larger plots, and homes with more bedrooms are likely to sell for higher prices. Another is the quadratic form of the *lotsize* variable. The quadratic form is clearly correlated with *lotsize*, and perhaps an increased lot size has a positive effect on the price up to a certain yard size. After that, people don't want to maintain such a large property, and the price may start to decrease again. I won't worry about the correlation between $log(lotsize)^2$ and $log(lotsize)$, but I will calculate the others.
+
+```{r}
+cat('The correlation between bedrooms and ln(price) is', cor(Housing$lprice, Housing$bedrooms, use = 'complete.obs'), 'and the correlation between bedrooms and ln(lotsize) is', cor(Housing$llotsize, Housing$bedrooms, use = 'complete.obs'))
+```
+
+```{r}
+Housing$sq_llotsize = Housing$llotsize^2
+
+cat('The correlation between the square of ln(lotsize) and ln(price) is', cor(Housing$sq_llotsize, Housing$lprice, use = 'complete.obs'))
+```
+
+Correlations between these variables do exist, though some correlations are stronger than others. We can include them in our multiple linear regression to avoid some omitted variable bias. 
+
+# Multiple Linear Regression
+
+# Building our model
+
+Let's build our multiple linear regression, and compare it to our simple linear regression:
+
+$ln(price) = \beta_0 + \beta_1 ln(lotsize) + \beta_2 bedrooms + \beta_3 ln(lotsize)^2 + e$
+
+
+```{r}
+Housing$sq_llotsize <- Housing$llotsize^2
+
+mod2 <- lm(lprice ~ llotsize + bedrooms + sq_llotsize, data = Housing)
+```
+
+
+```{r, results='asis'}
+mk_coef_compare (
+  models = list(mod1, mod2),
+  model_names = c("Simple", "Multiple"),
+  caption = "Comparing two models"
+)
+```
+
+
+We see that the coefficient on *log(lotsize)* changed! We also see that the quadratic term isn't significant, so let's remove that and re-run the model with *bathrooms*:
+
+```{r}
+mod3 <- lm(lprice ~ llotsize + bedrooms + bathrms, data = Housing)
+```
+
+Now let's compare our three models:
+
+```{r, results='asis'}
+mk_coef_compare(
+  models = list(mod1, mod2, mod3),
+  model_names = c("Simple", "Multiple Model 1", "Multiple Model 2"),
+  caption = "Comparing three models"
+)
+```
+
+
+When we include the other variables, the effect of *log(lotsize)* on *log(price)* is lessened. This indicates that the multiple linear regression was suffering from omitted variable bias, and caused us to overestimate the effect of the lot size on the sales price. 
+
+# Interval Estimation
+
+Interval estimation is similar to what we saw in the simple regression model, except the number of degrees of freedom is now  $N−K^*$,  where $K^*$
+
+is the number of regression coefficients to be estimated $K^* = K + 1$ (the number of the highest $\beta$ parameter subscript plus one to include the intercept). In the Housing example, $N = 546$ and the $K^*$ depends on which model we are considering.
+
+Let's get the degrees of freedom and the variances and covariances of the estimates from our various models. 
+
+```{r}
+df_mod2 <- length(Housing$lprice) - length(coef(mod2))
+df_mod3 <- length(Housing$lprice) - length(coef(mod3))
+```
+
+We'll pull the coefficients from model 3 and store them for later:
+
+```{r}
+b0 <- coef(mod3)[[1]] #intercept
+b1 <- coef(mod3)[["llotsize"]]
+b2 <- coef(mod3)[["bedrooms"]]
+b3 <- coef(mod3)[["bathrms"]]
+```
+
+For interval estimation, we need the variance of our $\beta$ estimators as well as the covariances. 
+
+It's honestly often easier to use matrices to define the regression model when we have a large number of predictors. If you're interested in a very quick overview of a matrix formulation of the linear regression model, [click here.](https://online.stat.psu.edu/stat462/node/132/) 
+
+Otherwise, you can just pull the variances of our estimators plus their covariances from the variance-covariance matrix helpfully provided by R!
+
+
+We remember the formula of $Var(\hat{\beta_1})$ from the case of simple linear regression:
+
+$var(\hat{\beta_1}) = \frac{\sigma^2}{\Sigma(x_i - \bar{x})}$.
+
+In the case of multiple linear regression, we can extend this to find the variance of $\hat{\beta_i}$: 
+
+$Var(\hat{\beta}) = (Cov(\hat{\beta_i}, \hat{\beta_j}))_{0\leq i, j \leq k}$
+
+Let $C = (X'X)^{-1} = (C_{ij})_{0\leq i, j \leq k}$
+
+Then:
+
+$Var(\hat{\beta}) = \sigma^2 C$
+
+That is:
+
+$Var\hat{\beta_i} = \sigma^2(X'X)^{-1}$ and $Cov(\hat{\beta_i}, \hat{\beta_j}) = \sigma^2 C_{ij}$.
+
+We also need to have an estimator for $\sigma^2$, which can be estimated by:
+
+$\frac{SSE}{n-k-1} = \frac{\Sigma_{i=1}^n(y_i-\hat{y_i})^2}{n-k-1}$
+
+This will be easier to see if we look at our variance-covariance matrix.
+
+```{r, results='asis'}
+#variance / covariance matrix
+#vcov(mod3)
+
+mk_vcov_table(mod3, format = "long", caption = "Variance–covariance list for model coefficients")
+```
+
+We can also look at this in a matrix, which is classic but harder to read:
+
+```{r, results='asis'}
+mk_vcov_table(mod3, format = "matrix", caption = "Variance–covariance matrix for model coefficients")
+```
+
+Let's pull the variances and variances from the matrix and store them individually:
+
+```{r}
+#row, then column
+varb0 <- vcov(mod3)[1,1] 
+varb1 <- vcov(mod3)[2,2] 
+varb2 <- vcov(mod3)[3,3] 
+varb3 <- vcov(mod3)[4,4] 
+
+covb0b1 <- vcov(mod3)[1,2] 
+covb0b2 <- vcov(mod3)[1,3] 
+covb0b3 <- vcov(mod3)[1,4] 
+covb1b2 <- vcov(mod3)[2,3] 
+covb1b3 <- vcov(mod3)[2,4] 
+covb2b3 <- vcov(mod3)[3,4] 
+
+seb1 <- sqrt(varb1) #standard error of b1
+seb2 <- sqrt(varb2)
+seb3 <- sqrt(varb3)
+
+```
+
+Since we now have our variances, covariances, and standard errors, we can determine the 95% confidence intervals. We'll also use ```confint()``` to check our results.
+
+```{r}
+alpha <- 0.05 #the significance level
+
+# qt() returns the value of the inverse cumulative density function (cdf) of the Student t distribution given a certain random variable x and degrees of freedom df 
+
+# we divide alpha by two because we're looking at both sides of the distribution, not a one-sided test 
+
+#tcr refers to the t critical value
+
+tcr <- qt(1 - alpha/2, df_mod3)
+
+low_b1 <- b1 - tcr * seb1
+up_b1 <- b1 + tcr * seb1
+
+low_b2 <- b2 - tcr * seb2
+up_b2 <- b2 + tcr * seb2
+
+low_b2 <- b2 - tcr * seb2
+up_b2 <- b2 + tcr * seb2
+
+low_b3 <- b3 - tcr * seb3
+up_b3 <- b3 + tcr * seb3
+
+confints <- confint(mod3, level=0.95)
+```
+
+```{r}
+kbl(
+  confints,
+  caption = "Confidence intervals for lot size, bedrooms, and bathrooms",
+  align = "lcc"
+) |>
+  kable_classic(full_width = FALSE) |>
+  row_spec(0, bold = TRUE)
+
+```
+
+# Interpreting our results
+
+Is this difference in the sales price when a home has a lot size of 2,000 square feet vs. 6,000 square feet? Is this differenc statistically significant? Is it a large difference? How do we know?
+
+Let's take a look back at the summary statistics:
+
+```{r}
+mean(Housing$lprice)
+sd(Housing$lprice)
+coef(mod3)[["llotsize"]]
+```
+
+Given that the mean of *ln(price)* is 11.1, and that the standard deviation of *ln(price)* is 0.372, we can call this a moderate effect: it is above a standard deviation larger than the mean. 
+
+We interpret a log-log model as an elasticity. 
+
+A standard simple linear regression log-log model can be stated as:
+
+$ln(y) = \beta_0 + \beta_1 ln(x) + e$,
+
+and the coefficient on $x$ indicates that a 1% change in $x$ changes $y$ by $\beta_1\%$. 
+
+## Filtering
+
+What if we only want to look at homes that are located in a preferred area?  We can use filtering for that!
+
+We will use the "dplyr" library to make filtering easy.
+
+
+```{r}
+pref_area <- dplyr::filter(Housing, prefarea == 'yes')
+```
+
+Let's then re-run our regression with our new dataset, and compare our results:
+
+```{r}
+mod_r1 <- lm(lprice ~ llotsize + bedrooms + bathrms, data = pref_area)
+
+
+mk_coeftab(
+  mod_r1,
+  mode = "simple",
+  term_labels = c(
+    llotsize = "ln(lot size)",
+    bedrooms = "bedrooms", 
+    bathrms = "bathrooms"
+  ),
+  caption = "Model (simple results): ln(price) on ln(lot size), bedrooms, bathrooms in a preferred area"
+)
+```
+
+
+```{r, results='asis'}
+mk_coef_compare(
+  models = list(mod1, mod2, mod3, mod_r1),
+  model_names = c("Simple", "Multiple Model 1", "Multiple Model 2", "Restricted Model"),
+  caption = "Comparing four models"
+)
+```
+
+
+
+Next let's run a model a home is *not* in a preferred area and compare to our other model:
+
+
+```{r}
+no_pref_area <- dplyr::filter(Housing, prefarea == 'no')
+mod_r2 <- lm(lprice ~ llotsize + bedrooms + bathrms, data = no_pref_area)
+
+mk_coeftab(
+  mod_r2,
+  mode = "simple",
+  term_labels = c(
+    llotsize = "ln(lot size)",
+    bedrooms = "bedrooms", 
+    bathrms = "bathrooms"
+  ),
+  caption = "Model (simple results): ln(price) on ln(lot size), lot size squared, bathrooms not in a preferred area"
+)
+```
+
+```{r, results='asis'}
+mk_coef_compare(
+  models = list(mod1, mod2, mod3, mod_r1, mod_r2),
+  model_names = c("Simple", "Multiple Model 1", "Multiple Model 2", "Restricted Model", "Restricted Model 2"),
+  caption = "Comparing five models"
+)
+```
+
+
+
+Interesting! We see that *ln(lotsize)* has a different effect depending on whether or not a home is in a preferred area. Is this difference statistically significant? I will leave that exercise to you (for the moment). 
+
+# Using our results for predictions
+
+Going back to the functional form of model 3:
+
+$ln(price_i) = \beta_0 + \beta_1 ln(lotsize_i) + \beta_2 bedrooms_i + \beta_3 bathrooms_i + e_i$,
+
+after we estimate it and assuming that the expected values of the error term in that equation is zero, we get $\hat{y_i}$, the predicted value of the expectation of $y_i$ given the $x_i$, where $\hat{\beta_0}$, $\hat{\beta_1}$, $\hat{\beta_2}$, and $\hat{\beta_3}$ are the least squares estimates of our regression parameters:
+
+$\hat{y_i} = \hat{\beta_0} + \hat{\beta_1} ln(lotsize_i) + \hat{\beta_2} bedrooms_i + \hat{\beta_3} bathrooms_i$
+
+The predicted value $\hat{y_i}$ is a random variable because it depends on our sample, so we can calculate a confidence interval and test hypotheses about it (as long as we can determine its distribution and variance). The prediction has a normal distribution, since it's a combination of normally distributed random variables (our regression estimators).
+
+However, the variance of the prediction is larger than the variance of $\hat{y_i}$. That's because $\hat{y_i}$ is $E(y|x)$, so its variance is the variance of the predicted $E(y|x)$. Not surprisingly, the variance of the forecast of a particular occurrence of $y$ has a larger variance!
+
+Let's use our multiple regression results to make a prediction for *ln(price)*. We will compare the predictions to the confidence intervals, and we'll see that the confidence intervals are higher because the variance of the predictions are higher!
+
+To make our lives easier, let's compare the variances from a simple linear regression instead of a multiple linear regression. The same principles would apply in the multiple linear regression case, but we'll let R do the heavy lifting there!
+
+Let's say this is our regression that we're estimating:
+
+$y_i = \beta_0 + \beta_1 x_i + e_i$.
+
+We then get our estimator $\hat{\beta_1}$ that is normally distributed:
+
+$\hat{\beta_1} \sim \mathcal{N}(\beta, \frac{\sigma^2}{\Sigma(x_i-\bar{x})^2})$
+
+Of course, we need an estimator for $\sigma^2$, because we don't know the theoretical distribution $\sigma^2$. We can replace the theoretical value $\sigma^2$ with the estimator:
+
+$\hat{\sigma^2} = \frac{\Sigma \hat{e_i}^2}{N-2}$,
+
+which is a $t$ distribution with $N-2$ degrees of freedom.
+
+The confidence interval is then given by $\hat{\beta_1} \pm t_c \cdot SE(\hat{\beta_1})$.
+
+For the predicted value (or forecast value--I'll use $f_i$ since $p$ already means a bunch of stuff), we also need to use an estimated variance and we'll again use a $t$ distribution. 
+
+The main difference here is that the following equation applies to any given $x$, not only to those values that are in the dataset:
+
+$\widehat{var(f_i)} = \hat{\sigma^2}[1 + \frac{1}{N} + \frac{(x_i - \bar{x})^2}{\Sigma_{j=1}^N(x_j-\bar{x})^2}]$
+
+We can reduce this to:
+
+$\widehat{var(f_i)} = \hat{\sigma^2} + \frac{\hat{\sigma^2}}{N} + (x_i - \bar{x})^2 Var(\hat{\beta_1})$.
+
+As you can see, this is larger than the variance of $\hat{\beta_1}$ on its own!
+
+So let's use the ```predict()``` function in R to build out both confidence intervals and prediction intervals. We'll then plot them to illustrate that, because of the larger variance, the prediction intervals are wider than the confidence intervals.
+
+```{r}
+x1min <- min(Housing$llotsize)
+x1max <- max(Housing$llotsize)
+llotsize <- seq(from = x1min, to = x1max, length.out = 6)
+x2min <- min(Housing$bedrooms)
+x2max <- max(Housing$bedrooms)
+bedrooms <- seq(from = x2min, to = x2max, length.out = 6)
+x3min <- min(Housing$bathrms)
+x3max <- max(Housing$bathrms)
+bathrms <- seq(from = x3min, to = x3max, length.out = 6)
+newdata <- data.frame(llotsize, bedrooms, bathrms)
+
+
+yconfidence <- predict(mod3, newdata = newdata, interval = 'confidence')
+
+yforecast <- predict(mod3, newdata = newdata, interval = 'predict')
+```
+
+
+```{r}
+df <- data.frame(yconfidence[,1], yconfidence[,2], yconfidence[,3], yforecast[,2], yforecast[,3])
+colnames(df) <- c('fit', 'lwr_confint', 'upr_confint', 'lwr_forecast', 'upr_forecast')
+```
+
+
+```{r}
+colors <- c('fit' = 'darkred', 'lwr_confint' = 'steelblue', 'upr_confint' = 'steelblue', 'lwr_forecast' = 'darkgreen', 'upr_forecast' = 'darkgreen')
+```
+
+```{r, fig.alt = "Comparing model confidence intervals vs. prediction intervals"}
+ggplot(df, aes(x = llotsize)) + 
+    geom_line(aes(y = fit, color = 'fit')) + 
+    geom_line(aes(y = lwr_confint, color = 'lwr_confint'), linetype = 'twodash') +                      
+    geom_line(aes(y = upr_confint, color = 'upr_confint'), linetype = 'twodash') + 
+    geom_line(aes(y = lwr_forecast, color = 'lwr_forecast'), linetype = 'longdash') + 
+    geom_line(aes(y = upr_forecast, color = 'upr_forecast'), linetype = 'longdash') +
+    labs(x = 'ln(lotsize)',
+         y = 'ln(price)',
+         color = 'Legend') +
+  scale_color_manual(values = colors)
+
+```
+
+
+As you can see above, the wider intervals belong to the foreast intervals, due to the larger variance.
+
+
+# Goodness-of-Fit
+
+First, some definitions.
+
+* **SST**: Total Sum of Squares. This is the sum of squared differences between each observed dependent variable and the mean of that variable. You may also see this written as **TSS**.
+
+The formula is:
+
+$SST = \Sigma_{i=1}^n(y_i - \bar{y})^2$.
+
+$y_i$ is the value of the observed $y$ for each of the $n$ data points, and $\bar{y}$ is the mean value of the observed data points.
+
+* **SSR**: Regression Sum of Squares. This is the sum of squared differences between each value of the dependent variable predicted by a regression model for each data point of the independent variable, and the mean of the observed dependent variable. You may also see this referred to as the explained sum of squares (ESS). 
+
+The sum of squares regression shows the portion of total variability in $y$ explained by the regression model.
+
+The formula is:
+
+$SSR = \Sigma_{i=1}^n (\hat{y_i} - \bar{y})^2$.
+
+$\hat{y_i}$ are the values predicted by the regression nmodel for each of the $n$ data points, and $\bar{y}$ is the mean value for $y$.
+
+* **SSE**: Error Sum of Squares. This is the sum of the squared difference between each value of the observed dependent variable and the value of the dependent variable as predicted by a regression model. It measure the difference between actual and prediction.
+
+This is also called the residual sum of squares (I will often use this term), and the unexplained sum of squares. 
+
+This represents the unexplained variability, the portion of the total variability that can't be explained by the regression model.
+
+The formula is:
+
+$SSE = \Sigma_{i = 1}^n(y_i - \hat{y_i})^2$.
+
+When we think about the *total* variation of $y$ around its sample mean (the *SST*), this can be decomposed into the explained and the unexplained parts (the *SSR* and the *SSE*, respectively). We can write this as:
+
+$SST = SSR + SSE$.
+
+The coefficient of determination, the $R^2$, is defined as the proportion of the total variance in $y$ that is explained by the regression. 
+
+If you divide both sides of the above equation by *SST* and rearrange, you get the following formula to calculate the $R^2$:
+
+$R^2 = \frac{SSR}{SST} = 1-\frac{SSE}{SST}$.
+
+We can take advantage of the "1 minus" bit because it's a *proportion*, so the $R^2$ takes values between 0 and 1. The closer to 1, the closer the fit of the regression line to the data and the higher the proportion of the total variability of $y$ the regression explained.
+
+Let's take a quick look back at one of our models and pull the $R^2$:
+
+```{r}
+summary(mod3)$r.squared
+```
+
+If you also need the SSE or the SSR, you can use ```anova```:
+
+```{r}
+anov <- anova(mod3)
+anov_df <- data.frame(anov)
+
+
+kbl(
+  anov_df,
+  caption = "Output generated by ANOVA",
+  align = "lcc"
+) |>
+  kable_classic(full_width = FALSE) |>
+  row_spec(0, bold = TRUE)
+
+
+```
+The error sum of squares, *SSE*, is in the final row, second column of the table above ($SSE =$ ```anov[4,2]```). The regression sum of squres, *SSR*, can be found by summing up the rows in column two for each coefficient--each coefficient has its own sum of squares due to regression, and their sum equals the total *SSR*. To find the total sum of squares, *SST*, you sum up all of the rows in column 2. 
+
+There are other useful items in this table. In the final row and third column, you can also find the estimated variance $\hat{\sigma^2}$. The degrees of freedom is also in the first column. 
+
+Back to column 2, we see that lotsize has the largest contribution to the reduction of variability in the residuals. Let's find the proportion of *SSR* explained by *llotsize*:
+
+```{r}
+cat('The SST is', sum(anov_df$Sum.Sq), '\n')
+cat('The proportion of SSR explained by lot size is',  anov_df[1,2]/(anov_df[1,2] + anov_df[2,2] + anov_df[2,3]), '\n')
+cat('The R squared of the regression is', (anov_df[1,2] + anov_df[2,2] + anov_df[2,3])/sum(anov_df$Sum.Sq))
+```
+
+We see that a majority of the regression sum of squares is explained by the effect of *lotsize*. This can be a very useful thing to consider when looking at model selection, a topic we will return to in future.
+
+We can also compare the fits of some of our models:
+
+```{r, results='asis'}
+mk_fit(
+  `Model 1: ln(price) ~ ln(lot size)` = mod1,
+  `Model 2: ln(price) ~ ln(lot size) + ln(lot size)^2 + bedrooms` = mod2,
+  `Model 3: ln(price) ~ ln(lot size) + bedrooms + bathrooms` = mod3,
+  caption = "Model fit comparison"
+)
+```
+
+We see that the $R^2$ is high on both multiple models than the simple model, and higher for model three than model two. We will discuss the AIC and BIC in more detail later!

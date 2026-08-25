@@ -1,0 +1,506 @@
+---
+title: '"Best" Proof'
+output: 
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Expectation of $\hat{\beta_1}$
+
+Let's start with the case of simple linear regression--the proof works, and is a lot simpler to calculate!
+
+We have our simple linear regression model that we want to estimate:
+
+$$
+\begin{aligned}
+y_i = \beta_0 + \beta_1 x_i + u_i
+\end{aligned}
+$$
+We then want to minimize the sum of the squared errors to get our estimators. When we estimate our model, our parameters put on their party hats:
+
+$$
+\begin{aligned}
+y_i = \hat{\beta_0} + \hat{\beta_1} x_i + \hat{u_i}
+\end{aligned}
+$$
+
+
+$$
+\begin{aligned}
+min_{\hat{\beta_0}, \hat{\beta_1}}\Sigma_{i=1}^N(\hat{u_i})^2\\
+\end{aligned}
+$$
+
+We can also write this in terms of $y_i$, $x_i$, and the $\hat{\beta}$ parameters:
+
+$$
+\begin{aligned}
+min_{\hat{\beta_0}, \hat{\beta_1}}\Sigma_{i=1}^N(y_i - \hat{\beta_0} - \hat{\beta_1}x_i)^2
+\end{aligned}
+$$
+
+With some optimization and rearranging, we get our equations for our $\hat{\beta}$ estimators:
+
+$$
+\begin{aligned}
+\hat{\beta_0} = \bar{y} - \hat{\beta_1}\bar{x}
+\end{aligned}
+$$
+
+and 
+
+$$
+\begin{aligned}
+\hat{\beta_1} = \frac{\Sigma_{i=1}^N(x_i - \bar{x})(y_i - \bar{y})}{\Sigma_{i=1}^N (x_i - \bar{x})^2}
+\end{aligned}
+$$
+
+
+Let's go back to our simple model, 
+
+$$
+\begin{aligned}
+y_i = \beta_0 + \beta_1 x_i + u_i
+\end{aligned}
+$$
+
+If we take the means on both sides (and remembering that the mean of a constant is equal to itself), we get:
+
+$$
+\begin{aligned}
+\bar{y} = \overline{\beta_0 + \beta_1 x_i + u_i} = \beta_0 + \beta_1 \bar{x} + \bar{u}
+\end{aligned}
+$$
+We can then substitute these terms for $y_i$ and $\bar{y}$ into our equation for $\hat{\beta_1}$:
+
+
+\begin{aligned}
+\hat{\beta_1} &= \frac{\Sigma_{i = 1}^N (x_i - \bar{x}) (\beta_0 + \beta_1 x_i + u_i - \beta_0 - \beta_1 \bar{x} - \bar{u})}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}
+\\
+\\
+
+& = \frac{\Sigma_{i = 1}^N (x_i - \bar{x}) (\beta_1 x_i + u_i - \beta_1 \bar{x} - \bar{u})}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}
+\\
+\\
+& = \frac{\Sigma_{i = 1}^N (x_i - \bar{x}) [\beta_1(x_i - \bar{x}) + (u_i - \bar{u})]}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}
+\\
+\\
+& = \frac{\Sigma_{i = 1}^N \beta_1(x_i - \bar{x})^2 + (x_i - \bar{x}) (u_i - \bar{u})}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}
+\\
+\\
+& = \frac{\Sigma_{i = 1}^N \beta_1(x_i - \bar{x})^2 + \Sigma_{i = 1}^N(x_i - \bar{x}) (u_i - \bar{u})}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}
+\\
+\\
+& = \frac{\Sigma_{i = 1}^N \beta_1(x_i - \bar{x})^2}{\Sigma_{i = 1}^N (x_i - \bar{x})^2} + \frac{\Sigma_{i = 1}^N(x_i - \bar{x}) (u_i - \bar{u})}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}
+\\
+\\
+& = \frac{\beta_1 \Sigma_{i = 1}^N (x_i - \bar{x})^2}{\Sigma_{i = 1}^N (x_i - \bar{x})^2} + \frac{\Sigma_{i = 1}^N(x_i - \bar{x}) (u_i - \bar{u})}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}
+\\
+\\
+& = \beta_1 +  \frac{\Sigma_{i = 1}^N(x_i - \bar{x}) (u_i - \bar{u})}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}
+
+\end{aligned}
+
+
+If our zero conditional mean assumption holds, plus the assumption that the errors are random ($E(u) = 0$), then if we take the expectation of $\hat{\beta_1}$ the second term cancels and we have unbiasedness:
+
+
+\begin{aligned}
+E(\hat{\beta_1}) &= E\left(\beta_1 +  \frac{\Sigma_{i = 1}^N(x_i - \bar{x}) (u_i - \bar{u})}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}\right)
+\\
+\\
+&= \beta_1 +  E\left(\frac{\Sigma_{i = 1}^N(x_i - \bar{x}) (u_i - \bar{u})}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}\right)
+\\
+\\
+&= \beta_1 +  \frac{\Sigma_{i = 1}^N(x_i - \bar{x}) E(u_i - \bar{u})}{\Sigma_{i = 1}^N (x_i - \bar{x})^2}
+\\
+\\
+&E(u_i - \bar{u}) = E(u_i) - E(\bar{u}) = 0
+
+\end{aligned}
+
+
+# Variance Properties of Random Variables
+
+We'll start with some variance properties that we'll use when deriving the variance of $\hat\beta$ and then showing that the OLS estimator is the "best" in terms of having the lowest possible variance.
+
+1. The variance of a constant is zero. Makes sense--a constant doesn't vary! For a constant $c$:
+
+$$
+Var(c) = 0\\
+$$
+
+2. For two independent random variables $X$ and $Y$, the variance of their sum is equal to the sum of their variances. 
+
+$$
+Var(X+Y) = Var(X) + Var(Y).
+$$
+
+3. If the random variables aren't independent, then the variance of their sum is:
+
+
+\begin{aligned}
+Var(X+Y) = Var(X) + Var(Y) + 2 Cov(X, Y) \\
+= Var(X) + Var(Y) + E[(X - \bar{X})(Y - \bar{Y})]
+\end{aligned}
+
+
+4. If $Y=mX + c$, then the variance of $Y$ is:
+
+$$
+Var(Y) = Var(mX + c) = m^2Var(X)
+$$
+
+5. If $Y = m_1 x_1 + m_2 x_2 + \cdots + m_n x_n + c$, then the variance of $Y$ is:
+
+
+\begin{aligned}
+Var(Y) = Var(m_1 x_1 + m_2 x_2 + \cdots + m_n x_n + c)\\
+= m_1^2Var(x_1) + m_2^2Var(x_2) + \cdots + m_n^2Var(x_n)
+\end{aligned}
+
+       
+6. If $Y = c_i x_x$, and $Cov(x_i, x_j) = 0$:
+
+$$
+Var(\Sigma_{i=1}^N c_i x_i) = \Sigma_{i = 1}^N Var(c_i x_i).
+$$
+
+7. Finally, a useful way to calculate the variance of a random variable $X$ is:
+
+
+\begin{aligned}
+Var(X) &= E(X^2) - [E(X)]^2
+\\
+\\
+&= \Sigma_{i=1}^N P_i(x_i - \bar{x})^2
+\end{aligned}
+
+The variance of a random variable $X$ shows how spread out it is around its mean $\bar{x}$. It's the expected value of the square of those differences. It is also a weighted average of the possible outcomes of $x_i$ occurring with probability $P_i$.
+
+# Deriving the variance of $\hat{\beta_1}$
+
+Finally, we can get to the variance. Using our expression for $\hat{\beta_1}$:
+
+$$
+Var(\hat{\beta_1}) = Var\left(\frac{\Sigma_{i=1}^N(x_i - \bar{x})(y_i - \bar{y})}{\Sigma_{i=1}^N (x_i - \bar{x})^2}\right)
+$$
+
+
+Remembering that, for any variable:
+
+$$
+\Sigma_{i = 1}^N (x_i - \bar{x}) = \Sigma_{i = 1}^N x_i - n\bar{x} = n\bar{x} - n\bar{x} = 0
+$$
+Plus the fact that we can rearrange the numerator of $\hat{\beta_1}$ like so:
+
+\begin{aligned}
+\Sigma_{i = 1}^N (y_i - \bar{y})(x_i - \bar{x}) &= \Sigma_{i = 1}^N (y_i x_i - y_i \bar{x} - \bar{y} x_i + \bar{y}\bar{x})
+\\
+\\
+&= \Sigma_{i = 1}^N y_i(x_i - \bar{x}) - \Sigma_{i = 1}^N \bar{y}(x_i - \bar{x})
+\\
+\\
+&= \Sigma_{i = 1}^N y_i(x_i - \bar{x}) - \bar{y}\Sigma_{i = 1}^N (x_i - \bar{x})
+\\
+\\
+&= \Sigma_{i = 1}^N y_i(x_i - \bar{x})
+
+\end{aligned}
+
+We can plug this back into our variance equation:
+
+
+$$
+Var(\hat{\beta_1}) = Var\left(\frac{\Sigma_{i = 1}^N y_i(x_i - \bar{x})}{\Sigma_{i=1}^N (x_i - \bar{x})^2}\right)
+$$
+
+The denominator of this fraction is a constant, so by using our variance property 4 we can pull it out of the variance expression:
+
+
+$Var(\hat{\beta_1}) = \frac{1}{(\Sigma_{i = 1}^N(x_i - \bar{x})^2)^2} Var\left(\Sigma_{i = 1}^N y_i(x_i - \bar{x})\right)$
+
+If we substitute our value of $y_i$ from our model equation:
+
+
+\begin{aligned}
+Var(\hat{\beta_1}) &= \frac{1}{(\Sigma_{i = 1}^N(x_i - \bar{x})^2)^2} Var\left(\Sigma_{i = 1}^N (\beta_0 + \beta_1 x_i + u_i)(x_i - \bar{x})\right)
+\\
+\\
+&= \frac{1}{(\Sigma_{i = 1}^N(x_i - \bar{x})^2)^2} Var\left(\Sigma_{i = 1}^N (\beta_0 + \beta_1 x_i)(x_i - \bar{x} + \Sigma_{i = 1}^N u_i (x_i - \bar{x})\right)
+
+\end{aligned}
+
+
+The first term in the variance is a constant, so by variance property 1, $Var(\Sigma_{i = 1}^N \beta_0 + \beta_1 x_i)(x_i - \bar{x})) = 0$.
+
+Given that, we end up with this equation:
+
+
+$Var(\hat{\beta_1}) = \frac{1}{(\Sigma_{i = 1}^N(x_i - \bar{x})^2)^2} Var\left( \Sigma_{i = 1}^N u_i (x_i - \bar{x})\right)$
+
+Using variance property 6, the assumption that $Cov(u_i, u_j) = 0$, and the fact that $\Sigma_{i = 1}^N (x_i - \bar{x})$ is a constant that will get squared when we take it out of the variance, we get the following:
+
+
+$Var(\hat{\beta_1}) = \frac{1}{(\Sigma_{i = 1}^N(x_i - \bar{x})^2)^2} \left( \Sigma_{i = 1}^N (x_i - \bar{x})^2 Var(u_i)\right)$
+
+Using the constant variance assumption (homoskedasticity), $Var(u_i) = \sigma^2$, which is constant.
+
+We finally get the following expression for the variance:
+
+\begin{aligned}
+Var(\hat{\beta_1}) &= \frac{1}{(\Sigma_{i = 1}^N(x_i - \bar{x})^2)^2} \left( \Sigma_{i = 1}^N (x_i - \bar{x})^2 \sigma^2\right)
+\\
+\\
+&=\frac{\sigma^2}{(\Sigma_{i = 1}^N(x_i - \bar{x})^2)^2} \left( \Sigma_{i = 1}^N (x_i - \bar{x})^2\right)
+\\
+\\
+&=\frac{\sigma^2}{\Sigma_{i = 1}^N(x_i - \bar{x})^2} 
+
+
+\end{aligned}
+
+
+Which is what we saw in class! Minus the $(1 - R_j^2)$ term, because we're only working with one $x$, but that isn't necessary for the proof that this is the lowest possible variance and it's simpler to work with.
+
+We can also define:
+
+\begin{aligned}
+
+\hat{\sigma}^2 = \frac{1}{n}\Sigma_{i = 1}^N (x_i - \bar{x})^2
+\\
+\\
+n \hat{\sigma}^22 = \Sigma_{i = 1}^N(x_i - \bar{x})^2
+\end{aligned}
+
+This gets us to our final variance term for $\hat{\beta_1}$ in a simple linear regression model:
+
+
+$Var(\hat{\beta_1}) = \frac{\sigma^2}{n\hat{\sigma_x^2}}$
+
+## Is this the "best" variance?
+
+Let's say we have some other unbiased estimator, $\beta_1^*$. 
+
+For $\hat{\beta_1}$ to be the best, that means that $Var(\hat{\beta_1}) \leq Var(\beta_1^*)$.
+
+Let's remember variance property 6. For a random variable:
+
+\begin{aligned}
+Var(X) &= E(X^2) - [E(X)]^2
+\\
+\\
+&= \Sigma_{i=1}^N P_i(x_i - \bar{x})^2
+\end{aligned}
+
+The variance of a random variable $X$ shows how spread out it is around its mean $\bar{x}$. It's the expected value of the square of those differences. It is also a weighted average of the possible outcomes of $x_i$ occurring with probability $P_i$.
+
+Both $\hat{\beta_1}$ and $\beta_1^*$ are computed from a sample, and are therefore random variables with a sampling distribution.
+
+We can then go back to our expression for $\hat{\beta_1}$:
+
+
+
+\begin{aligned}
+\hat{\beta_1} &= \frac{\Sigma_{i=1}^N(x_i - \bar{x})(y_i - \bar{y})}{\Sigma_{i=1}^N (x_i - \bar{x})^2}
+\\
+\\
+&= \frac{\Sigma_{i = 1}^N y_i(x_i - \bar{x})}{\Sigma_{i=1}^N (x_i - \bar{x})^2}
+
+
+\end{aligned}
+
+Here we see that $\hat{\beta_1}$ is also a weighted average of the possible outcomes of $y_i$ occurring with probability $P_i$:
+
+\begin{aligned}
+P_i = \frac{\Sigma_{i = 1}^N y_i(x_i - \bar{x})}{\Sigma_{i=1}^N (x_i - \bar{x})^2}
+\\
+\\
+
+E(y_i) = \Sigma_{i=1}^N P_i y_i
+\end{aligned}
+
+We see that this is a weighted average, with $P_i$ serving as weights.
+
+Let's not define our alternative estimator $\beta_1^*$, with a different weight $w_i$.
+
+
+\begin{aligned}
+\beta_1^* &= \Sigma_{i = 1}^N y_i w_i
+\\
+\\
+
+E(\beta_1^*) &= E(\Sigma_{i=1}^N y_i w_i)
+\end{aligned}
+
+We then plug in our term for $y_i$ from our model:
+
+
+\begin{aligned}
+E(\beta_1^*) &= E(\Sigma_{i=1}^N y_i w_i)
+\\
+\\
+&= \Sigma_{i=1}^N w_i E(\beta_0 + \beta_1 x_i + u_i)
+\\
+\\
+&= \beta_0 \Sigma_{i=1}^N w_i + \beta_1 \Sigma_{i=1}^N w_i x_i + E(u_i)
+\end{aligned}
+
+
+By assumption, $E(u) = 0$, so we are left with:
+
+
+$E(\beta_1^*)= \beta_0 \Sigma_{i=1}^N w_i + \beta_1 \Sigma_{i=1}^N w_i x_i$
+
+Since our alternative estimator $\beta_1^*$ is unbiased, that means that **on average** the value of $\beta_1^*$ over many samples will tend to $\beta$. There is no systematic tendency for $\beta_1^*$ to over- or underestimate $\beta$.
+
+For this to be true, we know that our weights $w_i$ must have certain properties imposed, namely that $\Sigma_{i=1}^N w_i = 0$ and $\Sigma_{i=1}^N w_i x_i = 1$.
+
+
+\begin{aligned}
+E(\beta_1^*) &= \beta_0 \Sigma_{i=1}^N w_i + \beta_1 \Sigma_{i=1}^N w_i x_i
+\\
+\\
+&= \beta_0 \cdot 0 + \beta_1 \cdot 1
+\\
+\\
+&= \beta_1
+\end{aligned}
+
+
+Turning to the variance $Var(\beta_1^*)$ with our restrictions imposed, and using our definition for $\beta_1^*$, we see that:
+
+
+$\beta_1^* = \Sigma_{i = 1}^N y_i w_i$
+
+So remembering that the $w_i$ are constants and using variance property 4:
+
+
+\begin{aligned}
+Var(\beta_1^*) &= Var(\Sigma_{i=1}^N w_i y_i)
+\\
+\\
+&= \Sigma_{i=1}^N w_i^2 Var(y_i)
+\\
+\\
+&= \Sigma_{i=1}^N Var(\beta_0 + \beta_1 x_i + u_1)
+\end{aligned}
+
+
+We see that inside our expression for the variance we have a deterministic component $\beta_0 + \beta_1 x_i$ and a random component $u_i$, which means that $Var(y_i)$ will depend on $u_i$.
+
+As we are using the assumption of homoskedasticity, $Var(y_i) = Var(u_i) = \sigma^2$, so the variance is constant. We then plug this constant term back into our expression for the variance of $\beta_1^*$:
+
+
+
+\begin{aligned}
+Var(\beta_1^*) &= \Sigma_{i=1}^N w_i^2 \sigma^2
+\\
+\\
+&= \sigma^2 \Sigma w_i^2
+\\
+\\
+&= \sigma^2 \Sigma_{i=1}^N\left[w_i - \frac{(x_i - \bar{x})}{(x_i - \bar{x})^2} + \frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}\right]
+\end{aligned}
+
+We can call the first two term in the summation $a$ and the second one $b$:
+
+
+\begin{aligned}
+a = w_i - \frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}
+\\
+\\
+b = \frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}
+\\
+\\
+(a + b)^2 = a^2 + b^2 + 2ab
+\end{aligned}
+
+So we can rewrite the expression for $Var(\beta_1^*)$:
+
+
+\begin{aligned}
+Var(\beta_1^*) &= \sigma^2 \Sigma_{i=1}^N\left[w_i - \frac{(x_i - \bar{x})}{(x_i - \bar{x})^2} + \frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}\right]
+\\
+\\
+&= \sigma^2 \Sigma_{i=1}^N\left[w_i - \frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}\right]^2 + \sigma^2 \left[\frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}\right]^2 + 2\sigma^2 \Sigma_{i=1}^N\left[w_i\frac{(x_i - \bar{x})}{(x_i - \bar{x})^2} - \frac{(x_i - \bar{x})^2}{[(x_i - \bar{x})^2]^2}\right]
+\end{aligned}
+
+
+Starting with the third term, we can start some simplification:
+
+
+\begin{aligned}
+&= 2\sigma^2 \Sigma_{i=1}^N\left[w_i\frac{(x_i - \bar{x})}{(x_i - \bar{x})^2} - \frac{(x_i - \bar{x})^2}{[(x_i - \bar{x})^2]^2}\right]
+\\
+\\
+&= 2\sigma^2 \left[ \frac{\Sigma_{i=1}^Nw_i(x_i - \bar{x})}{\Sigma_{i=1}^N(x_i - \bar{x})^2} - \frac{\Sigma_{i=1}^N(x_i - \bar{x})^2}{\Sigma_{i=1}^N[(x_i - \bar{x})^2]^2}\right]
+\\
+\\
+&= 2\sigma^2 \left[ \frac{\Sigma_{i=1}^Nw_i(x_i - \bar{x})}{\Sigma_{i=1}^N(x_i - \bar{x})^2} - \frac{1}{\Sigma_{i=1}^N(x_i - \bar{x})^2}\right]
+\\
+\\
+&= 2\sigma^2 \left[ \frac{\Sigma_{i=1}^Nw_ix_i - \bar{x}\Sigma_{i=1}^Nw_i}{\Sigma_{i=1}^N(x_i - \bar{x})^2} - \frac{1}{\Sigma_{i=1}^N(x_i - \bar{x})^2}\right]
+\\
+\\
+\end{aligned}
+
+
+Remembering our conditions for $\beta_1^*$ to be unbiased, $\Sigma_{i=1}^N w_i = 0$ and $\Sigma_{i=1}^N w_i x_i = 1$, we can rewrite the third term in our variance as:
+
+
+\begin{aligned}
+&= 2\sigma^2 \left[ \frac{\Sigma_{i=1}^Nw_ix_i - \bar{x}\Sigma_{i=1}^Nw_i}{\Sigma_{i=1}^N(x_i - \bar{x})^2} - \frac{1}{\Sigma_{i=1}^N(x_i - \bar{x})^2}\right]
+\\
+\\
+&= 2\sigma^2 \left[ \frac{1 - 0}{\Sigma_{i=1}^N(x_i - \bar{x})^2} - \frac{1}{\Sigma_{i=1}^N(x_i - \bar{x})^2}\right]
+\\
+\\
+&= 0
+\end{aligned}
+
+
+
+We're now left with this term for $Var(\beta_1^*)$:
+
+
+\begin{aligned}
+&= \sigma^2 \Sigma_{i=1}^N\left[w_i - \frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}\right]^2 + \sigma^2 \Sigma_{i=1}^N \left[\frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}\right]^2 
+\end{aligned}
+
+
+Let's rewrite this in a similar way as the variance for our OLS estimator $\hat{\beta_1}$, so it's easier to compare them:
+
+
+\begin{aligned}
+Var(\beta_1^*) &= \sigma^2 \Sigma_{i=1}^N\left[w_i - \frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}\right]^2 + \sigma^2 \Sigma_{i=1}^N \left[\frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}\right]^2 
+\\
+\\
+& = \sigma^2 \Sigma_{i=1}^N\left[w_i - \frac{(x_i - \bar{x})}{(x_i - \bar{x})^2}\right]^2 + \frac{\sigma^2}{(x_i - \bar{x})^2} 
+
+\end{aligned}
+
+
+The final term, $\sigma^2 / \Sigma(x_i - \bar{x})^2$, is the variance of our $\hat{\beta_1}$! 
+
+The term $(x_i - \bar{x} / (x_i - \bar{x})^2)$ are our weights $P_i$ from OLS.
+
+So:
+
+
+$Var(\beta_1^*) = \sigma^2 \Sigma_{i=1}^N(w_i - P_i)^2 + Var(\hat{\beta_1})$
+
+
+If $w_i = P_i$, then $Var(\beta_1^*) = Var(\hat{\beta_1})$. If $w_i \neq P_i$, then $Var(\beta_1^*) > Var(\hat{\beta_1})$. Which is what we wanted to prove! We've now shown that, if our Gauss Markov assumptions are true, the variance of our OLS estimator is the lowest possible variance out of other possible unbiased estimators.
+
+
