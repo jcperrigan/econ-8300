@@ -1,0 +1,310 @@
+---
+title: "ECON-8300"
+output:
+  html_document:
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Homework04
+
+Grading Rubric (per question):  
+3 points if complete and correct  
+0 points otherwise 
+
+
+## Retrieving your work
+
+This and all future homework .Rmd files are written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing. 
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment. 
+
+## Submitting your work
+
+When you upload your files to Canvas, you are to submit ***two*** files:
+
+a. Your reproducible document file (.Rmd) which should be saved as homework##-ID.Rmd. For example, my homework04 file would be saved as homework04-jperrigan.Rmd.
+
+b. Your rendered reproducible document file (.html) which should be saved as homework##-ID.html. For example, my homework04 file would be saved as homework04-jperrigan.html.
+
+Your ID is your Canvas username. It is also the text before the "@" symbol in your UNO email address.
+
+You have an unlimited number of submissions, but only the latest submission will be viewed and graded. **Proper means that the file is correctly named and formatted. Latest means that the file is the most recent submission prior to the deadline. Remember the .Rmd file needs to render properly to .html before submitting.** 
+
+
+
+***
+
+All students are expected to complete all problems. If any problem asks you a particular question, be sure to answer it completely (with code, written sentences, or both).
+
+***Do not change anything in this file above the double line. Doing so will prevent your homework from being graded.***
+
+***
+***
+
+We will be using the 'wage1' data from the `wooldridge` package. 
+
+```{r}
+library(tidyverse)
+library(kableExtra)
+library(wooldridge)
+
+data('wage1')
+?wage1
+```
+
+Make sure to also load `reporting.R` for your model summaries. This R script should be saved in the same folder as your homework.
+
+```{r}
+source("reporting.R")
+```
+
+
+
+**#1** 
+
+**Problem:** 
+
+Estimate
+
+$ln(wage_i) = \beta_0 + \beta_1 educ_i + \beta_2 exper_i + u_i$
+
+and answer the following questions:
+
+a. Interpret $\hat\beta_1$ and $\hat\beta_2$.
+b. Explain why this model is preferable to a simple regression of $ln(wage)$ on $educ$ alone.
+c. Do you prefer using $wage$ or $ln(wage)$ as the dependent variable? Why?
+
+This R code should be written in the code chunk of the **Answer** section below. Save your answers as a string to `prob01.` 
+
+**Answer:**
+
+```{r, problem01}
+#prob01  
+```
+
+
+***
+
+**#2** 
+
+Estimate 
+
+$ln(wage_i) = \beta_0 + \beta_1 educ_i + \beta_2 exper_i + \beta_3 tenure_i + \beta_4 female + u_i$
+
+and answer the following questions:
+
+a. Interpret each coefficient
+b. Explain how interpretation differs for $female$ vs. $educ$. Why?
+
+This R code should be written in the code chunk of the **Answer** section below. Save your answer as a string to `prob02.`
+
+```{r, problem02}
+#prob02 <-
+```
+
+
+***
+
+**#3** 
+
+**Problem:** 
+
+Complete the following:
+
+a. Compute the fitted values $\hat{\ln(wage)}$ for your model from question 2. Save your fitted values to y_hat.
+b. Compute the residuals from your model from question 2. Save your residuals to u_hat.
+c. Verify that your residuals sum to zero.
+d. Explain *why* residuals sum to zero. 
+
+
+The R code should be written in the code chunk of the **Answer** section below. Assign the answer to part d as a string to `prob03.`
+
+**Answer:**
+
+```{r, problem03}
+#y_hat <-
+#u_hat <-
+#prob03 <-
+```
+
+
+***
+
+
+**#4** 
+
+**Problem:** 
+
+Complete the following:
+
+a. Using your model from question 2, computed the predicted wage change if:
+
+- education increases by one year,
+- experiences increases by two years, and
+- tenure increases by one year 
+
+(all of the changes happen simultaneously).
+
+Save this predicted wage change to `pred_change`.
+
+b. Show the formula for this total change and explain why partial effects are additive.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer to part b as a string to `prob04`.
+
+**Answer:**
+
+```{r, problem04}
+#pred_change <-
+#prob04 <-
+```
+
+***
+
+**#5** 
+
+**Problem:** 
+
+Estimate the following two models:
+
+$ln(wage_i) = \beta_0 + \beta_1 educ_i + u_i$
+$ln(wage_i) = \beta_0 + \beta_1 educ_i + \beta_2 exper_i + u_i$
+
+Compare the coefficients and explain any differences between them using omitted variable bias logic. Which estimate is more credible? Why?
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer as a string to `prob05`.
+
+
+```{r, problem05}
+#prob05 <-
+```
+
+***
+
+
+**#6** 
+
+**Problem:** 
+
+Complete the following questions:
+
+a. Report the $R^2$ and the adjusted $R^2$ from your two models in problem 5. Save them to `r_sq` and `adj_r_sq`.
+
+b. Explain why the $R^2$ always rises (or at least never falls) when adding more regressors
+
+This R code should be written in the code chunk of the **Answer** section below. Save your answer to part b as a string to `prob06.`
+
+**Answer:**
+
+```{r, problem06}
+#r_sq <-
+#adj_r_sq <-
+#prob06 <-
+```
+
+  
+***
+
+**#7** 
+
+**Problem:** 
+
+Estimate
+
+$ln(wage_i) =  \beta_1 educ_i + \beta_2 exper_i + u_i$
+
+
+Compare the coefficients to the model in question five that includes the intercept. When might this specification be dangerous? When might it be appropriate?
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your answer as a string to `prob07`.
+
+**Answer:**
+
+```{r, problem07}
+#prob07 
+```
+
+
+***
+
+
+**#8** 
+
+
+**Problem:** 
+
+Estimate
+
+$ln(wage_i) = \beta_0 + \beta_1 educ_i + u_i$
+
+And complete the following questions
+
+a. Calculate $Cov(educ, exper)$. Save to `cov_educ_exper`.
+
+b. Derive the omitted variable bias formula and predict the direction of bias.
+
+c. Confirm the direction of bias empirically.
+
+Compare the coefficients to the model in question five that includes the intercept. When might this specification be dangerous? When might it be appropriate?
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your answer to parts b and d as a string to `prob08`.
+
+**Answer:**
+
+```{r, problem08}
+#cov_educ_exper <-
+#prob08 <-
+```
+
+***
+
+**#9** 
+
+**Problem:** 
+
+Estimate
+
+$ln(wage_i) = \beta_0 + \beta_1 educ_i + \beta_2 exper_i + \beta_3 married + u_i$
+
+and complete the following:
+
+a. Compute the VIFs and identify problematic variables
+
+b. Explain why coefficients remain unbiased 
+
+c. Explain what happens to the standard errors.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your answer as a string to `prob09`.
+
+**Answer:**
+
+```{r, problem09}
+#prob09 <-
+```
+
+***
+
+**#10** 
+
+**Problem:** 
+
+State the Gauss-Markov theorem and explain the meaning of BLUE. Why doesn't multicollinearity violate the theorem? When is OLS inefficient?
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your answer as a string to `prob10`.
+
+**Answer:**
+
+```{r, problem10}
+#prob10  
+```
+
+
+***
+
+
