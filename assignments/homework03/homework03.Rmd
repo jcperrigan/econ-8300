@@ -47,78 +47,41 @@ All students are expected to complete all problems. If any problem asks you a pa
 ***
 ***
 
-### Use the URLs to access the data. No local files allowed.
+# Data and packages
 
-# Loading and looking at the data 
+For the first part of the assignemnt, we will use the `meap01` dataset from the `wooldridge` package. It contains data for 1,823 Michigan elementary schools. The variables used here are:
 
-We will be using one of the Wooldridge data sets for this problem set.
+- `math4`: percentage of fourth-grade students rated satisfactory in mathematics
+- `exppp`: expenditures per pupil, in dollars
+- `lexppp`: natural logarithm of expenditures per pupil
+- `lunch`: percentage of students eligible for free or reduced-price lunch
+- `enroll`: school enrollment
 
-To install the wooldridge package, use the following: "install.packages('wooldridge')". Simply remove the "#" in the below code box.
+```{r packages}
+# Install the package once if needed:
+# install.packages("wooldridge")
 
-If you already have it installed, add it to your notebook library.
-```{r}
-#install.packages('wooldridge')
 library(wooldridge)
+data("meap01")
 ```
-
-Once you have the wooldridge package loaded, you can start to use the datasets by using the following code to load the data and then attach it:
-
-```{r}
-data('meap01')
-attach(meap01)
-```
-
-Attaching the dataframe means you can refer to objects in the dataframe by simply their name, instead of needing to refer to the dataframe each time. This is useful when working with a single dataframe at a time.
-
-Meap01 is a dataframe with 1,823 observations on 11 variables:
-
-* dcode: district code
-
-* bcode: building code
-
-* math4: percent students satisfactory, 4th grade math
-
-* read4: percent students satisfactory, 4th grade reading
-
-* lunch: percent students eligible for free or reduced lunch 
-
-* enroll: school enrollment
-
-* expend: total spending, $
-
-* exppp: expenditures per pupil: expend/enroll
-
-* lenroll: log(enroll)
-
-* lexpend: log(expend)
-
-* lexppp: log(exppp)
 
 
 ***
 
 **#1** 
 
-**Problem:** Using the "meap01" data:
+**Visualizing and quantifying the relationship**
 
-a) Compute the sample means of `exppp` and `math4`.
+1. Construct a scatterplot with `exppp` on the horizontal axis and `math4` on the vertical axis. Add a fitted linear regression line and informative axis labels.
+2. In 2–3 sentences, describe the direction, strength, and shape of the relationship. Note any observations that might have unusually high influence. Is there a high correlation by sight? What about when you calculate the correlation?
 
-b) Construct mean-centered variables:
-
-
-   $x_i^c = exppp_i - \bar{exppp}, \quad y_i^c = math4_i - \bar{math4}$
-
-
-Assign these values to `xc` and `yc`.
-
-c) Verify numerically that $\sum_i x_i^c = 0$ and $\sum_i y_i^c = 0$.
-   
+Save your written response as `prob01`.
 
 **Answer:**
 
 ```{r, problem01}
-#xc <-
-#yc <-
+# put your plot code here
+# prob01 <-
 ```
 
 
@@ -126,26 +89,23 @@ c) Verify numerically that $\sum_i x_i^c = 0$ and $\sum_i y_i^c = 0$.
 
 **#2** 
 
-**Problem:** 
+Consider the population regression model
 
-a) Using the centered variables, compute
+$$
+math4_i = \beta_0 + \beta_1 exppp_i + u_i.
+$$
 
-$\hat\beta_1 = \frac{\sum_i x_i^c y_i^c}{\sum_i (x_i^c)^2}$
+In 4–6 sentences:
 
-Assign your value to `b1_hat`.
+1. Explain the economic meaning of $\beta_0$ and $\beta_1$, including their units. Are they population parameters or sample estimates?
+2. Explain what the error term $u_i$ contains. Give two concrete examples of factors that could belong in $u_i$.
 
-b) Then, using your calculated value for $\hat\beta_1$, calculate $\hat\beta_0$:
-
-$\hat{\beta_0} = \bar{y} - \hat{\beta_1}\bar{x}$.
-
-Assign your value to `b0_hat`.
-
+Save your response as a string named `prob02`.
 
 **Answer:**
 
 ```{r, problem02}
-#b1_hat <-
-#b0_hat <-
+# prob02 <-
 ```
 
 ***
@@ -153,133 +113,195 @@ Assign your value to `b0_hat`.
 
 **#3** 
 
-**Problem:** 
+**Calculating the OLS estimators by hand**
 
-Estimate the regression
+Let $x_i=exppp_i$ and $y_i=math4_i$.
 
-$math4 = \beta_0 + \beta_1 exppp + u$
+1. Compute the sample means $\bar{x}$ and $\bar{y}$.
+2. Create the centered variables $x_i^c=x_i-\bar{x}$ and $y_i^c=y_i-\bar{y}$; save them as `xc` and `yc`.
+3. Verify numerically that $\sum_i x_i^c=0$ and $\sum_i y_i^c=0$.
+4. Calculate
 
-Report $\hat\beta_0$, $\hat\beta_1$, standard errors, and $R^2$.
+$$
+\hat\beta_1=\frac{\sum_i(x_i-\bar{x})(y_i-\bar{y})}{\sum_i(x_i-\bar{x})^2}
+$$
 
-This R code should be written in the code chunk of the **Answer** section below. Save your model results to `prob03`. 
+and
+
+$$
+\hat\beta_0=\bar{y}-\hat\beta_1\bar{x}.
+$$
+
+Save the estimates as `b1_hat` and `b0_hat`. Do not use `lm()` in this problem.
 
 **Answer:**
 
 ```{r, problem03}
-#prob03 <-
+# xc <-
+# yc <-
+# b1_hat <-
+# b0_hat <-
 ```
 
 ***
 
 **#4** 
 
-**Problem:** 
+Estimate
 
-Construct a 95% confidence interval for $\beta_1$ **manually** using
+$$
+math4_i = \beta_0 + \beta_1 exppp_i + u_i
+$$
 
-$\hat\beta_1 \pm t_{0.975,\,n-2} \cdot SE(\hat\beta_1)$
+using `lm()` and save the fitted model as `prob05_model`.
 
-Verify it matches `confint()`.
+1. Check that the estimated intercept and slope match your calculations in Problem 4 (small differences from rounding are acceptable).
+2. Interpret the slope in context. What would be the predicted change in `math4` associated with a $500 increase in expenditures per pupil?
 
-This R code should be written in the code chunk of the **Answer** section below. 
-
-Save your confidence interval as a vector to `prob04`, with the lower bound of the confidence interval coming first. 
+Save the written responses to parts 2 and 3 as a string to `prob04`.
 
 **Answer:**
 
 ```{r, problem04}
-#prob04 <-
+# prob04_model <-
+# prob04 <-
 ```
 
 ***
 
 **#5** 
 
-**Problem:** 
+For `prob04_model`, calculate the following manually from `math4`, `yhat`, and `uhat`:
 
-Test
+$$
+TSS=\sum_i(y_i-\bar{y})^2, \qquad
+ESS=\sum_i(\hat{y}_i-\bar{y})^2, \qquad
+SSR=\sum_i\hat{u}_i^2,
+$$
 
-$H_0: \beta_1 = 0 \quad vs \quad H_1: \beta_1 \neq 0$
+$$
+R^2=1-\frac{SSR}{TSS}, \qquad
+SER=\sqrt{\frac{SSR}{n-2}}.
+$$
 
-State the test statistic and p-value. Assign the values to `t_stat` and `p_two`.
+1. Save these five values in a named vector called `prob05_fit`. Put them in the order: $TSS, ESS, SSR, R^2, SER$.
+2. Interpret $R^2$ and the SER in context. Be precise about their units. Make sure your $R^2$ matches the value reported by your model `summary()`.
 
-This R code should be written in the code chunk of the **Answer** section below. 
+Save your interpretation as `prob05`.
 
 **Answer:**
 
 ```{r, problem05}
-#t_stat <-
-#p_two <-
+# prob05_fit <-
+# prob05 <-
 ```
 
 ***
 
-**#6** 
 
-**Problem:** 
+**#6** . 
 
-a) Now test $H_0: \beta_1 \le 0 \quad vs \quad H_1: \beta_1 > 0$
+The OLS slope can be written as
 
-Manually compute the one-sided p-value. Assign the value to `p_one`.
+$$
+\hat\beta_1=\beta_1+
+\frac{\sum_i(x_i-\bar{x})u_i}{\sum_i(x_i-\bar{x})^2}.
+$$
 
-b) Explain why it differs from the two-sided case.
+In 6–8 sentences:
 
-Assign your response to this question as a string to `prob06`.
+1. Use this expression to explain why $E(u_i\mid X_i)=0$ implies that $\hat\beta_1$ is unbiased.
+2. Explain why $\hat\beta_1$ varies from sample to sample even when $\beta_1$ is fixed.
+3. Explain how increasing the sample size generally affects the sampling distribution of $\hat\beta_1$.
+4. Distinguish unbiasedness from consistency.
 
-This R code should be written in the code chunk of the **Answer** section below. 
+Save your response as a string named `prob06`.
 
 **Answer:**
 
 ```{r, problem06}
-#p_one <-
-#prob06 <-
+# prob06 <-
 ```
 
 
 ***
 
+# Data and packages
+
+For the rest of the homework, we will use the `bwght` dataset from the `wooldridge` package. It contains data on births in Pennsylvania. The variables used here are:
+
+- `bwght`: infant birth weight, in ounces
+- `smoker`: indicator equal to 1 if the mother smoked during pregnancy and 0 otherwise
+- `cigs`: average number of cigarettes smoked per day during pregnancy
+- `faminc`: family income, in thousands of dollars
+- `parity`: birth order of the child
+
+Use homoskedasticity-only standard errors unless otherwise specified.
+
+```{r packages}
+# Install these packages once if needed:
+# install.packages(c("sandwich", "lmtest"))
+
+library(sandwich)
+library(lmtest)
+data("bwght")
+bwght$smoker <- ifelse(bwght$cigs > 0, 1, 0)
+```
 
 **#7** 
 
-**Problem:** Using your estimated level model from Question 2:
+1. Compute the mean birth weight for nonsmokers (`smoker = 0`) and smokers (`smoker = 1`). Save the two means in a named vector called `prob07_means`.
+2. Estimate
 
-a) Compute the predicted change in `math4` if `exppp` increases by **$500**. Save this answer to `change_500`.
+$$
+bwght_i=\beta_0+\beta_1 smoker_i+u_i
+$$
 
-b) Compute the predicted change if `exppp` **decreases** by **$1,000**. Save this answer to `change_minus_1000`.
+and save the model as `prob07_model`.
+3. Show numerically how the two regression coefficients are related to the two group means.
+4. Interpret the intercept and slope in context and include their units. 
 
-b) Explain whether linearity is a reasonable approximation over this range. Save this answer as a string to `prob07`.**
+Save your written response as `prob07`.
 
-
-This R code should be written in the code chunk of the **Answer** section below. 
-
+**Answer:**
 
 ```{r, problem07}
-#change_500 <-
-#change_minus_1000 <-
-#prob07 <-
+# prob07_means <-
+# prob07_model <-
+# prob07 <-
 ```
 
 ***
 
 **#8** 
 
-**Problem:** 
+For the two smoking groups:
 
-Estimate
+1. Compute each group's sample size and sample variance of `bwght`.
+2. Manually calculate the standard error of the difference in sample means and save this standard error as `prob08_se`:
 
-$math4 = \beta_0 + \beta_1 \ln(exppp) + u$
+$$
+SE(\bar{Y}_1-\bar{Y}_0)
+=\sqrt{\frac{s_1^2}{n_1}+\frac{s_0^2}{n_0}}.
+$$
 
-a) Compute the predicted change in `math4` for a 10% increase in spending. Save this to `pred_10pct`**
+$$
+H_0:\beta_1=0
+\qquad \text{against} \qquad
+H_1:\beta_1\neq 0.
+$$
 
-b) Interpret $\hat\beta_1$ as a semi-elasticity. Compare this prediction to Question 4. Save this answer as a string to `prob08`.
+3. Calculate the test statistic and its associated two-sided large-sample p-value manually for the test above and save the p-value as `prob08_p`. (Hint: use ```pnorm()```).
+4. State the decision at the 5% significance level and interpret the evidence in context.
 
-This R code should be written in the code chunk of the **Answer** section below. 
+Save your written conclusion as `prob08`.
 
 **Answer:**
 
 ```{r, problem08}
-#pred_10pct <-
-#prob08 <-
+# prob08_se <-
+# prob03_p <-
+# prob03 <-
 ```
 
 
@@ -287,47 +309,47 @@ This R code should be written in the code chunk of the **Answer** section below.
 
 **#9** 
 
-**Problem:** 
+Test whether smoking is associated with **lower** average birth weight:
 
-Compare the **level** and **log** models using:**
+$$
+H_0:\beta_1\geq 0
+\qquad \text{against} \qquad
+H_1:\beta_1<0.
+$$
 
-* $R^2$
-* Residual standard error
-* Economic interpretability
+1. Calculate the one-sided large-sample p-value using the t-statistic from Problem 8; save it as `prob09_p`.
+2. State the decision at the 1% significance level.
+3. Explain why this p-value is different from the two-sided p-value and why the direction of the alternative hypothesis must be picked before looking at the estimate.
 
-Which model do you prefer and why? 
-
-This R code should be written in the code chunk of the **Answer** section below. Assign the answer as a string to `prob09`. 
+Save your explanation as `prob09`.
 
 **Answer:**
 
 ```{r, problem09}
-#prob09 <-
+# prob09_p <-
+# prob09 <-
 ```
 
 
 ***
 
 
-**#10** 
+**#10**  
 
-**Problem:** 
+Answer the following in 7–9 sentences:
 
-In **5–7 sentences**, explain the relationship between:
+1. What is the sampling distribution of an OLS estimator?
+2. What does its standard error measure?
+3. What does the central limit theorem contribute to large-sample regression inference?
+4. Why does Stock and Watson emphasize heteroskedasticity-robust standard errors in observational economic data?
+6. Distinguish statistical significance from economic importance, using the smoking coefficient as an example.
 
-* confidence intervals
-* p-values
-* hypothesis tests
-
-Focus on how they provide equivalent information (e.g., CI-based rejection vs p-value-based rejection).
-
-This R code should be written as a string in the code chunk of the Answer section below. The string should be assigned to `prob10`.
+Save your response as a string named `prob10`.
 
 **Answer:**
 
 ```{r, problem10}
-#prob10 <- 
+# prob10 <-
 ```
-
 
 ***
