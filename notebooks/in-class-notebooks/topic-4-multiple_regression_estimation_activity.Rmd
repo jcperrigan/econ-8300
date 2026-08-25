@@ -1,0 +1,356 @@
+---
+title: "In-Class Activity Notebook: Multiple Regression (Estimation, OVB, Inference)"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# 0. Pair programming  
+
+- **Driver**: types, runs code, narrates what you’re doing.
+- **Navigator**: reads prompts, checks logic, asks “why,” and watches for mistakes.
+- Switch roles at the marked **SWITCH** points.
+
+**What is pair programming?**
+
+It involves two distinct roles that you'll alternate between. One person is the driver, responsible for writing the code. The other is the navigator and reviews the code and offers guidance and instructions. The parts are swapped at regular intervals.
+
+Pair programming is a subject of a lot of debate, but we're going to use it today anyway, because it promotes teamwork and shared problem-solving.
+
+---
+
+# 1. Learning goals
+
+By the end of tonight, you should be able to:
+
+1. Estimate a multiple regression model with `lm()` and interpret slopes
+2. Diagnose and demonstrate omitted variable bias (OVB) using nested models  
+3. Explain what multicollinearity does (and doesn’t) do, and check it in practice  
+4. Construct confidence intervals, run hypothesis tests (including joint tests), and make predictions  
+
+---
+
+# 2. Load packages + data 
+
+We’ll use the **Housing** cross-section data (1987) from the `Ecdat` package. This is the same data as used in the sample notebook.
+
+```{r}
+# If needed - you only need to run it once:
+# install.packages("Ecdat", repos="http://R-Forge.R-project.org")
+
+library(tidyverse)
+library(Ecdat)
+library(broom)
+library(car)       # VIF + linearHypothesis
+library(lmtest)    # coeftest
+library(sandwich)  # robust vcov
+library(effects)   # partial effects plots
+
+data(Housing)
+
+# take a look at the data/ variable descriptions
+?Housing
+```
+
+
+**Create a smaller working tibble called `h`**
+
+
+
+```{r}
+h <- Housing |>
+  as_tibble()
+
+glimpse(h)
+summary(h)
+```
+
+**Your turn: keep only these variables from the `h` tibble:**
+ 
+- `price` (outcome)
+- `lotsize`, `bedrooms`, `bathrms`, `stories`, `garagepl`
+- `driveway`, `fullbase`, `airco`
+
+```{r}
+h <- h |>
+  select()
+
+glimpse(h)
+summary(h)
+```
+
+---
+
+# 3. Quick EDA + transformations
+
+## 3.1 Outcome distribution and scale
+
+
+```{r}
+h |> ggplot(aes(x = price)) + 
+  geom_histogram()
+```
+
+**Prompt (talk, don’t code yet!):**  
+Why might `log(price)` be a good idea here? (Think: skewness, interpreting % changes, diminishing marginal effects.)
+
+Now create logged variables and add them to `h`. Call them `lprice` and `llotsize`.
+
+```{r}
+h <- h |>
+  mutate()
+  )
+```
+
+Check the distributions by creating histograms of `lprice` and `llotsize`:
+
+```{r}
+ggplot(h, aes(x = lprice)) + #insert code for a histogram here
+
+ggplot(h, aes(x = llotsize)) + #insert code for a histogram here
+
+```
+
+**SWITCH ROLES**
+
+---
+
+# 4. From simple regression to multiple regression 
+
+## 4.1 Simple regression (baseline)
+
+Estimate:
+
+$\ln(price)_i = \beta_0 + \beta_1 \ln(lotsize)_i + u_i$
+
+Save your model as `m1`.
+
+Look at your results.
+
+
+```{r}
+m1 <- 
+
+```
+
+**Task 4A (interpretation):**  
+Write 1–2 sentences interpreting $\hat\beta_1$. 
+
+
+
+## 4.2 Multiple regression 
+
+Estimate:
+
+$\ln(price)_i = \beta_0 + \beta_1 \ln(lotsize)_i + \beta_2 bedrooms_i + \beta_3 bathrms_i + \beta_4 stories_i + \beta_5 garagepl_i + u_i$
+
+Save your model as `m2`.
+
+Look at your results.
+
+
+```{r}
+m2 <- 
+```
+
+**Task 4B (compare):**  
+
+```{r}
+bind_rows(
+  tidy(m1) |> mutate(model = "m1"),
+  tidy(m2) |> mutate(model = "m2")
+) |>
+  filter(term == "llotsize")
+```
+
+Compare $\hat\beta_1$ in `m1` vs `m2`. Did it move? In which direction? 
+
+
+
+
+
+---
+
+# 5. Omitted Variable Bias 
+
+## 5.1 Add “amenity” proxies
+
+Add `driveway`, `fullbase`, and `airco` to the model.
+
+Save your model as `m3`.
+
+Look at your results.
+
+```{r}
+m3 <- 
+
+```
+
+
+**Task 5A:**  
+
+```{r}
+bind_rows(
+  tidy(m2) |> mutate(model = "m2"),
+  tidy(m3) |> mutate(model = "m3")
+)
+```
+
+Pick **one coefficient** that changes noticeably from `m2` to `m3`. Propose an OVB mechanism:
+
+- What omitted factor was being partially “loaded” into the coefficient before?
+
+- Why might it be correlated with the regressor?
+
+
+
+## 5.2 Partial effect visualization 
+
+Plot the partial effect of `llotsize` in `m2`. Then plot the partial effect of `llotsize` in `m3`. What changed? How does this tie into your answers in part 5A?
+
+```{r}
+eff_llotsize_m2 <- effect("llotsize", m2)
+plot(eff_llotsize_m2)
+summary(eff_llotsize_m2)
+
+eff_llotsize_m3 <- effect("llotsize", m3)
+plot(eff_llotsize_m3)
+summary(eff_llotsize_m3)
+```
+
+**SWITCH ROLES**
+
+---
+
+# 6. Multicollinearity
+
+## 6.1 Correlation among regressors
+
+First select the following variables from `h`: `llotsize`, `bedrooms`, `bathrms`, `stories`, `garagepl`. Then the `cor` function calculate the correlations.
+
+```{r}
+h |>
+  select() |>
+  cor(use = "complete.obs")
+```
+
+## 6.2 VIF (variance inflation factor)
+
+Next calculate the variance inflation factor for `m3`.
+
+```{r}
+# calculate the VIF here
+
+```
+
+**Task 6A:**  
+If a variable has a higher VIF, what does that mean about its SE and t-stat, holding everything else the same?
+
+
+---
+
+# 7. Inference: CI, single tests, joint tests 
+
+## 7.1 95% confidence intervals (classical)
+
+Calculate the 95% confidence intervals for `m3`, using "normal" standard errors.
+
+```{r}
+# calculate the 95% confidence intervals here.
+
+```
+
+## 7.2 Robust SEs (HC1)
+
+Calculate the 95% confidence intervals for `m3`, using robust standard errors.
+
+```{r}
+# calculate the 95% confidence intervals here, using robust standard errors.
+
+```
+
+**Task 7A:**  
+Pick one coefficient whose “significance” changes (or nearly changes) when you move to robust SEs. Why might that happen?
+
+
+
+## 7.3 Joint hypothesis test (F-test)
+
+Test whether structure variables are jointly irrelevant:
+
+$H_0: bedrooms = 0,\ bathrms = 0,\ stories = 0,\ garagepl = 0$
+
+Use `linearHypothesis`.
+
+```{r}
+#use linearHypothesis to test your hypothesis
+
+```
+
+**Task 7B:**  
+Interpret the null + what rejection means in plain English.
+
+
+**SWITCH ROLES**
+
+---
+
+# 8. Predictions + goodness-of-fit 
+
+## 8.1 Predict for a “typical” house
+
+Create a hypothetical observation using medians/modes.
+
+```{r}
+new_house <- tibble(
+  llotsize = log(median(h$lotsize, na.rm = TRUE)),
+  bedrooms = median(h$bedrooms, na.rm = TRUE),
+  bathrms  = median(h$bathrms, na.rm = TRUE),
+  stories  = median(h$stories, na.rm = TRUE),
+  garagepl = median(h$garagepl, na.rm = TRUE),
+  driveway = "yes",
+  fullbase = "yes",
+  airco    = "yes"
+)
+
+# use the new_house data to predict using confidence intervals
+
+#use the new_house data to predict using prediction intervals
+
+
+```
+
+**Task 8A:**  
+What’s the difference between a **confidence interval** for the mean and a **prediction interval** for an individual house?
+
+
+
+## 8.2 R-squared vs adjusted R-squared
+
+```{r}
+glance(m2) |> select(r.squared, adj.r.squared)
+glance(m3) |> select(r.squared, adj.r.squared)
+```
+
+**Task 8B:**  
+Why can $R^2$ mechanically rise as you add variables? What does adjusted $R^2$ try to correct?
+
+
+
+---
+
+# 9. Wrap-up 
+
+In 4–6 sentences, answer:
+
+1. What coefficient do you trust most for a causal story, and why?
+2. Where do you see the biggest OVB risk remaining?
+3. Did multicollinearity meaningfully affect your inference?
+
+
