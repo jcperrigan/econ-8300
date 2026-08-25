@@ -100,6 +100,8 @@ Run `?mtcars` in the Console. Find the definitions and units of the following va
 
 Why would it be risky to analyze a variable without first checking its definition and units?
 
+Without the definition and units, we could misinterpret the magnitude, direction, or real-world meaning of a result. We might also mistake a category code such as `am` for a quantitative variable.
+
 **Answer:**
 
 ```{r}
@@ -192,6 +194,8 @@ Why is the mean not necessarily displayed as exactly zero? If needed, try `round
 
 **Answer:**
 
+The unrounded result is really close to zero but may not equal zero because computers store a lot of decimal values with finite binary precision. This is ordinary floating-point rounding error.
+
 
 ## Task 2.2: Diagnose an error
 
@@ -233,6 +237,8 @@ Use `nrow()` to determine how many cars are in each group.
 
 ```{r group-counts}
 # YOUR CODE HERE
+nrow(automatic)
+nrow(manual)
 ```
 
 ## Task 3.2: Calculate and interpret group means
@@ -241,6 +247,12 @@ Calculate mean `mpg` separately for automatic and manual cars. Give the results 
 
 ```{r group-means}
 # YOUR CODE HERE
+
+mean_mpg_automatic <- mean(automatic$mpg)
+mean_mpg_manual <- mean(manual$mpg)
+
+mean_mpg_automatic
+mean_mpg_manual
 ```
 
 Report the difference as:
@@ -251,17 +263,22 @@ $$
 
 ```{r mean-difference}
 # YOUR CODE HERE
+mpg_difference <- mean_mpg_manual - mean_mpg_automatic
+mpg_difference
 ```
 
 Interpret the difference in one sentence. Be precise about its direction and units.
 
 **Answer:**
 
+In this sample, manual cars average about 7.24 more miles per gallon than automatic cars.
+
 
 Does this comparison establish that changing a car from automatic to manual would *cause* its fuel economy to change by that amount? Why or why not?
 
 **Answer:**
 
+No. Transmission type wasn't randomly assigned, and the two groups may be different in weight, horsepower, model design, engine size, or other characteristics that also affect fuel economy. This is a descriptive association, not necessarily a causal effect.
 
 ## Task 3.3: Make and improve a plot
 
@@ -280,12 +297,22 @@ Modify the plot so that it has:
 
 ```{r improved-plot}
 # YOUR CODE HERE
+plot(
+  cars$wt,
+  cars$mpg,
+  main = "Fuel Economy and Vehicle Weight",
+  xlab = "Vehicle weight (thousands of pounds)",
+  ylab = "Fuel economy (miles per gallon)",
+  pch = 19,
+  col = "#A30D26"
+)
 ```
 
 Describe the relationship shown in the plot. Comment on its direction, strength, and whether it appears approximately linear.
 
 **Answer:**
 
+Fuel economy and vehicle weight have a strong negative, approximately linear relationship, heavier cars generally get fewer miles per gallon. A few observations are different from the main pattern, but there isn't any obvious strong curvature.
 
 > **Switch roles.** The navigator becomes the driver.
 
@@ -383,6 +410,9 @@ Why might the vectorized version generally be preferable in R?
 
 **Answer:**
 
+The vectorized version is shorter, easier to read, and usually more efficient because R functions and arithmetic are designed to operate on entire vectors. The loop is still useful for teaching and for things that can't be written naturally as vector operations.
+
+
 
 # Part 6: Knit and reflect (5--10 minutes)
 
@@ -422,6 +452,18 @@ Choose one additional variable (`hp`, `wt`, or `qsec`). Compare its mean for aut
 
 ```{r extension-comparison}
 # YOUR CODE HERE
+mean_hp_automatic <- mean(automatic$hp)
+mean_hp_manual <- mean(manual$hp)
+mean_hp_manual - mean_hp_automatic
+
+boxplot(
+  hp ~ factor(am, labels = c("Automatic", "Manual")),
+  data = cars,
+  main = "Horsepower by Transmission Type",
+  xlab = "Transmission type",
+  ylab = "Gross horsepower",
+  col = c("gray80", "#A30D26")
+)
 ```
 
 ## Extension B: Improve the function
@@ -432,6 +474,14 @@ Use `?mean` to identify the needed argument, then test the function on:
 
 ```{r extension-missing, eval=FALSE}
 x_with_missing <- c(1, 2, NA, 4, 5)
+x_with_missing <- c(1, 2, NA, 4, 5)
+
+standardize <- function(x) {
+  z <- (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
+  return(z)
+}
+
+standardize(x_with_missing)
 ```
 
 ## Extension C: Add a fitted line
@@ -440,4 +490,16 @@ Use `lm()` to estimate a linear relationship between `mpg` and `wt`, then add th
 
 ```{r extension-line}
 # YOUR CODE HERE
+weight_model <- lm(mpg ~ wt, data = cars)
+
+plot(
+  cars$wt,
+  cars$mpg,
+  main = "Fuel Economy and Vehicle Weight",
+  xlab = "Vehicle weight (thousands of pounds)",
+  ylab = "Fuel economy (miles per gallon)",
+  pch = 19,
+  col = "#A30D26"
+)
+abline(weight_model, col = "#101820", lwd = 2)
 ```
