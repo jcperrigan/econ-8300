@@ -1,6 +1,5 @@
 ---
 title: "In-Class Activity: Exploring Data with R"
-author: "ECON 8300"
 output:
   html_document:
     toc: true
