@@ -69,7 +69,7 @@ Make sure to remove the "#" from in front of "prob01" in order for the code to r
 
 
 ```{r, problem01}
-#prob01 = 
+#prob01 <- 
 
 ```
 
@@ -84,7 +84,7 @@ This R code should be written in the code chunk of the **Answer** section below.
 **Answer:**
 
 ```{r, problem02}
-#prob02 = 
+#prob02 <- 
 
 ```
 
@@ -100,7 +100,7 @@ This R code should be written in the code chunk of the **Answer** section below.
 **Answer:**
 
 ```{r, problem03}
-#prob03 = 
+#prob03 <-
 ```
 
 ***
@@ -117,7 +117,7 @@ This R code should be written in the code chunk of the **Answer** section below.
 **Answer:**
 
 ```{r, problem04}
-#prob04 = 
+#prob04 <- 
 ```
 
 
@@ -135,7 +135,7 @@ This R code should be written in the code chunk of the **Answer** section below.
 ```{r, problem05}
 set.seed(3)
 
-#prob05 = 
+#prob05 <- 
 ```
 
 
@@ -167,7 +167,7 @@ This R code should be written in the code chunk of the **Answer** section below.
 ```{r, problem06}
 set.seed(8)
 
-#prob06 = 
+#prob06 <- 
 ```
 
 
@@ -187,7 +187,7 @@ This R code should be written in the code chunk of the **Answer** section below.
 ```{r, problem07}
 set.seed(13)
 
-#prob07 = 
+#prob07 <- 
 
 ```
 
@@ -203,7 +203,7 @@ This R code should be written in the code chunk of the **Answer** section below.
 **Answer:**
 
 ```{r, problem08}
-#prob08 = 
+#prob08 <- 
 ```
 
 ***
@@ -219,7 +219,7 @@ This R code should be written in the code chunk of the **Answer** section below.
 **Answer:**
 
 ```{r, problem09}
-#prob09 = 
+#prob09 <- 
 ```
 
 
@@ -234,7 +234,7 @@ Save your answer as a string to "prob10."
 **Answer:**
 
 ```{r, problem10}
-#prob10 = "Enter your answer in between quotation marks here."
+#prob10 <- "Enter your answer in between quotation marks here."
 ```
 
 
