@@ -153,9 +153,9 @@ $$
 math4_i = \beta_0 + \beta_1 exppp_i + u_i
 $$
 
-using `lm()` and save the fitted model as `prob05_model`.
+using `lm()` and save the fitted model as `prob04_model`.
 
-1. Check that the estimated intercept and slope match your calculations in Problem 4 (small differences from rounding are acceptable).
+1. Check that the estimated intercept and slope match your calculations in Problem 3 (small differences from rounding are acceptable).
 2. Interpret the slope in context. What would be the predicted change in `math4` associated with a $500 increase in expenditures per pupil?
 
 Save the written responses to parts 2 and 3 as a string to `prob04`.
@@ -291,7 +291,7 @@ H_0:\beta_1=0
 H_1:\beta_1\neq 0.
 $$
 
-3. Calculate the test statistic and its associated two-sided large-sample p-value manually for the test above and save the p-value as `prob08_p`. (Hint: use ```pnorm()```).
+3. Using the calculated standard error and the $\hat{\beta}_1$ from the model in problem 7, calculate the test statistic and its associated two-sided large-sample p-value manually for the test above and save the p-value as `prob08_p`. (Hint: use ```pnorm()```).
 4. State the decision at the 5% significance level and interpret the evidence in context.
 
 Save your written conclusion as `prob08`.
@@ -300,6 +300,7 @@ Save your written conclusion as `prob08`.
 
 ```{r, problem08}
 # prob08_se <-
+# prob08_t <- 
 # prob03_p <-
 # prob03 <-
 ```
