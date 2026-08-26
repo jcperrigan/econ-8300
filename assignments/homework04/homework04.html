@@ -207,188 +207,6 @@ window.buildTabsets = function(tocID) {
 };
 
 </script>
-<style>
-
-pre, pre code, .sourceCode, .sourceCode pre {
-background: none !important;
-box-shadow: none !important;
-border: none !important;
-color: #111 !important;
-font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-}
-
-.sourceCode .kw, .sourceCode .cf { color:#003366 !important; font-weight:600; } 
-.sourceCode .dt, .sourceCode .ty { color:#660033 !important; font-weight:600; } 
-.sourceCode .dv, .sourceCode .bn, .sourceCode .fl { color:#003399 !important; } 
-.sourceCode .st, .sourceCode .ch, .sourceCode .vs { color:#5C2E00 !important; } 
-.sourceCode .co, .sourceCode .do { color:#4A4A4A !important; font-style:italic; }
-.sourceCode .fu { color:#004D40 !important; } 
-.sourceCode .va, .sourceCode .bu, .sourceCode .at { color:#163300 !important; } 
-
-.sourceCode .op, 
-.sourceCode .sc, 
-pre code .hl-operator, 
-pre code .hl-punctuation { 
-color:#111 !important; 
-font-weight:600;
-}
-
-pre.sourceCode code > span,
-.sourceCode span { background: none !important; }
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Find Pandoc code-line anchors like: <a class="sourceLine" id="cb1-3" href="#cb1-3"></a>
-  var anchors = document.querySelectorAll('a.sourceLine');
-  anchors.forEach(function(a){
-    // Replace each empty <a> with a <span> to eliminate "empty hyperlink" issues
-    var s = document.createElement('span');
-    s.className = a.className;
-    if (a.id) s.id = a.id;
-    if (a.getAttribute('title')) s.setAttribute('data-line', a.getAttribute('title'));
-    a.replaceWith(s);
-  });
-
-  // Defensive cleanup for any leftover empty anchors
-  document.querySelectorAll('pre code a[href]').forEach(function(a){
-    if (!a.textContent.trim()) {
-      var s = document.createElement('span');
-      s.className = a.className || '';
-      if (a.id) s.id = a.id;
-      a.replaceWith(s);
-    }
-  });
-});
-</script>
-
-<style>
-
-table {
-border-collapse: separate !important;
-border-spacing: 0.5em 0.25em !important; 
-width: auto; 
-margin: 1em 0;
-}
-th, td {
-padding: 0.5em 1em !important; 
-text-align: center; 
-vertical-align: middle;
-border: none; 
-}
-caption {
-caption-side: top;
-text-align: left;
-font-weight: 600;
-margin-bottom: 0.25em;
-}
-
-thead th {
-border-bottom: 2px solid #444;
-}
-tbody tr + tr td,
-tbody tr + tr th {
-border-top: 1px solid #ccc;
-}
-tbody th[scope="row"] {
-text-align: left !important;
-}
-</style>
-
-<script>
-// 1) Add scope="col" to header cells that are missing it
-document.querySelectorAll('table thead th:not([scope])').forEach(th => {
-  th.setAttribute('scope', 'col');
-});
-
-// 2) If a table has no caption, create a visually-hidden one
-//    using the nearest preceding heading as a fallback.
-document.querySelectorAll('table').forEach((tbl, idx) => {
-  if (!tbl.querySelector('caption')) {
-    let captionText = '';
-    // walk backwards to find a previous heading
-    let prev = tbl.previousElementSibling;
-    while (prev && !/^H[1-6]$/.test(prev.tagName)) prev = prev.previousElementSibling;
-    if (prev) captionText = prev.textContent.trim();
-    if (!captionText) captionText = 'Data table ' + (idx + 1);
-
-    const cap = document.createElement('caption');
-    cap.textContent = captionText;
-    cap.style.position = 'absolute';
-    cap.style.left = '-9999px';
-    cap.style.height = '1px';
-    cap.style.width = '1px';
-    cap.style.overflow = 'hidden';
-    tbl.insertBefore(cap, tbl.firstChild);
-  }
-});
-</script>
-
-<style>
-
-pre.numberSource code > span > a:first-child::before { color: #6b6b6b !important; } 
-pre.numberSource { border-left: 1px solid #6b6b6b !important; }
-
-code span.op, code span.sc { color: #7a2d00 !important; font-weight: 700; } 
-</style>
-
-<style>
-table thead th { padding-right: 1rem !important; white-space: nowrap; }
-</style>
-
-
-<script>
-  // Add missing scope attributes to table headers for accessibility checkers
-  document.querySelectorAll("table thead th:not([scope])").forEach(th => {
-    th.setAttribute("scope", "col");
-  });
-
-  // (Optional safety) If any header cells are in tbody (rare), set them too
-  document.querySelectorAll("table tbody th:not([scope])").forEach(th => {
-    th.setAttribute("scope", "row");
-  });
-</script>
-
-<style>
-
-.text-muted,
-.help-block,
-.dropdown-header,
-.navbar-default .navbar-nav > li > a,
-.navbar-default .navbar-text,
-.navbar-default .navbar-brand {
-color: #444 !important;
-}
-
-.form-control::placeholder { color: #555 !important; opacity: 1 !important; }
-.form-control::-webkit-input-placeholder { color: #555 !important; }
-.form-control::-moz-placeholder { color: #555 !important; opacity: 1 !important; }
-.form-control:-ms-input-placeholder { color: #555 !important; }
-.form-control::-ms-input-placeholder { color: #555 !important; }
-</style>
-
-<style>
-table caption,
-p.caption,
-.caption,
-.table caption {
-color: #111 !important;
-opacity: 1 !important;
-}
-</style>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll("table").forEach(function (tbl) {
-    tbl.querySelectorAll("thead th").forEach(function (th) {
-      if (!th.hasAttribute("scope")) th.setAttribute("scope", "col");
-    });
-    tbl.querySelectorAll("tbody th").forEach(function (th) {
-      if (!th.hasAttribute("scope")) th.setAttribute("scope", "row");
-    });
-  });
-});
-</script>
 
 <style type="text/css">
 code{white-space: pre-wrap;}
@@ -610,7 +428,7 @@ display: none;
 <div id="homework04" class="section level1">
 <h1>Homework04</h1>
 <p>Grading Rubric (per question):<br />
-3 points if complete and correct<br />
+2 points if complete and correct<br />
 0 points otherwise</p>
 <div id="retrieving-your-work" class="section level2">
 <h2>Retrieving your work</h2>
@@ -652,32 +470,31 @@ graded.</em></strong></p>
 <p>We will be using the ‘wage1’ data from the <code>wooldridge</code>
 package.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div>
-<pre><code>## Warning: package &#39;readr&#39; was built under R version 4.4.3</code></pre>
 <pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.2.0     ✔ readr     2.2.0
+## ✔ dplyr     1.2.1     ✔ readr     2.2.0
 ## ✔ forcats   1.0.1     ✔ stringr   1.6.0
-## ✔ ggplot2   4.0.2     ✔ tibble    3.3.1
+## ✔ ggplot2   4.0.3     ✔ tibble    3.3.1
 ## ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
-## ✔ purrr     1.2.1     
+## ✔ purrr     1.2.2     
 ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
 ## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span></code></pre></div>
 <pre><code>## 
 ## Attaching package: &#39;kableExtra&#39;
 ## 
 ## The following object is masked from &#39;package:dplyr&#39;:
 ## 
 ##     group_rows</code></pre>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">library</span>(wooldridge)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&#39;wage1&#39;</span>)</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>?wage1</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">library</span>(wooldridge)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&#39;wage1&#39;</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>?wage1</span></code></pre></div>
 <p>Make sure to also load <code>reporting.R</code> for your model
 summaries. This R script should be saved in the same folder as your
 homework.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;reporting.R&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;reporting.R&quot;</span>)</span></code></pre></div>
 <p><strong>#1</strong></p>
 <p><strong>Problem:</strong></p>
 <p>Estimate</p>
@@ -695,7 +512,7 @@ Why?</li>
 <strong>Answer</strong> section below. Save your answers as a string to
 <code>prob01.</code></p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co">#prob01  </span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co">#prob01  </span></span></code></pre></div>
 <hr />
 <p><strong>#2</strong></p>
 <p>Estimate</p>
@@ -709,7 +526,7 @@ Why?</li>
 <p>This R code should be written in the code chunk of the
 <strong>Answer</strong> section below. Save your answer as a string to
 <code>prob02.</code></p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co">#prob02 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co">#prob02 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#3</strong></p>
 <p><strong>Problem:</strong></p>
@@ -726,9 +543,9 @@ residuals to u_hat.</li>
 <strong>Answer</strong> section below. Assign the answer to part d as a
 string to <code>prob03.</code></p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co">#y_hat &lt;-</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#u_hat &lt;-</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#prob03 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co">#y_hat &lt;-</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#u_hat &lt;-</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#prob03 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#4</strong></p>
 <p><strong>Problem:</strong></p>
@@ -752,8 +569,8 @@ effects are additive.</li>
 <strong>Answer</strong> section below. Assign the answer to part b as a
 string to <code>prob04</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co">#pred_change &lt;-</span></span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#prob04 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co">#pred_change &lt;-</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#prob04 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#5</strong></p>
 <p><strong>Problem:</strong></p>
@@ -767,7 +584,7 @@ Why?</p>
 <p>This R code should be written in the code chunk of the
 <strong>Answer</strong> section below. Assign the answer as a string to
 <code>prob05</code>.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co">#prob05 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co">#prob05 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#6</strong></p>
 <p><strong>Problem:</strong></p>
@@ -784,9 +601,9 @@ rises (or at least never falls) when adding more regressors</p></li>
 <strong>Answer</strong> section below. Save your answer to part b as a
 string to <code>prob06.</code></p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co">#r_sq &lt;-</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#adj_r_sq &lt;-</span></span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#prob06 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co">#r_sq &lt;-</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#adj_r_sq &lt;-</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#prob06 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#7</strong></p>
 <p><strong>Problem:</strong></p>
@@ -800,7 +617,7 @@ be appropriate?</p>
 <strong>Answer</strong> section below. Assign your answer as a string to
 <code>prob07</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co">#prob07 </span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co">#prob07 </span></span></code></pre></div>
 <hr />
 <p><strong>#8</strong></p>
 <p><strong>Problem:</strong></p>
@@ -822,8 +639,8 @@ be appropriate?</p>
 <strong>Answer</strong> section below. Assign your answer to parts b and
 d as a string to <code>prob08</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co">#cov_educ_exper &lt;-</span></span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#prob08 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co">#cov_educ_exper &lt;-</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#prob08 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#9</strong></p>
 <p><strong>Problem:</strong></p>
@@ -840,7 +657,7 @@ d as a string to <code>prob08</code>.</p>
 <strong>Answer</strong> section below. Assign your answer as a string to
 <code>prob09</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co">#prob09 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co">#prob09 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#10</strong></p>
 <p><strong>Problem:</strong></p>
@@ -851,7 +668,7 @@ inefficient?</p>
 <strong>Answer</strong> section below. Assign your answer as a string to
 <code>prob10</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co">#prob10  </span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co">#prob10  </span></span></code></pre></div>
 <hr />
 </div>
 </div>
