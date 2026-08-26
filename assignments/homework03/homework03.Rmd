@@ -342,8 +342,7 @@ Answer the following in 7–9 sentences:
 1. What is the sampling distribution of an OLS estimator?
 2. What does its standard error measure?
 3. What does the central limit theorem contribute to large-sample regression inference?
-4. Why does Stock and Watson emphasize heteroskedasticity-robust standard errors in observational economic data?
-6. Distinguish statistical significance from economic importance, using the smoking coefficient as an example.
+4. Distinguish statistical significance from economic importance, using the smoking coefficient as an example.
 
 Save your response as a string named `prob10`.
 
