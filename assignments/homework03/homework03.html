@@ -207,188 +207,6 @@ window.buildTabsets = function(tocID) {
 };
 
 </script>
-<style>
-
-pre, pre code, .sourceCode, .sourceCode pre {
-background: none !important;
-box-shadow: none !important;
-border: none !important;
-color: #111 !important;
-font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-}
-
-.sourceCode .kw, .sourceCode .cf { color:#003366 !important; font-weight:600; } 
-.sourceCode .dt, .sourceCode .ty { color:#660033 !important; font-weight:600; } 
-.sourceCode .dv, .sourceCode .bn, .sourceCode .fl { color:#003399 !important; } 
-.sourceCode .st, .sourceCode .ch, .sourceCode .vs { color:#5C2E00 !important; } 
-.sourceCode .co, .sourceCode .do { color:#4A4A4A !important; font-style:italic; }
-.sourceCode .fu { color:#004D40 !important; } 
-.sourceCode .va, .sourceCode .bu, .sourceCode .at { color:#163300 !important; } 
-
-.sourceCode .op, 
-.sourceCode .sc, 
-pre code .hl-operator, 
-pre code .hl-punctuation { 
-color:#111 !important; 
-font-weight:600;
-}
-
-pre.sourceCode code > span,
-.sourceCode span { background: none !important; }
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Find Pandoc code-line anchors like: <a class="sourceLine" id="cb1-3" href="#cb1-3"></a>
-  var anchors = document.querySelectorAll('a.sourceLine');
-  anchors.forEach(function(a){
-    // Replace each empty <a> with a <span> to eliminate "empty hyperlink" issues
-    var s = document.createElement('span');
-    s.className = a.className;
-    if (a.id) s.id = a.id;
-    if (a.getAttribute('title')) s.setAttribute('data-line', a.getAttribute('title'));
-    a.replaceWith(s);
-  });
-
-  // Defensive cleanup for any leftover empty anchors
-  document.querySelectorAll('pre code a[href]').forEach(function(a){
-    if (!a.textContent.trim()) {
-      var s = document.createElement('span');
-      s.className = a.className || '';
-      if (a.id) s.id = a.id;
-      a.replaceWith(s);
-    }
-  });
-});
-</script>
-
-<style>
-
-table {
-border-collapse: separate !important;
-border-spacing: 0.5em 0.25em !important; 
-width: auto; 
-margin: 1em 0;
-}
-th, td {
-padding: 0.5em 1em !important; 
-text-align: center; 
-vertical-align: middle;
-border: none; 
-}
-caption {
-caption-side: top;
-text-align: left;
-font-weight: 600;
-margin-bottom: 0.25em;
-}
-
-thead th {
-border-bottom: 2px solid #444;
-}
-tbody tr + tr td,
-tbody tr + tr th {
-border-top: 1px solid #ccc;
-}
-tbody th[scope="row"] {
-text-align: left !important;
-}
-</style>
-
-<script>
-// 1) Add scope="col" to header cells that are missing it
-document.querySelectorAll('table thead th:not([scope])').forEach(th => {
-  th.setAttribute('scope', 'col');
-});
-
-// 2) If a table has no caption, create a visually-hidden one
-//    using the nearest preceding heading as a fallback.
-document.querySelectorAll('table').forEach((tbl, idx) => {
-  if (!tbl.querySelector('caption')) {
-    let captionText = '';
-    // walk backwards to find a previous heading
-    let prev = tbl.previousElementSibling;
-    while (prev && !/^H[1-6]$/.test(prev.tagName)) prev = prev.previousElementSibling;
-    if (prev) captionText = prev.textContent.trim();
-    if (!captionText) captionText = 'Data table ' + (idx + 1);
-
-    const cap = document.createElement('caption');
-    cap.textContent = captionText;
-    cap.style.position = 'absolute';
-    cap.style.left = '-9999px';
-    cap.style.height = '1px';
-    cap.style.width = '1px';
-    cap.style.overflow = 'hidden';
-    tbl.insertBefore(cap, tbl.firstChild);
-  }
-});
-</script>
-
-<style>
-
-pre.numberSource code > span > a:first-child::before { color: #6b6b6b !important; } 
-pre.numberSource { border-left: 1px solid #6b6b6b !important; }
-
-code span.op, code span.sc { color: #7a2d00 !important; font-weight: 700; } 
-</style>
-
-<style>
-table thead th { padding-right: 1rem !important; white-space: nowrap; }
-</style>
-
-
-<script>
-  // Add missing scope attributes to table headers for accessibility checkers
-  document.querySelectorAll("table thead th:not([scope])").forEach(th => {
-    th.setAttribute("scope", "col");
-  });
-
-  // (Optional safety) If any header cells are in tbody (rare), set them too
-  document.querySelectorAll("table tbody th:not([scope])").forEach(th => {
-    th.setAttribute("scope", "row");
-  });
-</script>
-
-<style>
-
-.text-muted,
-.help-block,
-.dropdown-header,
-.navbar-default .navbar-nav > li > a,
-.navbar-default .navbar-text,
-.navbar-default .navbar-brand {
-color: #444 !important;
-}
-
-.form-control::placeholder { color: #555 !important; opacity: 1 !important; }
-.form-control::-webkit-input-placeholder { color: #555 !important; }
-.form-control::-moz-placeholder { color: #555 !important; opacity: 1 !important; }
-.form-control:-ms-input-placeholder { color: #555 !important; }
-.form-control::-ms-input-placeholder { color: #555 !important; }
-</style>
-
-<style>
-table caption,
-p.caption,
-.caption,
-.table caption {
-color: #111 !important;
-opacity: 1 !important;
-}
-</style>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll("table").forEach(function (tbl) {
-    tbl.querySelectorAll("thead th").forEach(function (th) {
-      if (!th.hasAttribute("scope")) th.setAttribute("scope", "col");
-    });
-    tbl.querySelectorAll("tbody th").forEach(function (th) {
-      if (!th.hasAttribute("scope")) th.setAttribute("scope", "row");
-    });
-  });
-});
-</script>
 
 <style type="text/css">
 code{white-space: pre-wrap;}
@@ -649,211 +467,271 @@ line. Doing so will prevent your homework from being
 graded.</em></strong></p>
 <hr />
 <hr />
-<div id="use-the-urls-to-access-the-data.-no-local-files-allowed." class="section level3">
-<h3>Use the URLs to access the data. No local files allowed.</h3>
 </div>
 </div>
-</div>
-<div id="loading-and-looking-at-the-data" class="section level1">
-<h1>Loading and looking at the data</h1>
-<p>We will be using one of the Wooldridge data sets for this problem
-set.</p>
-<p>To install the wooldridge package, use the following:
-“install.packages(‘wooldridge’)”. Simply remove the “#” in the below
-code box.</p>
-<p>If you already have it installed, add it to your notebook
-library.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co">#install.packages(&#39;wooldridge&#39;)</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(wooldridge)</span></code></pre></div>
-<p>Once you have the wooldridge package loaded, you can start to use the
-datasets by using the following code to load the data and then attach
-it:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&#39;meap01&#39;</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">attach</span>(meap01)</span></code></pre></div>
-<p>Attaching the dataframe means you can refer to objects in the
-dataframe by simply their name, instead of needing to refer to the
-dataframe each time. This is useful when working with a single dataframe
-at a time.</p>
-<p>Meap01 is a dataframe with 1,823 observations on 11 variables:</p>
+<div id="data-and-packages" class="section level1">
+<h1>Data and packages</h1>
+<p>For the first part of the assignemnt, we will use the
+<code>meap01</code> dataset from the <code>wooldridge</code> package. It
+contains data for 1,823 Michigan elementary schools. The variables used
+here are:</p>
 <ul>
-<li><p>dcode: district code</p></li>
-<li><p>bcode: building code</p></li>
-<li><p>math4: percent students satisfactory, 4th grade math</p></li>
-<li><p>read4: percent students satisfactory, 4th grade reading</p></li>
-<li><p>lunch: percent students eligible for free or reduced
-lunch</p></li>
-<li><p>enroll: school enrollment</p></li>
-<li><p>expend: total spending, $</p></li>
-<li><p>exppp: expenditures per pupil: expend/enroll</p></li>
-<li><p>lenroll: log(enroll)</p></li>
-<li><p>lexpend: log(expend)</p></li>
-<li><p>lexppp: log(exppp)</p></li>
+<li><code>math4</code>: percentage of fourth-grade students rated
+satisfactory in mathematics</li>
+<li><code>exppp</code>: expenditures per pupil, in dollars</li>
+<li><code>lexppp</code>: natural logarithm of expenditures per
+pupil</li>
+<li><code>lunch</code>: percentage of students eligible for free or
+reduced-price lunch</li>
+<li><code>enroll</code>: school enrollment</li>
 </ul>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Install the package once if needed:</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co"># install.packages(&quot;wooldridge&quot;)</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(wooldridge)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;meap01&quot;</span>)</span></code></pre></div>
 <hr />
 <p><strong>#1</strong></p>
-<p><strong>Problem:</strong> Using the “meap01” data:</p>
-<ol style="list-style-type: lower-alpha">
-<li><p>Compute the sample means of <code>exppp</code> and
-<code>math4</code>.</p></li>
-<li><p>Construct mean-centered variables:</p>
-<p><span class="math inline">\(x_i^c = exppp_i - \bar{exppp}, \quad
-y_i^c = math4_i - \bar{math4}\)</span></p></li>
+<p><strong>Visualizing and quantifying the relationship</strong></p>
+<ol style="list-style-type: decimal">
+<li>Construct a scatterplot with <code>exppp</code> on the horizontal
+axis and <code>math4</code> on the vertical axis. Add a fitted linear
+regression line and informative axis labels.</li>
+<li>In 2–3 sentences, describe the direction, strength, and shape of the
+relationship. Note any observations that might have unusually high
+influence. Is there a high correlation by sight? What about when you
+calculate the correlation?</li>
 </ol>
-<p>Assign these values to <code>xc</code> and <code>yc</code>.</p>
-<ol start="3" style="list-style-type: lower-alpha">
-<li>Verify numerically that <span class="math inline">\(\sum_i x_i^c =
-0\)</span> and <span class="math inline">\(\sum_i y_i^c =
-0\)</span>.</li>
-</ol>
+<p>Save your written response as <code>prob01</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co">#xc &lt;-</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#yc &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># put your plot code here</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co"># prob01 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#2</strong></p>
-<p><strong>Problem:</strong></p>
-<ol style="list-style-type: lower-alpha">
-<li>Using the centered variables, compute</li>
+<p>Consider the population regression model</p>
+<p><span class="math display">\[
+math4_i = \beta_0 + \beta_1 exppp_i + u_i.
+\]</span></p>
+<p>In 4–6 sentences:</p>
+<ol style="list-style-type: decimal">
+<li>Explain the economic meaning of <span class="math inline">\(\beta_0\)</span> and <span class="math inline">\(\beta_1\)</span>, including their units. Are they
+population parameters or sample estimates?</li>
+<li>Explain what the error term <span class="math inline">\(u_i\)</span>
+contains. Give two concrete examples of factors that could belong in
+<span class="math inline">\(u_i\)</span>.</li>
 </ol>
-<p><span class="math inline">\(\hat\beta_1 = \frac{\sum_i x_i^c
-y_i^c}{\sum_i (x_i^c)^2}\)</span></p>
-<p>Assign your value to <code>b1_hat</code>.</p>
-<ol start="2" style="list-style-type: lower-alpha">
-<li>Then, using your calculated value for <span class="math inline">\(\hat\beta_1\)</span>, calculate <span class="math inline">\(\hat\beta_0\)</span>:</li>
-</ol>
-<p><span class="math inline">\(\hat{\beta_0} = \bar{y} -
-\hat{\beta_1}\bar{x}\)</span>.</p>
-<p>Assign your value to <code>b0_hat</code>.</p>
+<p>Save your response as a string named <code>prob02</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co">#b1_hat &lt;-</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#b0_hat &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># prob02 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#3</strong></p>
-<p><strong>Problem:</strong></p>
-<p>Estimate the regression</p>
-<p><span class="math inline">\(math4 = \beta_0 + \beta_1 exppp +
-u\)</span></p>
-<p>Report <span class="math inline">\(\hat\beta_0\)</span>, <span class="math inline">\(\hat\beta_1\)</span>, standard errors, and <span class="math inline">\(R^2\)</span>.</p>
-<p>This R code should be written in the code chunk of the
-<strong>Answer</strong> section below. Save your model results to
-<code>prob03</code>.</p>
+<p><strong>Calculating the OLS estimators by hand</strong></p>
+<p>Let <span class="math inline">\(x_i=exppp_i\)</span> and <span class="math inline">\(y_i=math4_i\)</span>.</p>
+<ol style="list-style-type: decimal">
+<li>Compute the sample means <span class="math inline">\(\bar{x}\)</span> and <span class="math inline">\(\bar{y}\)</span>.</li>
+<li>Create the centered variables <span class="math inline">\(x_i^c=x_i-\bar{x}\)</span> and <span class="math inline">\(y_i^c=y_i-\bar{y}\)</span>; save them as
+<code>xc</code> and <code>yc</code>.</li>
+<li>Verify numerically that <span class="math inline">\(\sum_i
+x_i^c=0\)</span> and <span class="math inline">\(\sum_i
+y_i^c=0\)</span>.</li>
+<li>Calculate</li>
+</ol>
+<p><span class="math display">\[
+\hat\beta_1=\frac{\sum_i(x_i-\bar{x})(y_i-\bar{y})}{\sum_i(x_i-\bar{x})^2}
+\]</span></p>
+<p>and</p>
+<p><span class="math display">\[
+\hat\beta_0=\bar{y}-\hat\beta_1\bar{x}.
+\]</span></p>
+<p>Save the estimates as <code>b1_hat</code> and <code>b0_hat</code>. Do
+not use <code>lm()</code> in this problem.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co">#prob03 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># xc &lt;-</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co"># yc &lt;-</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co"># b1_hat &lt;-</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># b0_hat &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#4</strong></p>
-<p><strong>Problem:</strong></p>
-<p>Construct a 95% confidence interval for <span class="math inline">\(\beta_1\)</span> <strong>manually</strong>
-using</p>
-<p><span class="math inline">\(\hat\beta_1 \pm t_{0.975,\,n-2} \cdot
-SE(\hat\beta_1)\)</span></p>
-<p>Verify it matches <code>confint()</code>.</p>
-<p>This R code should be written in the code chunk of the
-<strong>Answer</strong> section below.</p>
-<p>Save your confidence interval as a vector to <code>prob04</code>,
-with the lower bound of the confidence interval coming first.</p>
+<p>Estimate</p>
+<p><span class="math display">\[
+math4_i = \beta_0 + \beta_1 exppp_i + u_i
+\]</span></p>
+<p>using <code>lm()</code> and save the fitted model as
+<code>prob04_model</code>.</p>
+<ol style="list-style-type: decimal">
+<li>Check that the estimated intercept and slope match your calculations
+in Problem 3 (small differences from rounding are acceptable).</li>
+<li>Interpret the slope in context. What would be the predicted change
+in <code>math4</code> associated with a $500 increase in expenditures
+per pupil?</li>
+</ol>
+<p>Save the written responses to parts 2 and 3 as a string to
+<code>prob04</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co">#prob04 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># prob04_model &lt;-</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co"># prob04 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#5</strong></p>
-<p><strong>Problem:</strong></p>
-<p>Test</p>
-<p><span class="math inline">\(H_0: \beta_1 = 0 \quad vs \quad H_1:
-\beta_1 \neq 0\)</span></p>
-<p>State the test statistic and p-value. Assign the values to
-<code>t_stat</code> and <code>p_two</code>.</p>
-<p>This R code should be written in the code chunk of the
-<strong>Answer</strong> section below.</p>
-<p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co">#t_stat &lt;-</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#p_two &lt;-</span></span></code></pre></div>
-<hr />
-<p><strong>#6</strong></p>
-<p><strong>Problem:</strong></p>
-<ol style="list-style-type: lower-alpha">
-<li>Now test <span class="math inline">\(H_0: \beta_1 \le 0 \quad vs
-\quad H_1: \beta_1 &gt; 0\)</span></li>
+<p>For <code>prob04_model</code>, calculate the following manually from
+<code>math4</code>, <code>yhat</code>, and <code>uhat</code>:</p>
+<p><span class="math display">\[
+TSS=\sum_i(y_i-\bar{y})^2, \qquad
+ESS=\sum_i(\hat{y}_i-\bar{y})^2, \qquad
+SSR=\sum_i\hat{u}_i^2,
+\]</span></p>
+<p><span class="math display">\[
+R^2=1-\frac{SSR}{TSS}, \qquad
+SER=\sqrt{\frac{SSR}{n-2}}.
+\]</span></p>
+<ol style="list-style-type: decimal">
+<li>Save these five values in a named vector called
+<code>prob05_fit</code>. Put them in the order: <span class="math inline">\(TSS, ESS, SSR, R^2, SER\)</span>.</li>
+<li>Interpret <span class="math inline">\(R^2\)</span> and the SER in
+context. Be precise about their units. Make sure your <span class="math inline">\(R^2\)</span> matches the value reported by your
+model <code>summary()</code>.</li>
 </ol>
-<p>Manually compute the one-sided p-value. Assign the value to
-<code>p_one</code>.</p>
-<ol start="2" style="list-style-type: lower-alpha">
-<li>Explain why it differs from the two-sided case.</li>
-</ol>
-<p>Assign your response to this question as a string to
-<code>prob06</code>.</p>
-<p>This R code should be written in the code chunk of the
-<strong>Answer</strong> section below.</p>
+<p>Save your interpretation as <code>prob05</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co">#p_one &lt;-</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#prob06 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># prob05_fit &lt;-</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co"># prob05 &lt;-</span></span></code></pre></div>
 <hr />
+<p><strong>#6</strong> .</p>
+<p>The OLS slope can be written as</p>
+<p><span class="math display">\[
+\hat\beta_1=\beta_1+
+\frac{\sum_i(x_i-\bar{x})u_i}{\sum_i(x_i-\bar{x})^2}.
+\]</span></p>
+<p>In 6–8 sentences:</p>
+<ol style="list-style-type: decimal">
+<li>Use this expression to explain why <span class="math inline">\(E(u_i\mid X_i)=0\)</span> implies that <span class="math inline">\(\hat\beta_1\)</span> is unbiased.</li>
+<li>Explain why <span class="math inline">\(\hat\beta_1\)</span> varies
+from sample to sample even when <span class="math inline">\(\beta_1\)</span> is fixed.</li>
+<li>Explain how increasing the sample size generally affects the
+sampling distribution of <span class="math inline">\(\hat\beta_1\)</span>.</li>
+<li>Distinguish unbiasedness from consistency.</li>
+</ol>
+<p>Save your response as a string named <code>prob06</code>.</p>
+<p><strong>Answer:</strong></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># prob06 &lt;-</span></span></code></pre></div>
+<hr />
+</div>
+<div id="data-and-packages-1" class="section level1">
+<h1>Data and packages</h1>
+<p>For the rest of the homework, we will use the <code>bwght</code>
+dataset from the <code>wooldridge</code> package. It contains data on
+births in Pennsylvania. The variables used here are:</p>
+<ul>
+<li><code>bwght</code>: infant birth weight, in ounces</li>
+<li><code>smoker</code>: indicator equal to 1 if the mother smoked
+during pregnancy and 0 otherwise</li>
+<li><code>cigs</code>: average number of cigarettes smoked per day
+during pregnancy</li>
+<li><code>faminc</code>: family income, in thousands of dollars</li>
+<li><code>parity</code>: birth order of the child</li>
+</ul>
+<p>Use homoskedasticity-only standard errors unless otherwise
+specified.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Install these packages once if needed:</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co"># install.packages(c(&quot;sandwich&quot;, &quot;lmtest&quot;))</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="fu">library</span>(sandwich)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">library</span>(lmtest)</span></code></pre></div>
+<pre><code>## Loading required package: zoo</code></pre>
+<pre><code>## 
+## Attaching package: &#39;zoo&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;bwght&quot;</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>bwght<span class="sc">$</span>smoker <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(bwght<span class="sc">$</span>cigs <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span></code></pre></div>
 <p><strong>#7</strong></p>
-<p><strong>Problem:</strong> Using your estimated level model from
-Question 2:</p>
-<ol style="list-style-type: lower-alpha">
-<li><p>Compute the predicted change in <code>math4</code> if
-<code>exppp</code> increases by <strong>$500</strong>. Save this answer
-to <code>change_500</code>.</p></li>
-<li><p>Compute the predicted change if <code>exppp</code>
-<strong>decreases</strong> by <strong>$1,000</strong>. Save this answer
-to <code>change_minus_1000</code>.</p></li>
-<li><p>Explain whether linearity is a reasonable approximation over this
-range. Save this answer as a string to <code>prob07</code>.**</p></li>
+<ol style="list-style-type: decimal">
+<li>Compute the mean birth weight for nonsmokers
+(<code>smoker = 0</code>) and smokers (<code>smoker = 1</code>). Save
+the two means in a named vector called <code>prob07_means</code>.</li>
+<li>Estimate</li>
 </ol>
-<p>This R code should be written in the code chunk of the
-<strong>Answer</strong> section below.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co">#change_500 &lt;-</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#change_minus_1000 &lt;-</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#prob07 &lt;-</span></span></code></pre></div>
+<p><span class="math display">\[
+bwght_i=\beta_0+\beta_1 smoker_i+u_i
+\]</span></p>
+<p>and save the model as <code>prob07_model</code>. 3. Show numerically
+how the two regression coefficients are related to the two group means.
+4. Interpret the intercept and slope in context and include their
+units.</p>
+<p>Save your written response as <code>prob07</code>.</p>
+<p><strong>Answer:</strong></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># prob07_means &lt;-</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co"># prob07_model &lt;-</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co"># prob07 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#8</strong></p>
-<p><strong>Problem:</strong></p>
-<p>Estimate</p>
-<p><span class="math inline">\(math4 = \beta_0 + \beta_1 \ln(exppp) +
-u\)</span></p>
-<ol style="list-style-type: lower-alpha">
-<li><p>Compute the predicted change in <code>math4</code> for a 10%
-increase in spending. Save this to <code>pred_10pct</code>**</p></li>
-<li><p>Interpret <span class="math inline">\(\hat\beta_1\)</span> as a
-semi-elasticity. Compare this prediction to Question 4. Save this answer
-as a string to <code>prob08</code>.</p></li>
+<p>For the two smoking groups:</p>
+<ol style="list-style-type: decimal">
+<li>Compute each group’s sample size and sample variance of
+<code>bwght</code>.</li>
+<li>Manually calculate the standard error of the difference in sample
+means and save this standard error as <code>prob08_se</code>:</li>
 </ol>
-<p>This R code should be written in the code chunk of the
-<strong>Answer</strong> section below.</p>
+<p><span class="math display">\[
+SE(\bar{Y}_1-\bar{Y}_0)
+=\sqrt{\frac{s_1^2}{n_1}+\frac{s_0^2}{n_0}}.
+\]</span></p>
+<p><span class="math display">\[
+H_0:\beta_1=0
+\qquad \text{against} \qquad
+H_1:\beta_1\neq 0.
+\]</span></p>
+<ol start="3" style="list-style-type: decimal">
+<li>Using the calculated standard error and the <span class="math inline">\(\hat{\beta}_1\)</span> from the model in problem
+7, calculate the test statistic and its associated two-sided
+large-sample p-value manually for the test above and save the p-value as
+<code>prob08_p</code>. (Hint: use <code>pnorm()</code>).</li>
+<li>State the decision at the 5% significance level and interpret the
+evidence in context.</li>
+</ol>
+<p>Save your written conclusion as <code>prob08</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co">#pred_10pct &lt;-</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#prob08 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># prob08_se &lt;-</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co"># prob08_t &lt;- </span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co"># prob03_p &lt;-</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co"># prob03 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#9</strong></p>
-<p><strong>Problem:</strong></p>
-<p>Compare the <strong>level</strong> and <strong>log</strong> models
-using:**</p>
-<ul>
-<li><span class="math inline">\(R^2\)</span></li>
-<li>Residual standard error</li>
-<li>Economic interpretability</li>
-</ul>
-<p>Which model do you prefer and why?</p>
-<p>This R code should be written in the code chunk of the
-<strong>Answer</strong> section below. Assign the answer as a string to
-<code>prob09</code>.</p>
+<p>Test whether smoking is associated with <strong>lower</strong>
+average birth weight:</p>
+<p><span class="math display">\[
+H_0:\beta_1\geq 0
+\qquad \text{against} \qquad
+H_1:\beta_1&lt;0.
+\]</span></p>
+<ol style="list-style-type: decimal">
+<li>Calculate the one-sided large-sample p-value using the t-statistic
+from Problem 8; save it as <code>prob09_p</code>.</li>
+<li>State the decision at the 1% significance level.</li>
+<li>Explain why this p-value is different from the two-sided p-value and
+why the direction of the alternative hypothesis must be picked before
+looking at the estimate.</li>
+</ol>
+<p>Save your explanation as <code>prob09</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co">#prob09 &lt;-</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># prob09_p &lt;-</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co"># prob09 &lt;-</span></span></code></pre></div>
 <hr />
 <p><strong>#10</strong></p>
-<p><strong>Problem:</strong></p>
-<p>In <strong>5–7 sentences</strong>, explain the relationship
-between:</p>
-<ul>
-<li>confidence intervals</li>
-<li>p-values</li>
-<li>hypothesis tests</li>
-</ul>
-<p>Focus on how they provide equivalent information (e.g., CI-based
-rejection vs p-value-based rejection).</p>
-<p>This R code should be written as a string in the code chunk of the
-Answer section below. The string should be assigned to
-<code>prob10</code>.</p>
+<p>Answer the following in 7–9 sentences:</p>
+<ol style="list-style-type: decimal">
+<li>What is the sampling distribution of an OLS estimator?</li>
+<li>What does its standard error measure?</li>
+<li>What does the central limit theorem contribute to large-sample
+regression inference?</li>
+<li>Why does Stock and Watson emphasize heteroskedasticity-robust
+standard errors in observational economic data?</li>
+<li>Distinguish statistical significance from economic importance, using
+the smoking coefficient as an example.</li>
+</ol>
+<p>Save your response as a string named <code>prob10</code>.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co">#prob10 &lt;- </span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># prob10 &lt;-</span></span></code></pre></div>
 <hr />
 </div>
 

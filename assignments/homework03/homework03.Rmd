@@ -238,7 +238,7 @@ For the rest of the homework, we will use the `bwght` dataset from the `wooldrid
 
 Use homoskedasticity-only standard errors unless otherwise specified.
 
-```{r packages}
+```{r packages2}
 # Install these packages once if needed:
 # install.packages(c("sandwich", "lmtest"))
 
