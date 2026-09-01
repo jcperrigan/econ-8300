@@ -6,8 +6,8 @@ output:
     toc_depth: 2
     df_print: kable
     highlight: tango
-#    includes:
-#      in_header: wcag-overrides.html
+    includes:
+      in_header: wcag-overrides.html
 ---
 
 
