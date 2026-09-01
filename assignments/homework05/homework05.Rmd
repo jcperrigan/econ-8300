@@ -1,0 +1,289 @@
+---
+title: "ECON-8300"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Homework05
+
+Grading Rubric (per question):  
+2 points if complete and correct  
+0 points otherwise 
+
+
+## Retrieving your work
+
+This and all future homework .Rmd files are written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing. 
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment. 
+
+
+## Submitting your work
+
+When you upload your files to Canvas, you are to submit ***two*** files:
+
+a. Your reproducible document file (.Rmd) which should be saved as homework##-ID.Rmd. For example, my homework01 file would be saved as homework01-jperrigan.Rmd.
+
+b. Your rendered reproducible document file (.html) which should be saved as homework##-ID.html. For example, my homework01 file would be saved as homework01-jperrigan.html.
+
+Your ID is your Canvas username. It is also the text before the "@" symbol in your UNO email address.
+
+You have an unlimited number of submissions, but only the  latest submission will be viewed and graded. **Proper means that the file is correctly named and formatted. Latest means that the file is the most recent submission prior to the deadline. Remember the .Rmd file needs to render properly to .html before submitting.** 
+
+
+***
+
+All students are expected to complete all problems. If any problem asks you a particular question, be sure to answer it completely (with code, written sentences, or both).
+
+***Do not change anything in this file above the double line. Doing so will prevent your homework from being graded.***
+
+***
+***
+
+We will use the `gpa2` dataset from the `wooldridge` package. The outcome is cumulative college GPA (`colgpa`). Before beginning, use `?gpa2` to review the definitions and units of the variables.
+
+```{r packages}
+library(tidyverse)
+library(wooldridge)
+
+data("gpa2")
+
+?gpa2
+```
+
+Make sure to also load `reporting.R` for your model summaries. This R script should be saved in the same folder as your homework.
+
+```{r reporting}
+source("reporting.R")
+```
+
+Throughout the assignment, use conventional homoskedasticity-only standard errors and the following model:
+
+$$
+colgpa_i = \beta_0 + \beta_1 sat100_i + \beta_2 hsperc_i +
+\beta_3 tothrs_i + \beta_4 female_i + \beta_5 athlete_i + u_i.
+$$
+
+Here, `sat100` measures SAT scores in hundreds of points. Estimate the model once and save it as `full_model`.
+
+```{r full-model}
+# full_model <-
+```
+
+***
+
+**#1**
+
+**Problem:**
+
+1. From `full_model`, save the coefficient estimate, standard error, t statistic, and p-value for `female` as a named vector called `female_results`.
+2. Explain what the coefficient estimate and its standard error measure. Be clear about the difference between the two quantities.
+
+Assign your written answer to `prob01` as a string.
+
+**Answer:**
+
+```{r, problem01}
+# female_results <-
+# prob01 <-
+```
+
+***
+
+**#2**
+
+**Problem:**
+
+Use a 5% significance level to test
+
+$$
+H_0:\beta_{female}=0
+\qquad \text{against} \qquad
+H_1:\beta_{female}\neq 0.
+$$
+
+1. Calculate the t statistic manually from the coefficient estimate and standard error. Save it as `female_t` and verify that it matches the model output.
+2. State the decision rule using either the p-value or a critical value, then report your conclusion in context. Do not describe the estimate as causal.
+
+Assign your written answer to `prob02` as a string.
+
+**Answer:**
+
+```{r, problem02}
+# female_t <-
+# prob02 <-
+```
+
+***
+
+**#3**
+
+**Problem:**
+
+1. Construct a 95% confidence interval for $\beta_{female}$ by hand and save its endpoints as a named vector called `female_ci`. Verify your result using `confint()`.
+2. Interpret the interval in context and explain why it leads to the same decision as the two-sided test in Problem 2.
+
+Assign your written answer to `prob03` as a string.
+
+**Answer:**
+
+```{r, problem03}
+# female_ci <-
+# prob03 <-
+```
+
+***
+
+**#4**
+
+**Problem:**
+
+Researchers claim that, holding the other regressors constant, a 100-point increase in SAT score is associated with a 0.10-point increase in college GPA. Test this claim using a two-sided hypothesis test at the 5% significance level.
+
+$$
+H_0: \beta_{sat100}=0.10 \qquad \text{against} \qquad H_1: \beta_{sat100}\neq 0.10
+$$
+
+
+using `full_model` and a 5% significance level.
+
+1. Create `sat100 = sat / 100`, re-estimate the full model using `sat100`, and calculate the t statistic for $H_0:\beta_{sat100}=0.10$. Save it as `sat_t`.
+2. Calculate the two-sided p-value, save it as `sat_p`.
+3. State your conclusion in context. Explain what rejecting or failing to reject this particular null would mean; do not reinterpret it as a test against zero.
+
+Assign your written answer to `prob04` as a string.
+
+**Answer:**
+
+```{r, problem04}
+# sat_t <-
+# sat_p <-
+# prob04 <-
+```
+
+***
+
+**#5**
+
+**Problem:**
+
+Because lower values of `hsperc` indicate a better high-school class rank, consider the one-sided test
+
+$$
+H_0:\beta_{hsperc}\geq 0
+\qquad \text{against} \qquad
+H_1:\beta_{hsperc}<0.
+$$
+
+1. Calculate the t statistic for the boundary value $\beta_{hsperc}=0$ and the appropriate one-sided p-value. Save them as a named vector called `hsperc_test`.
+2. State your conclusion at the 5% significance level and explain why the two-sided p-value printed by `summary()` is not the p-value requested here.
+
+Assign your written answer to `prob05` as a string.
+
+**Answer:**
+
+```{r, problem05}
+# hsperc_test <-
+# prob05 <-
+```
+
+***
+
+**#6**
+
+**Problem:**
+
+We want to test whether total college hours and athlete status are jointly significant after controlling for the other regressors:
+
+$$
+H_0:\beta_{tothrs}=0 \text{ and } \beta_{athlete}=0.
+$$
+
+1. Write the unrestricted and restricted population regression equations for this test. Assign both equations as a string to `prob06`.
+2. Estimate the restricted model and save it as `restricted_model`. Explain why `full_model` is the unrestricted model.
+
+**Answer:**
+
+```{r, problem06}
+# prob06 <-
+# restricted_model <-
+```
+
+***
+
+**#7**
+
+**Problem:**
+
+1. Calculate the residual sums of squares for the restricted and unrestricted models. Save them, in that order, as a named vector called `f_rss`.
+2. Identify the number of restrictions $q$, the numerator degrees of freedom, and the denominator degrees of freedom. Save them as a named vector called `f_df`.
+
+**Answer:**
+
+```{r, problem07}
+# f_rss <-
+# f_df <-
+```
+
+***
+
+**#8**
+
+**Problem:**
+
+1. Use your results from Problem 7 to calculate the F statistic manually. Save it as `partial_f`, then verify it using `anova(restricted_model, full_model)`.
+2. Calculate the p-value and state your conclusion at the 5% significance level. Explain the conclusion using the word **jointly**.
+
+Assign your written answer to `prob08` as a string.
+
+**Answer:**
+
+```{r, problem08}
+# partial_f <-
+# prob08 <-
+```
+
+***
+
+**#9**
+
+**Problem:**
+
+1. Suppose separate two-sided t-tests fail to reject both $H_0:\beta_{tothrs}=0$ and $H_0:\beta_{athlete}=0$. Explain why that wouldn't necessarily imply that the joint null in Problem 6 should also fail to be rejected.
+2. Explain one problem with replacing a single joint F-test with multiple separate t-tests.
+
+Assign your complete answer to `prob09` as a string.
+
+**Answer:**
+
+```{r, problem09}
+# prob09 <-
+```
+
+***
+
+**#10**
+
+**Problem:**
+
+1. State the null and alternative hypotheses tested by the overall F statistic reported for `full_model`. Use the model output to reach a conclusion at the 5% significance level.
+2. Explain how this overall F-test differs from the partial F-test in Problem 8, including which coefficients are tested and what the restricted model would contain.
+
+Assign your written answer to `prob10` as a string.
+
+**Answer:**
+
+```{r, problem10}
+# prob10 <-
+```
+
+
