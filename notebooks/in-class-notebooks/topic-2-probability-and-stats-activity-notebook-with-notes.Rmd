@@ -1,0 +1,531 @@
+---
+title: "In-Class Exercises Probability and Stats Review"
+output: 
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#install.packages('tidyverse')
+library(tidyverse)
+
+
+set.seed(123)
+```
+
+# 1. Random Variables & Distributions
+
+Warm‑up (no code)
+
+1. In your own words, what is a random variable?
+Variable whose value is determined by some underlying experiment, connects probability with data. Assigns some real number to an outcome in the sample space of a random experiment. 
+
+
+2. What does it mean to say a variable follows a normal distribution?
+Its values are symmetrical, bell shaped, most data are clustered around the mean, extreme values go down equally on both sides
+
+
+```{r}
+# Draw 1,000 observations from a normal distribution
+# density function
+dnorm(x = c(-1, 0, 1), mean = 0, sd = 1)
+# cumulative distribution function (takes a value and gives a percent/ probability)
+pnorm(q = 0, mean = 0, sd = 1, lower.tail = TRUE)
+# quantile function (takes a percentile and gives a value)
+qnorm(p = .5, mean = 0, sd = 1, lower.tail = TRUE)
+
+# random generation
+obs <- rnorm(n = 100000, mean = 50, sd = 10)
+head(obs)
+```
+
+
+## Task 1: Compute the mean and standard deviation of your observations manually using mean() and sd().
+
+* How close are they to the values we specified (50 and 10)?
+
+
+
+```{r}
+# calculate the mean and standard deviation
+mean(obs)
+sd(obs)
+```
+
+
+Discussion:
+
+* Why aren’t the sample values exactly 50 and 10?
+
+We're drawing a random sample, no matter how big it is there will always be an element of randomness/ variability
+
+## Task 2: Visualizing the Distribution
+
+```{r}
+# create a histogram of your simulated data
+
+#using base R
+#hist(obs)
+
+```
+
+```{r}
+# using ggplot (in tidyverse)
+obs_data <- data.frame(obs = obs)
+
+obs_plot <- ggplot(obs_data, aes(x = obs)) +
+  geom_histogram(
+    bins = 30,
+    fill = "steelblue",
+    color = "white"
+  ) +
+  labs(
+    title = "Distribution of Observations",
+    x = "Observed value",
+    y = "Frequency",
+    alt = paste(
+      "Histogram of 100,000 observations drawn from a normal distribution",
+      "with a mean of 50 and a standard deviation of 10.",
+      "The distribution is bell-shaped and centered near 50."
+    )
+  ) +
+  theme_minimal()
+
+obs_plot
+```
+
+Group discussion questions:
+
+* Is the distribution symmetric?
+Yes, it does look symmetric
+
+* Where is most of the mass concentrated?
+Around 50 :) 
+
+
+# 2. Probability & Events
+
+
+Concept check
+
+Suppose:
+
+* $P(A) = 0.4$
+
+* $P(B) = 0.3$
+
+* $P(A \cap B) = 0.1$ 
+"intersection / and"
+The probability that both A and B happen
+
+* Compute $P(A \cup B)$.
+"union/ or"
+The probability that either A or B happen
+
+
+General additive rule: $P(A \cup B) = P(A) + P(B) - P(A \cap B)$
+
+Formula (independent events): $P(A \cap B) = P(A) \times P(B)$
+
+If A and B are mutually exclusive, $P(A \cup B) = P(A) + P(B)$
+
+Formula (dependent events): $P(A \cap B) = P(A) \times P(B|A)$
+
+* Are A and B independent? Why or why not?
+
+```{r}
+# P(A or B)
+.4 + .3 - .1
+
+# are A and B independent
+#P(A and B) 
+.4 * .3
+
+```
+
+
+.12 != .1, so $P(A \cap B)$ are not independent 
+
+If $P(A)$ and $P(B)$ were independent, then $P(A)P(B)$ would equal $P(A \cap B)$ but they don't. 
+
+
+
+
+## Task 3: Empirical Probabilities via Simulation
+
+```{r}
+# Roll a die 10,000 times and save the sample
+set.seed(123)
+rolls <- sample(x = 1:6, size = 10000, replace = TRUE)
+
+
+# Calculate the probability of rolling a 6 from your sample
+# == (test if TRUE)
+# != (test if FALSE)
+mean(rolls == 6)
+
+
+```
+
+
+Next:
+
+* Estimate the probability of rolling an even number from your sample.
+
+* Estimate P(roll ≥ 4).
+
+```{r}
+# probability of rolling an even number
+# %% 2 
+mean(rolls %% 2 == 0)
+
+# probability P(roll >= 4)
+mean(rolls >= 4)
+```
+
+
+Discussion:
+
+* Why do these values get closer to the theoretical probabilities as sample size increases?
+
+Law of large numbers: as n increases, observed/ empirical values converge to theoretical probabilities
+
+# 3. Law of Large Numbers
+
+## Task 4: Convergence of Sample Means
+
+Generate two samples, one of size 10 and one of size 5,000.
+
+Each of these samples should draw from the 
+
+```{r}
+# Generate increasing sample sizes
+n <- seq(10, 5000, by = 10)
+
+means <- sapply(n, function(i) mean(rnorm(i, 50, 10)))
+```
+
+```{r}
+# using base R to create the plot
+
+#plot(n, means, type = "l",
+#main = "Law of Large Numbers",
+#xlab = "Sample size",
+#ylab = "Sample mean")
+#abline(h = 50, col = "red")
+```
+
+```{r}
+# using ggplot to create the plot
+lln_plot <- ggplot(
+  data.frame(n = n, means = means),
+  aes(x = n, y = means)
+) +
+  geom_line(color = "steelblue", linewidth = 0.8) +
+  geom_hline(
+    yintercept = 50,
+    color = "red",
+    linewidth = 0.8
+  ) +
+  labs(
+    title = "Law of Large Numbers",
+    x = "Sample size",
+    y = "Sample mean",
+    alt = paste(
+      "Line plot illustrating the law of large numbers.",
+      "As the sample size increases, the sample mean converges toward",
+      "the population mean of 50, shown by a red horizontal line."
+    )
+  ) +
+  theme_minimal()
+
+lln_plot
+
+```
+
+Law of large numbers: as n grows, $\bar{x}$ converges to $\mu$ (sample value converges to population value)
+
+Central limit theorem: for a big enough sample, the sampling distribution of the $\bar{x}$ is approximately normal.
+
+Questions
+
+1. What happens to the sample mean as n grows?
+
+Sample mean oscillates pretty wildly at small sample sizes, then stabilizes closer to the population mean at larger sample sizes (LLN)
+
+2. Why does this matter for empirical research?
+Large samples give reliable estimates (foundation of stat. inference)
+
+
+# 4. Central Limit Theorem
+
+## Task 5: Sampling Distribution of the Mean
+
+```{r}
+# Draw 1000 sample means from a skewed distribution
+sample_means <- replicate(10000, mean(rexp(40)))
+
+
+# create a histogram of the sample means
+# using base R
+
+#hist(sample_means)
+
+```
+
+```{r}
+# using ggplot to create the histogram
+
+sample_means_data <- data.frame(sample_means = sample_means)
+
+ggplot(sample_means_data, aes(x = sample_means)) +
+  geom_histogram(
+    bins = 30,
+    fill = "steelblue",
+    color = "white"
+  ) +
+  labs(
+    title = "Sampling Distribution of the Sample Mean",
+    x = "Sample mean",
+    y = "Frequency",
+    alt = paste(
+      "Histogram of 10,000 sample means, each calculated from 40",
+      "observations drawn from an exponential distribution.",
+      "The sampling distribution is approximately bell-shaped and",
+      "centered near 1."
+    )
+  ) +
+  theme_minimal()
+```
+
+Group discussion
+
+* Is the original distribution normal?
+No, the original distribution is an exponential distribution
+
+
+* Is the sampling distribution approximately normal?
+The sampling distribution of the mean is approximately normal 
+
+
+* Why is this result important for inference?
+This justifies using normal based inference even when the data aren't normal
+
+CLT: for a bit enough sample size, the sampling distribution of the $\bar{x}$ is approximately normal.
+
+
+
+
+# 5. Descriptive Statistics
+
+## Task 6: Working with Real Data
+
+```{r}
+# add the mtcars data to your R session
+
+cars <- mtcars
+
+# looking at the data description
+?mtcars
+```
+
+Next:
+
+* Compute mean, median, and standard deviation of `mpg`.
+
+* Interpret each statistic.
+
+```{r}
+# mean
+mean(cars$mpg)
+
+# median
+median(cars$mpg)
+
+# sd
+sd(cars$mpg)
+```
+
+
+
+## Task 7: Group Comparisons
+
+
+```{r}
+# Compare the mean mpg for automatic vs manual transmission
+# we will use the dplyr package from tidyverse
+cars |>
+  group_by(am) |>
+  summarise(mean_value = mean(mpg, na.rm = TRUE))
+```
+
+Questions:
+
+* Which group has higher fuel efficiency?
+Manual transmission has higher fuel efficiency
+
+
+
+* Is this a causal claim? Why or why not?
+Not necessarily (correlation != causation, this is a clue we should dig closer but there could be other elements at play)
+
+# 6. Covariance & Correlation
+
+## Task 8: Correlation in Practice
+
+```{r}
+# calculate the correlation between horsepower (hp) and mpg
+cor(cars$hp, cars$mpg)
+```
+
+Questions:
+
+* Is this relationship positive or negative?
+
+Negative relationship, correlation $\approx -.78$
+
+
+* How strong is it using the correlation guidelines?
+
+Strong negative relationship
+
+
+
+## Task 9: Visualizing Correlation
+
+```{r}
+# create a scatterplot with horsepower on the x-axis and mpg on the y-axis
+# draw a regression line through the scatterplot
+
+# in base R, to run it remove the "#"
+
+#plot(
+#  cars$hp,
+#  cars$mpg,
+#  main = "Fuel Efficiency and Horsepower",
+#  xlab = "Horsepower",
+#  ylab = "Miles per gallon",
+#  pch = 19,
+#  col = "steelblue"
+#)
+
+#abline(
+#  lm(mpg ~ hp, data = cars),
+#  col = "red",
+#  lwd = 2
+#)
+
+```
+
+```{r}
+# in ggplot:
+
+ggplot(cars, aes(x = hp, y = mpg)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(
+    method = "lm",
+    formula = y ~ x,
+    se = FALSE,
+    color = "red"
+  ) +
+  labs(
+    title = "Fuel Efficiency and Horsepower",
+    x = "Horsepower",
+    y = "Miles per gallon",
+    alt = paste(
+      "Scatterplot of horsepower and fuel efficiency for 32 cars.",
+      "The fitted regression line slopes downward, indicating that",
+      "cars with greater horsepower tend to have lower fuel efficiency."
+    )
+  ) +
+  theme_minimal()
+```
+
+Discussion:
+
+* Does the plot match the correlation sign?
+
+Downward slope matches negative correlation
+
+* What patterns do you see?
+
+Let's check and see if we notice any clustering by transmission type:
+
+
+```{r}
+
+ggplot(cars, aes(x = hp, y = mpg)) +
+  geom_point(
+    aes(color = factor(am)),
+    size = 2.5
+  ) +
+  geom_smooth(
+    method = "lm",
+    formula = y ~ x,
+    se = FALSE,
+    color = "red"
+  ) +
+  scale_color_manual(
+    values = c("0" = "steelblue", "1" = "darkorange"),
+    labels = c("0" = "Automatic", "1" = "Manual")
+  ) +
+  labs(
+    title = "Fuel Efficiency and Horsepower",
+    x = "Horsepower",
+    y = "Miles per gallon",
+    color = "Transmission",
+    alt = paste(
+      "Scatterplot of horsepower and fuel efficiency for 32 cars.",
+      "Points are colored by automatic or manual transmission.",
+      "A single fitted regression line slopes downward, indicating that",
+      "cars with greater horsepower tend to have lower fuel efficiency."
+    )
+  ) +
+  theme_minimal()
+```
+
+We see that there are some clusters by transmission types.
+
+# 7. Reflection & Wrap‑Up
+
+
+* **What did simulation help you understand today?**
+
+
+* **Which concept (LLN, CLT, correlation, etc.) still feels fuzzy?**
+Note from me:
+
+These two ideas sound similar, but they answer different questions.
+
+Law of Large Numbers (LLN) asks: “What happens to ONE sample statistic when the sample gets bigger?” As your sample size increases, your sample mean gets closer to the true population mean. Focus: accuracy of a single estimate
+
+Central Limit Theorem (CLT) asks: “What does the distribution of sample means look like across MANY samples?” If you take samples a bunch of times and compute their means, those means form a distribution that becomes approximately normal, even if the original data are skewed. Focus: shape of the sampling distribution
+
+Memory trick:
+
+LLN = one sample, getting closer
+
+CLT = many samples, bell curve
+
+Why both matter: 
+
+- LLN tells us our estimate improves with more data. 
+
+- CLT tells us how that estimate behaves (distribution), which lets us build confidence intervals and hypothesis tests.
+
+* **How could these tools apply to your own research questions?**
+
+Applications to polling, A/B testing, regression, surveys
+
+
+
+
+
+
