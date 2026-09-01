@@ -1,0 +1,284 @@
+---
+title: "In-Class Activity: Further Inference in Multiple Regression"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+#library(here)
+#here::i_am("in-class-notebooks/in-class-activity-multiple-regression-inference.Rmd")
+```
+
+# Plan for today
+
+
+## Goals
+Practice the core inference ideas in multiple regression:
+
+* single-coefficient tests & confidence intervals,
+* heteroskedasticity-robust standard errors,
+* joint hypothesis testing (F-tests),
+* prediction / prediction intervals,
+* quick diagnostics (RESET, VIF).
+
+
+## Packages + data
+
+We’ll use the **gpa2** data (Wooldridge). If `wooldridge` is not installed, install it.
+
+```{r}
+need <- c("tidyverse", "wooldridge", "sandwich", "lmtest", "car", "kableExtra")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have])
+invisible(lapply(need, library, character.only = TRUE))
+#source(here("scripts", "reporting.R"))
+source("reporting.R")
+
+data("gpa2")
+
+```
+
+Quick variable recap:
+
+* `colgpa`: college GPA (dependent variable)
+* `tothrs`: total study hours
+* `athlete`: 1 if student-athlete
+* `sat`: SAT score
+
+We’ll estimate:
+
+
+$colgpa = \beta_0 + \beta_1 tothrs + \beta_2 athlete + \beta_3 sat + u$
+
+---
+
+# Task 1 — Fit the model + read the output 
+
+1. Estimate the model above and store it as `mod1`.
+2. Print the regression summary.
+3. In **1–2 sentences**, interpret **the slope on `tothrs`** in plain English.
+
+```{r, results = "asis"}
+# fit the model
+mod1 <- 
+
+# view results
+
+```
+
+**Interpretation (write here):**  
+
+
+---
+
+# Task 2 — Test a single coefficient + build a 95% CI 
+
+## 2A. Hypothesis test (two-sided)
+Test:
+
+
+$H_0:\beta_{tothrs}=0 \quad \text{vs} \quad H_1:\beta_{tothrs}\neq 0$
+
+1. Extract the estimate and the usual (homoskedastic) standard error for `tothrs` and `sat`
+2. Compute the **t statistic** by hand for `tothrs` and `sat`
+3. Compute the **two-sided p-value** using `pt()` for both variables.
+
+```{r}
+# extract beta_hat and se_hat for tothrs
+b1  <- 
+se1 <- 
+
+b2 <- 
+se2 <- 
+
+#  t statistic for H0: beta1 = 0
+t_stat1 <- 
+t_stat2 <- 
+
+#  two-sided p-value
+p_val1 <- 
+p_val2 <- 
+
+```
+
+## 2B. 95% confidence interval
+
+Construct a 95% CI for $\beta_{tothrs}$ and $\beta_{sat}$ using:
+
+$\hat\beta \pm t_{0.975, df}\cdot SE(\hat\beta)$
+
+```{r}
+# critical value
+t_crit <- 
+
+# CI endpoints
+ci1 <- 
+
+
+ci2 <- 
+
+
+```
+
+**Interpret the confidence intervals:**
+
+
+
+---
+
+# Task 3 — Robust standard errors (HC1) (Driver 2)
+
+Real data often have heteroskedasticity. Re-do inference for `tothrs` using **HC1 robust** SEs.
+
+1. Compute a robust variance-covariance matrix with `vcovHC(mod1, type="HC1")`.
+2. Use `coeftest()` to print the coefficient table with robust SEs.
+3. Compare the usual vs robust SE for `tothrs` (which is bigger? Why?).
+
+```{r}
+res_df <- tibble(
+  fitted_m1 = fitted(mod1),
+  resid_m1 = resid(mod1)
+)
+```
+
+
+```{r, fig.alt = "residuals plot for model 1"}
+# create a residual / fitted values plot for model 1 
+
+```
+
+
+
+```{r}
+# get the robust VCOV matrix
+V_hc1 <- 
+
+# get the robust coefficient test table for model 1 using coeftest()
+coeftest(mod1, vcov. = V_hc1)
+
+# compare SEs for tothrs (robust and usual)
+se1_robust <- 
+```
+
+**1–2 sentence takeaway about residuals plots and robust standard errors:**  
+
+
+---
+
+# Task 4 — Joint hypothesis test (F-test) (Driver 2)
+
+We want to test whether `tothrs` and `athlete` matter *jointly*:
+
+
+$H_0:\beta_{tothrs}=0 \ \text{and}\ \beta_{athlete}=0 \ \text{and} \beta_{female} = 0 \quad \text{vs} \quad H_1: \text{at least one is nonzero}.$
+
+## 4A. Do it “by hand” using restricted vs unrestricted SSE
+
+Steps:
+1. Fit a **restricted** model that drops `tothrs` and `athlete` and `female` (keep `sat`).
+2. Extract SSE (sum of squared residuals) for restricted and unrestricted.
+3. Compute the F statistic:
+
+
+$F = \frac{(SSE_R - SSE_U)/q}{SSE_U/(N-p)}$
+
+where $q$ is the number of restrictions $p$ is number of parameters in the unrestricted model (including intercept).
+
+```{r}
+# restricted model (only sat)
+
+# SSEs
+
+
+# pieces for F
+
+
+# F stat and p-value
+
+```
+
+## 4B. Do it with `linearHypothesis()`
+
+```{r}
+linearHypothesis()
+```
+
+**F-stat interpretation (3-4 sentences):**  
+
+
+
+---
+
+# Task 5 — Prediction + prediction interval (Driver 1)
+
+Let’s predict GPA for a hypothetical student:
+- `tothrs = 20`
+- `athlete = 0`
+- `sat = 1100`
+
+1. Create a one-row data frame called `new_student`.
+2. Compute the predicted mean GPA.
+3. Compute a **95% prediction interval**.
+
+```{r}
+# define new observation
+
+
+# point prediction
+
+
+# 95% prediction interval
+
+# 95% confidence interval (compare)
+```
+
+**Question:** Why is the *prediction interval* wider than a confidence interval for the conditional mean?  
+*(Answer in a few sentences.)*  
+
+
+
+---
+
+# Task 6 — Quick diagnostics: RESET + VIF (Driver 2)
+
+## 6A. RESET (functional form)
+
+Use `resettest()` (from `lmtest`) to check whether adding powers of fitted values suggests misspecification. First run a RESET test:
+
+```{r}
+# RESET test
+
+```
+
+**Interpretation:**  
+What do your results tell you about your model's specification? What is the RESET test doing "under the hood"?
+
+
+## 6B. Collinearity via VIF
+Compute variance inflation factors (VIF). 
+
+```{r}
+#  VIFs
+
+```
+
+**Interpretation:**  
+Why is it called a "Variance Inflation Factor"? What does the presence of multicollinearity do to the coefficients? What do your results tell you about your model?
+
+
+
+
+
+---
+
+# Wrap-up (2 minutes)
+
+1. One thing you feel solid on:
+2. One thing you want to review before the homework:

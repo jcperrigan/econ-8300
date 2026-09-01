@@ -1,29 +1,19 @@
 ---
-title: "In-Class Activity Notebook: Multiple Regression (Estimation, OVB, Inference)"
+title: "In-Class Activity Notebook: Multiple Regression (Estimation, OVB)"
 output:
   html_document:
-    toc: true
-    toc_float: true
-    df_print: paged
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-# 0. Pair programming  
-
-- **Driver**: types, runs code, narrates what you’re doing.
-- **Navigator**: reads prompts, checks logic, asks “why,” and watches for mistakes.
-- Switch roles at the marked **SWITCH** points.
-
-**What is pair programming?**
-
-It involves two distinct roles that you'll alternate between. One person is the driver, responsible for writing the code. The other is the navigator and reviews the code and offers guidance and instructions. The parts are swapped at regular intervals.
-
-Pair programming is a subject of a lot of debate, but we're going to use it today anyway, because it promotes teamwork and shared problem-solving.
-
----
 
 # 1. Learning goals
 
@@ -32,7 +22,7 @@ By the end of tonight, you should be able to:
 1. Estimate a multiple regression model with `lm()` and interpret slopes
 2. Diagnose and demonstrate omitted variable bias (OVB) using nested models  
 3. Explain what multicollinearity does (and doesn’t) do, and check it in practice  
-4. Construct confidence intervals, run hypothesis tests (including joint tests), and make predictions  
+4. Make predictions  
 
 ---
 
@@ -60,7 +50,6 @@ data(Housing)
 
 
 **Create a smaller working tibble called `h`**
-
 
 
 ```{r}
@@ -117,7 +106,6 @@ ggplot(h, aes(x = llotsize)) + #insert code for a histogram here
 
 ```
 
-**SWITCH ROLES**
 
 ---
 
@@ -224,7 +212,6 @@ plot(eff_llotsize_m3)
 summary(eff_llotsize_m3)
 ```
 
-**SWITCH ROLES**
 
 ---
 
@@ -279,27 +266,6 @@ Calculate the 95% confidence intervals for `m3`, using robust standard errors.
 Pick one coefficient whose “significance” changes (or nearly changes) when you move to robust SEs. Why might that happen?
 
 
-
-## 7.3 Joint hypothesis test (F-test)
-
-Test whether structure variables are jointly irrelevant:
-
-$H_0: bedrooms = 0,\ bathrms = 0,\ stories = 0,\ garagepl = 0$
-
-Use `linearHypothesis`.
-
-```{r}
-#use linearHypothesis to test your hypothesis
-
-```
-
-**Task 7B:**  
-Interpret the null + what rejection means in plain English.
-
-
-**SWITCH ROLES**
-
----
 
 # 8. Predictions + goodness-of-fit 
 

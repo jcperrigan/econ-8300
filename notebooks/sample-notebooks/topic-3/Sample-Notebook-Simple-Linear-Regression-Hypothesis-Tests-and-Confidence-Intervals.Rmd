@@ -5,8 +5,8 @@ output:
     toc: yes
     df_print: kable
     highlight: tango
-#    includes:
-#      in_header: wcag-overrides.html
+    includes:
+      in_header: wcag-overrides.html
 ---
 
 ```{r setup, include=FALSE}
@@ -26,7 +26,7 @@ data('bwght')
 
 This data is from the 1989 linked National Mortality Detail files, which contains a census of infant births and deaths. Here we are looking at births in Pennsylvania in 1989.
 
-Our goal is to examine the relationship between *bwght* (birth weight of infant in grams) and *cigs* (the number of cigarettes smoked daily while pregnant).
+Our goal is to examine the relationship between *bwght* (birth weight of the infant in ounces) and *cigs* (the average number of cigarettes smoked per day while pregnant).
 
 You can find more information about the dataset here: https://rdrr.io/cran/wooldridge/man/bwght.html
 
@@ -127,10 +127,10 @@ Our hypothesis test for this example is to test whether *birthweight* is the sam
 
 We can write this as:
 
-$H_0: \mu_{1, smoker = 1} - \mu_{1, smoker = 0} = 0$
-$H_1: \mu_{1, smoker = 1} - \mu_{1, smoker = 0} \neq 0$,
+$H_0: \mu_{smoker = 1} - \mu_{smoker = 0} = 0$
+$H_1: \mu_{smoker = 1} - \mu_{smoker = 0} \neq 0$,
 
-where $\mu_1$ is the population mean.
+where each $\mu$ is the population mean birth weight for the indicated group.
 
 To test this hypothesis, we need to find the *t*-statistic of the difference. The general formula for the *t*-statistic of the difference between means is:
 
@@ -166,7 +166,7 @@ $SEM_N = \sqrt{\frac{\sigma^2}{N}} = \frac{\sigma}{\sqrt{N}}$,
 
 We can use the standard error of the difference between means to test whether there is a statistically significant difference in *birthweight* when $smoker = 1$ vs. when $smoker = 0$. 
 
-To find the standard error of the difference, we need to add our standard errors together to get the pooled standard error. This pooled standard error assumes that the variances are equal (homoskedasticity):
+To find the conventional standard error of the difference, we first combine the two group variances into a pooled variance estimate. This pooled standard error assumes that the population variances are equal (homoskedasticity):
 
 $SE_p = \sqrt{s^2_{p}(\frac{1}{n_1} + \frac{1}{n_2})}$, 
 
@@ -227,7 +227,7 @@ n_smoker_false
 
 Finally, we plug those values into the equation for the standard error of the difference. We are using the standard error of the pooled two-sample t-test, which assumes homoeskedasticity, or equal variance, between the two samples. 
 
-The reason we're doing this is because this is one of the Gauss-Markov assumptions and is an assumption made when using ```lm()``` in R, unless we specify otherwise. We will return to more questions around homoskedasticity later!
+Homoskedasticity is used to derive the conventional OLS standard errors reported by `summary(lm(...))`. It is not required for OLS coefficient estimates to be unbiased, but it is required for those conventional standard errors to be valid. We will return to heteroskedasticity-robust standard errors later!
 
 $SE = \sqrt{s^2_{p}(\frac{1}{n_1} + \frac{1}{n_2})}$, 
 
@@ -278,13 +278,13 @@ t_stat <- mean_diff / SE_diff
 cat('The difference between the means is', mean_diff, '; the standard error of the difference is', SE_diff, '; the t-statistic of the difference is', t_stat)
 ```
 
-The *t*-statistic is greater than the two-sided critical value of 1.96 (note, using the normal distribution, we'll also check using the t-distribution); the difference between the means of *birthweight* is therefore statistically significant at 95%.
+The absolute value of the *t*-statistic is greater than the two-sided critical value from the *t*-distribution. Equivalently, its two-sided *p*-value is below 0.05. We therefore reject the null hypothesis of no population difference at the 5% significance level.
 
 # Confidence Intervals
 
-Another way to look at hypothesis testing is by constructing confidence intervals. Confidence intervals incorporate the uncertainty and sample error to create a range of values the actual population value is likely to fall within.
+Another way to conduct inference is by constructing confidence intervals. A confidence interval uses the estimate, its standard error, and a critical value to quantify sampling uncertainty.
 
-For a 95% confidence interval (meaning we're 95% confident that the true value of the difference in *birthweight* lies in this range of values), we can use the standard error of the difference in means plus the 95% critical value.
+For a 95% confidence interval, we use the estimated difference in means plus or minus the standard error multiplied by the appropriate critical value. If we repeatedly drew samples and constructed intervals using this procedure, approximately 95% of those intervals would contain the true population difference.
 
 ```{r}
 alpha <- .05
@@ -295,10 +295,10 @@ t_critical_value <- qt(p, df)
 lower_ci_t <- mean_diff - t_critical_value * SE_diff
 upper_ci_t <- mean_diff + t_critical_value * SE_diff
 
-cat('The t-distribution critical value is', t_critical_value, 'and we are 95% confidence the difference in birthweight is between', lower_ci_t, 'and', upper_ci_t)
+cat('The t-distribution critical value is', t_critical_value, 'and the 95% confidence interval for the difference in birthweight is', lower_ci_t, 'to', upper_ci_t)
 ```
 
-The confidence interval does not include zero, which tells us we can be 95% confident that there is a difference in birthweight in the population (that the difference in birthweight does not equal zero). 
+The confidence interval does not include zero, so a two-sided test rejects the null hypothesis of no population difference at the 5% significance level.
 
 We could also use the critical value from the normal distribution for an approximation that does not take the degrees of freedom from our data into account. If we do that, we get the following confidence interval:
 
@@ -306,7 +306,7 @@ We could also use the critical value from the normal distribution for an approxi
 lower_ci <- mean_diff - 1.96 * SE_diff
 upper_ci <- mean_diff + 1.96 * SE_diff
 
-cat('The normal distribution critical value is 1.96 and we are 95% confidence the difference in birthweight is between', lower_ci, 'and', upper_ci)
+cat('Using the normal critical value of 1.96, the approximate 95% confidence interval for the difference in birthweight is', lower_ci, 'to', upper_ci)
 ```
 
 As you can see, they're quite similar! 
@@ -430,7 +430,7 @@ mk_coeftab(
 
 What do you see? What is the intercept equal to, and what is the coefficient on *smoker* equal to? What about the standard error on *smoker*, what do you see there?
 
-The intercept is equal to the mean birthweight when *smoker* = 1! Then the coefficient on *smoker* is equal to the difference, the standard error on *smoker* is equal to the standard error of the difference in means, and the *t*-statistic is equal to the *t*-statistic we found before!
+The intercept is equal to the mean birth weight when *smoker* = 0, the reference group. The coefficient on *smoker* equals the smoker mean minus the nonsmoker mean. Under the equal-variance assumption used above, the conventional standard error and *t*-statistic also match the pooled difference-in-means calculations.
 
 We can also find our confidence intervals:
 
@@ -450,7 +450,7 @@ So in order to conduct a hypothesis test on an individual regression coefficient
 
 *The mean of the distribution of the sample regression coefficient is the population regression coefficient $\beta_i$.
 *The standard deviation of the distribution of the sample regression coefficient is $\sigma_{\hat{\beta_i}}$. Because we do not know the population standard deviation we must estimate $\sigma_{\hat{\beta_i}}$ with the sample standard deviation $\hat{\sigma}_{\hat{\beta_i}}$.
-*The distribution of the sample regression coefficient follows a normal distribution.
+*If the regression errors are normally distributed, the OLS coefficient has an exact normal sampling distribution. Without normal errors, the sampling distribution is approximately normal in sufficiently large samples under the usual regularity conditions.
 
 Let's construct a number of random subsamples from our data and re-calculate $\hat{\beta_0}$ and $\hat{\beta_1}$. We'll then take the mean of these calculated values and see how close they are to our original regression coefficient estimates.
 
@@ -563,7 +563,7 @@ We see now that we have a theoretical (true) probability distribution of birthwe
 
 Let's calculate the variance of $\hat{\beta_1}$:
 
-$var(\hat{\beta_1}) = \frac{\sigma^2}{\Sigma(x_i - \bar{x})}$
+$var(\hat{\beta_1}) = \frac{\sigma^2}{\sum_{i=1}^{N}(x_i - \bar{x})^2}$
 
 and plot the density function.
 
@@ -582,7 +582,7 @@ x <- c(rep(x1, N/2), rep(x2,N/2)) #rep replicates the values in x
 
 xbar <- mean(x) # mean of x
 sumx2 <- sum((x-xbar)^2) # the variance denominator
-varb1 <- sigma / sumx2 #variance of beta 1
+varb1 <- sigma^2 / sumx2 # variance of beta 1
 sdb1 <- sqrt(varb1) #standard deviation of beta 1 (square root of variance)
 leftlim <- b1 - 3 * sdb1 #left limit for curve
 rightlim <- b1 + 3 * sdb1 #right limit for curve
@@ -620,11 +620,11 @@ mb1 <- mean(vb1) #gets the means of vb1
 seb1 <- sd(vb1) #gets the standard error of vb1
 ```
 
-Let's take a look at the means of our coefficients from our regressions, as well as the means of the standard errors from our regressions:
+Let's take a look at the mean of the simulated coefficient estimates and the standard deviation of their sampling distribution. That standard deviation is the Monte Carlo estimate of the coefficient's standard error:
 
 ```{r}
 cat('The mean of the coefficients from our ', nrsim, ' simulations is ', mb1)
-cat('The mean of the standard errors from our ', nrsim, ' simulations is', seb1)
+cat('The standard deviation of the coefficients from our ', nrsim, ' simulations is', seb1)
 ```
 
 ```{r, fig.alt = "Plotting beta 1's density from the Monte Carlo simulation compared to the estimation from the data"}
@@ -717,11 +717,10 @@ The hypothesis testing procedure is as follows:
 2. State your null and alternative hypotheses about the population. Usually, the null is that there is no effect ($\beta_1 = 0$), and the alternative is that there *is* an effect ($\beta_1 \neq 0$).
 3. Determine your significance level $\alpha$. The significance level defines how strong the sample evidence must be to conclude an effect exists in the population. In economics, $\alpha$ is usually set to 0.05, which signifies a 5% risk of deciding an effect exists when it does not.
 4. Run a regression to determine the coefficient (the estimated value $\hat{\beta_1}$) and the standard error. 
-5. Look at the *t*-statistic and *p*-value of the coefficient. The difference between the estimator $\hat{\beta_1}$ and the hypothesized value $0$ is in the numerator of the *t*-statistic; the standard error is in the denominator. If the *t*-statistic is greater than the critical value, you can reject the null hypothesis.
-6. Look at the p-value associated with the *t*-statistic. Remember, the p-value is the probability that you would obtain the effect observed in your sample (or larger) if the null hypothesis is correct. Lower p-values represent stronger evidence against the null. If the p-value is less than or equal to $\alpha$, you can reject the null hypothesis.
-7. Look at the confidence intervals. A 95% confidence interval tells us that we can be 95% sure that the true population value falls in that interval. If 0 is not included in the confidence interval, you can reject the null hypothesis at the 5% significance level.
-8. With small or finite samples (or for robustness checks), simulation procedures like Monte Carlo experiments can be useful. Monte Carlo simulations test how sensitive the results of a regression model are to changes in the data or assumptions, essentially checking how robust the model's conclusions are to potential variations or uncertainties in the input data. This can also help us know how robust the conclusions of our hypothesis tests are.
-
+5. Look at the *t*-statistic and *p*-value of the coefficient. The difference between the estimator $\hat{\beta_1}$ and the hypothesized value is in the numerator of the *t*-statistic; the standard error is in the denominator. For a two-sided test, reject the null when the absolute value of the *t*-statistic is greater than the critical value.
+6. Look at the *p*-value associated with the *t*-statistic. The *p*-value is the probability, assuming the null hypothesis is true, of obtaining a test statistic at least as extreme as the one observed. Lower *p*-values represent stronger evidence against the null. If the *p*-value is less than or equal to $\alpha$, reject the null hypothesis.
+7. Look at the confidence interval. Across repeated samples, 95% of intervals constructed using a valid 95% confidence-interval procedure would contain the true population value. If 0 is not included in the realized interval, reject the null hypothesis $H_0:\beta_1=0$ in the corresponding two-sided test at the 5% significance level.
+8. Simulation procedures such as Monte Carlo experiments can help us study the finite-sample behavior of estimators and tests under a fully specified data-generating process. Their conclusions apply to the assumptions built into that simulation.
 
 
 

@@ -1,0 +1,865 @@
+---
+title: "Sample Notebook - Multiple Regression: Inference"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+#useful for data manipulation
+#install.packages('tidyverse') 
+library(tidyverse)
+#install.packages('AER')
+library(AER)
+#install.packages('stats')
+library(stats)
+#install.packages('kableExtra') #used for accessible reporting tables
+library(kableExtra)
+#install.packages('lmtest') #for resettest
+library(lmtest)
+#install.packages('car') #for linearHypothesis
+```
+
+# The normality assumption
+
+## Recap of the Gauss-Markov assumptions 
+
+Formally, the Gauss-Markov theorem states the following: In a linear regression with response vector $y$ and design matrix $X$, the least squares estimator $\hat{\beta} \overset{\Delta}{=} (X'X)^{-1}X'y$ is the minimum-variance linear unbiased estimator of the model parameter $\beta$, under the ordinary least squares assumptions.
+
+In other words, under the following assumptions, our estimators are BLUE: the Best Linear Unbiased Estimators.
+
+### **1. Linearity in parameters**
+
+This assumption addresses the following two properties of the model:
+* The linear functional form of the model
+* The accuracy in which it describes the real relationship under analysis
+
+These rules constrain the model to one type: 
+$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + ... + \beta_k x_k + u$
+
+To satisfy this assumption, the correctly specified model must fit this linear pattern. 
+
+Remember that the defining characteristic of linear regression is functional form, but that's of the *parameters*, not the ability to model curvature. Linear models can model curvature by including nonlinear *variables* like polynomials and logarithms.
+
+In addition to following the linear functional form, this model needs to portray the subject matter accurately. If it doesn't, this is a model specification error! We'll return in more detail to this issue.
+
+### **2. Random sampling**
+
+We have a random sample of $n$ observations, ${(x_{i1}, x_{i2}, ..., x_{ik}, y_i): i = 1, 2, ..., n}$ following the population model in assumption 1. 
+
+In order to run a full and appropriate regression, you want to ensure that the sample is drawn randomly from the population. If the sample is not random, then you run the risk of introducing an unknown factor into your analysis that OLS will not account for.
+
+### **3. No perfect collinearity** 
+
+This means that no independent variable in the sample (and therefore in the population) is constant, and there are no exact linear relationships among the independent variables. When one of the variables change, the other variables should *not* change by a completely fixed proportion.
+
+An example of a perfect linear function would be including both *games won* and *games lost* in your model. They have a perfect negative correlation!
+
+### **4. Zero conditional mean**
+
+The error has an expected value of zero given any values of the independent variables:
+
+$E(u | x_1, x_2, ..., x_k) = 0$.
+
+If an independent variable is correlated with the error term, we could use the independent variable to predict the error term. This violates the idea that the error term represents unpredictable random error!
+
+Violations of this assumption can occur because there is omitted variable bias, incorrectly modeled curvature, simultaneity between the independent and dependent variables, or measurement error in the independent variables.
+
+Violating this assumption biases the coefficient estimator. When an independent variable is correlated with the error term, OLS then incorrectly attributes some of the variance that the error term actually explains to the independendent variable instead.
+
+You can check this assumption using residual plots. 
+
+Under assumptions 1-4, OLS estimators are **unbiased**:
+
+$E(\hat{\beta_j}) = \beta_j, j = 0, 1, ..., k$
+
+for any values of the population parameter $\beta_j$. In other words, the OLS estimators are unbiased estimators of the population parameters.
+
+For a full proof of unbiasedness, see the "Deriving the OLS Estimators and Unbiaesdness" sample notebook in Module 3.
+
+The final Gauss-Markov assumption is: 
+
+### **5. Homoskedasticity**
+
+The variance of the errors should be consistent for all observations, so it should not change for each observation or for a range of observations. This assumption is not needed for unbiasedness, but it is needed for ensuring that our estimators are the Best.
+
+
+## Adding on the normality assumption
+
+Estimating only a number for a regression parameter such as $\beta$ gives no indication of its reliability, since it's just a realization of the random variable $\hat{\beta}$.
+
+The sampling distributions of the OLS estimators depend on the underlying distributions of the errors. 
+To make the sampling distributions of our estimators easier to handle, we add the normality assumption: we assume that the unobserved error is normally distributed in the population with mean 0 and variance $\sigma^2$:
+
+$e \sim \mathcal{N}(0, \sigma^2)$
+
+Once you add the normality assumptions to the Gauss-Markov assumptions, these six assumptions are the classical linear model assumptions. It's basically the GM assumptions plus the assumption of a normally distributed error term.
+
+With this normality assumption, our estimators will have a stronger efficiency property than under Gauss-Markov assumptions alone. In fact, under CLM assumptions now the OLS estimators are the minimum variance unbiased estimtors in general, not just among estimators that are linear in $y_i$. 
+
+This also gives us:
+
+$y|x \sim \mathcal{N}(\beta_0 + \beta_1 x_1 + ... + \beta_k x_k, \sigma^2)$.
+
+Conditioned on $x$, $y$ has a normal distribution with mean linear in $x_1, ..., x_k$ and a constant variance (homoskedasticity assumption).
+
+What's the justification for this assumption?
+
+The logic goes as follows:
+
+The error term captures all influences on $y_i$ that are not already accounted for by the regressors $x_i$. Clearly there can be many influences not accounted for, but hopefully the important stuff is in the $x_i$ so the error term $e_i$ is capturing the "unimportant" bits. The central limit theorem more or less says that a suitably scaled average of a lot of small factors behaves like a normal random variable, so $u_i$ being a collection of those small factors, would be a normal random variable and be normally distributed.
+
+Of course, this would rely on the error term only having small factors...we may also be dealing with omitted variables.
+
+And we don't actually need the normality assumption on the errors once we resort to asymptotic approximations (as $n \rightarrow \infty$)
+
+However, if the error distribution is not normal, the sampling distribution of the OLS estimators may also be non-normal, which impacts the validity of hypothesis tests that rely on normal distribution assumptions. In a case of clear non-normality, despite asymptotic approximations OLS is unlikely to be the correct choice. In those cases, likelihood-based methods (like logistic regression, ordinal regression, etc.) are better at dealing with these errors.
+
+
+# Testing hypotheses about a single population parameter
+
+Hypothesis testing seeks to establish whether the data sample at hand provides sufficient evidence to support a hypothesis about a population parameter. 
+
+The procedure requires three things: the hypotheses (null and alternative), a test statistic, and a significance level ($\alpha$).
+
+Let's assume that the following population model satisfies the CLM assumptions:
+
+$y = \beta_0 + \beta_1 x_1 + \cdots + \beta_k x_k + u$.
+
+Because it satisfies the CLM assumptions, it will produce unbiased estimators for $\beta_j$.
+
+So how do we test hypotheses about one particular $\beta$?
+
+We know that the *actual* values of $\beta_j$ are unknown features of the population, and we'll never know them with certainty. However, we can hypothesize about the value of $\beta_j$ and test our hypothesis using statistical inference. We will need enough evidence to reject our null hypothesis.
+
+What constitutes evidence in the case of testing a hypothesis about a single population parameter?
+
+In this case, we will be using a $t$ test and finding its associated $p$ value. The $p$ value is the area in the probability distribution outside the calculated $t$ statistic. It is the probability that hte $t$ ratio takes a value that is more extreme than the calculated one, under the assumption that the null hypothesis is true. We reject the null hypothesis if the $p$ value is less than a chosen significance level.
+
+* For a right-tail test, the $p$ value is the area to the right of the calculated $t$.
+* For a left-tail test, it is the area to the left of the calculated $t$.
+* For a two-tail test, the $p$ value is split in two equal amounts, $p/2$ to the left and $p/2$ to the right.
+
+
+## Stating a hypothesis about a single parameter
+
+### Null hypothesis
+
+The null hypothesis is one of two mutually exclusive theories about the population's properties. Typically, it states that there is no effect. 
+
+For example: 
+$H_0: \beta_1 = 0$
+
+You can think of the null as the default theory, and you require sufficiently strong evidence in your sample to reject it.
+
+### Alternative hypothesis
+
+The alternative hypothesis is the other theory about the properties of the population in hypothesis testing. Typically, it states that a population parameter does not equal the null hypothesis value. In other words, there is a non-zero effect.
+
+For example:
+$H_1: \beta_1 \neq 0$
+
+If you sample contains sufficient evidence, you can reject the null in favor of the alternative hypothesis.
+
+### Regression estimation
+
+We will be using the "gpa2" data from the "wooldridge" package in R throughout this sample notebook. You can load the data in using the following code chunk:
+
+#### Loading the data 
+
+```{r}
+#install.packages("wooldridge")
+library(wooldridge)
+data('gpa2')
+```
+
+If you do not have the "wooldridge" package, remove the "#" from the first line of the code chunk to run.
+
+Take a look at the information about the data using "?" to see the number of observations and descriptions of the variables:
+
+```{r}
+?gpa2
+```
+
+
+#### Summary Statistics
+Let's take a quick look at the summary statistics for our data before diving in.
+
+A simpler way is to use `summary()` in base R to look at summary statistics, though I will be creating an accessible .html table below using `reporting.R`.
+
+```{r}
+#summary(gpa2)
+```
+
+**To create the .html table version:** 
+
+
+1. Have `reporting.R` installed in the same folder as your .Rmd file.
+
+econometrics-folder/
+├── sample-notebook.Rmd
+└── reporting.R
+
+2. Have `tidyverse` and `kableExtra` installed and added to your R session. These were already added to the session above.
+
+These need to be installed and added to your R session before using `reporting.R`, because the code used to create the tables uses both of them.
+
+
+3. Load `reporting.R` and run that chunk once.
+
+```{r}
+source("reporting.R")
+```
+
+And you're ready!
+
+4. Getting summary statistics.
+
+To get summary statistics for all variables use:
+
+`mk_dataset_summary(dataset_name)`
+
+To get summary statistics for only numeric variables use:
+
+`mk_numeric_summary(dataset_name)`
+
+To get summary statistics for only factor variables use:
+
+`mk_factor_summary(dataset_name)`
+
+Make sure to use `{r, results='asis'}` at the top of any code chunk where you're referencing `reporting.R`!
+
+Since everything in this dataset is numeric, I'm going to use the numeric summary:
+
+```{r, results='asis'}
+mk_numeric_summary(
+  gpa2,
+  caption = 'gpa2 dataset summary (numeric variables)'
+)
+```
+
+## Writing the regression equation and testing our hypothesis
+
+Multiple regressions are coded the same way in R as we have seen previously.
+
+For example, we have data on college GPA, total hours through the fall semester, whether someone is an athlete, and SAT score. We want to estimate the equation
+
+$colgpa = \beta_0 + \beta_1 tothrs + \beta_2 athlete + u$
+
+and then report the results. 
+
+If we are interested in testing how *tothrs* corresponds to the expected value of *colgpa*, we will want to write our null and alternative hypotheses that we will test:
+
+$H_0: \beta_{tothrs} = 0$
+$H_1: \beta_{totrs} \neq 0$
+
+We then estimate our regression equation to test our hypotheses.
+
+For a simple summary, use `summary(model_name)`. 
+
+For an accessible summary table, you can use `reporting.R` and `mk_coeftab`:
+
+`mk_coeftab(model_name, mode = "simple", term_labels = c(variable_name = "variable_name"), caption ="Model (simple): y on x")`
+
+The options for the model results table are "simple" or "full". The variable name in the term labels, the one without the quotation marks, needs to match the variable name from your model.
+
+
+```{r, results='asis'}
+mod1 <- lm(colgpa ~ tothrs + athlete + sat, data = gpa2)
+#summary(mod1)
+
+mk_coeftab(
+  mod1,
+  mode = 'simple',
+  term_labels = c(
+    tothrs = "total hours",
+    athlete = "student athlete (=1 if yes)",
+    sat = "combined SAT score"
+  ),
+  caption = "Model (simple): College GPA on total hours, athlete, SAT score"
+)
+
+```
+
+### Plotting residuals
+
+Residuals are the vertical distances between the observed values and the fitted values. Plotting residuals is very important to check whether any assumptions are being violated.
+
+Residual plots display the residual values on the y-axis and fitted values or another variable on the x-axis.
+
+
+#### Scatterplots
+
+When looking at residual scatterplots, you want to determine whether the residuals are consistent with random error. Scatterplots help us check the homoskedasticity assumption.
+
+To do this, you want to check to see if they are scattered around zero for the entire range of fitted values. If your plots display patterns rather than randomness, you can't trust the regression coefficients and other numeric results. 
+
+Let's look at a scatterplot of residuals from our model and check for issues:
+
+First we will get the residuals from our model:
+
+```{r}
+# creaeting a new dataframe with gpa2 plus the fitted values and residuals from the model
+mod1_data <- broom::augment(mod1)
+```
+
+
+Next we will plot them with $tothrs$ on the x-axis. We will also add a horizontal line at 0:
+
+```{r, fig.alt = "Scatter plot of total hours on the x axis and model residuals on the y axis."}
+# Create the Residuals vs Fitted plot
+ggplot(data = mod1_data, aes(x = tothrs, y = .resid)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "loess", se = FALSE, color = 'black') + # adding a smoothing line to detect patterns
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") + # adding a horizontal line at y=0
+  labs(x = "Total Hours", y = "Residuals", title = "Residual Plot: Residuals vs Total Hours") 
+```
+
+Let's also take a look and with *sat* on the x-axis:
+
+```{r, fig.alt = "Scatter plot of SAT score on the x axis and model residuals on the y axis."}
+# Create the Residuals vs Fitted plot
+ggplot(data = mod1_data, aes(x = sat, y = .resid)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "loess", se = FALSE, color = 'black') + # adding a smoothing line to detect patterns
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") + # adding a horizontal line at y=0
+  labs(x = "SAT Score", y = "Residuals", title = "Residual Plot: Residuals vs SAT Score") 
+```
+
+
+We can also make a fitted values vs. residuals plot:
+
+```{r, fig.alt = "Scatter plot of fitted values on the x axis and model residuals on the y axis."}
+# Create the Residuals vs Fitted plot
+ggplot(data = mod1_data, aes(x = .fitted, y = .resid)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "loess", se = FALSE, color = 'black') + # adding a smoothing line to detect patterns
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") + # adding a horizontal line at y=0
+  labs(x = "Fitted Vaues", y = "Residuals", title = "Residual Plot: Residuals vs Fitted Values") 
+```
+
+The x-axis displays the fitted values and the y-axis displays the residuals. From the plot we can see that the spread of the residuals tends to be highest around the middle of our plot. The spread of residuals is not uniform. Instead, the vertical range of the residuals increases or decreases in a specific pattern rather than a random cloud.
+
+This suggests that we don't have constant variance (violating the assumption of homoskedasticity).
+
+#### Histograms
+
+Another useful way to visualize residuals is through histograms. Our normality assumption states that the error terms are normally distributed. We can use a "normal probability plot of the residuals" as a way of checking whether it's reasonable to assume that the error terms are normally distributed.
+
+```{r, fig.alt = "Histogram of residuals with normal and sample probability distributions overlaid on top."}
+ggplot(mod1_data, aes(x = .resid)) +
+  geom_histogram(
+    aes(y = after_stat(density)),
+    bins = 30,
+    fill = "grey80",
+    color = "black"
+  ) +
+  geom_density(color = "blue", linewidth = 1) +
+  stat_function(
+    fun = dnorm,
+    args = list(
+      mean = mean(mod1_data$.resid, na.rm = TRUE),
+      sd   = sd(mod1_data$.resid, na.rm = TRUE)
+    ),
+    color = "red",
+    linewidth = 1
+  ) +
+  labs(
+    title = "Residuals",
+    x = "Residual",
+    y = "Density"
+  ) +
+  theme_minimal()
+
+
+```
+
+
+
+
+The `after_state(density)` flag indicates that we want to look at the density and not the frequency counts. 
+
+Whichever histogram you're looking at, does it look normal? I think it's pretty normal, only slightly skewed to the left, and given that we have 4,137 observations we don't need to worry about our normality assumption being violated.
+
+
+### Interpreting coefficients and considering the null hypothesis
+
+Let's look at our regression results again:
+```{r, results='asis'}
+mk_coeftab(
+  mod1,
+  mode = 'simple',
+  term_labels = c(
+    tothrs = "total hours",
+    athlete = "student athlete (=1 if yes)",
+    sat = "combined SAT score"
+  ),
+  caption = "Model (simple): College GPA on total hours, athlete, SAT score"
+)
+
+```
+
+How do we interpret the coefficient on $tothrs$? The coefficient tells us that as the total hours spent in the fall semester increases by one, the expected value of $colgpa$ increases by .00252. 
+
+We can also see that this relationship is statistically significant. We know this because the absolute t-value is greater than the critical value for a 5% level, and the p-value is less than 0.05.
+
+We have enough evidence to reject our null hypothesis that $\beta_{tothrs} = 0$ in favor of our alternative hypothesis that $\beta_{tothrs} \neq 0$.
+
+### Linear-log models
+
+In a linear-log model, the independent variable is log transformed. The literal interpretation of our estimated coefficient $\hat{\beta}$ is that a one-unit increase in $log(x)$ will produce an expected increase in *y* of $\hat{\beta}$ units.
+
+For a small increase *p* in X, $log([100 + p] / 100) \approx p/100$. For $p=1*, this means that $\hat{\beta} / 100$ can be interpreted as the approximate expected increase in *y* from a 1% increase in *x*.
+
+
+### Log-linear models
+
+For a log-linear model (where the dependent variable is log transformed), each one-unit increase in *x* multiples the expected value of *y* by $e^\hat{\beta_1}$.
+
+For small values of $\hat{\beta_1}$, $e^\hat{\beta_1} \approx 1 + \hat{\beta_1}$. 
+
+$100 \cdot \hat{\beta}$ is the expected percentage change in *y* for a unit increase in *x*.
+
+
+### Log-log models
+
+When both the dependent and the independent variables are log-transformed, this is a combination of the linear-log and log-linear interpretations seen above. 
+
+Our interpretation of $\hat{\beta}$ is the expected percentage change in *y* when *x* increases by some percentage. The coefficient of $log(x)$ is referred to as an elasticity.
+
+For instance, if our estimated $\hat{\beta} = .06$, then $e^.06 \approx 1.06$, and a one-unit change in *x* corresponds to (approximately) an expected increase in *y* of 6%.
+
+So if our $\hat{\beta_1} = 0.18$, a 1% increase in $x_1$ would be associated with an approximately 18% increase in *y*.
+
+
+# Testing joint hypotheses
+
+We can use the *t* statistic to test whether one particular variable has no partial effect on the dependent variable. But what if we want to test whether a group of variables has no effect?
+
+A joint hypothesis is a set of relationships among regression parameters, relationships that need to be simultaneously true according to the null hypothesis. 
+
+In this case, the null hypothesis is that a set of variables has no effect on $y$, once another set of variables has been controlled.
+
+Quick definitions recap:
+
+* **SST**: Total Sum of Squares. This is the sum of squared differences between each observed dependent variable and the mean of that variable. You may also see this written as **TSS**.
+
+The formula is:
+
+$SST = \Sigma_{i=1}^n(y_i - \bar{y})^2$.
+
+$y_i$ is the value of the observed $y$ for each of the $n$ data points, and $\bar{y}$ is the mean value of the observed data points.
+
+* **SSE**: Explained Sum of Squares (also known as Regression Sum of Squares, SSR). This is the sum of squared differences between each value of the dependent variable predicted by a regression model for each data point of the independent variable, and the mean of the observed dependent variable. You may also see this referred to as the explained sum of squares (ESS). 
+
+The sum of squares regression shows the portion of total variability in $y$ explained by the regression model.
+
+The formula is:
+
+$SSE = \Sigma_{i=1}^n (\hat{y_i} - \bar{y})^2$.
+
+$\hat{y_i}$ are the values predicted by the regression nmodel for each of the $n$ data points, and $\bar{y}$ is the mean value for $y$.
+
+* **SSR**: Residual Sum of Squares (also known as Error Sum of Squares, SSE). This is the sum of the squared difference between each value of the observed dependent variable and the value of the dependent variable as predicted by a regression model. It measure the difference between actual and prediction.
+
+This is also called the residual sum of squares (I will often use this term), and the unexplained sum of squares. 
+
+This represents the unexplained variability, the portion of the total variability that can't be explained by the regression model.
+
+The formula is:
+
+$SSR = \Sigma_{i = 1}^n(y_i - \hat{y_i})^2$.
+
+When we think about the *total* variation of $y$ around its sample mean (the *SST*), this can be decomposed into the explained and the unexplained parts (the *SSR* and the *SSE*, respectively). We can write this as:
+
+$SST = SSR + SSE$.
+
+The coefficient of determination, the $R^2$, is defined as the proportion of the total variance in $y$ that is explained by the regression. 
+
+If you divide both sides of the above equation by *SST* and rearrange, you get the following formula to calculate the $R^2$:
+
+$R^2 = \frac{SSE}{SST} = 1-\frac{SSR}{SST}$.
+
+This brings me back to the $F$-statistic.
+
+**Joint hypotheses can be tested using the F-statistic:**
+
+$F = \frac{(SSR_R - SSR_U)/q}{SSR_U/(n-k-1)} \sim F(q, n-k-1)$,
+
+where the $F$ statistic has an $F$ distribution with the degrees of freedom $q$ and $n-k-1$, where $k$ does not include the intercept
+
+In the equation above, the subscript $U$ stands for "unrestricted", the initial equation with all regressors. The subscript $R$ stands for "restricted", the new equation obtained from the initial one, where the relationships in the null hypothesis are assumed to hold.
+
+The F statistic is a ratio with two sets of degrees of freedom: one for the numerator ($q$), and one for the denominator ($n-k-1$).
+
+The numerator degrees of freedom is equal to the number of simultaneous restrictions in the null hypothesis. The denominator degrees of freedom is the degrees of freedom in the unrestricted model.
+
+Let's take a look at an example:
+
+$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_3 + e$
+
+$H_0: \beta_2 = 0$ AND $\beta_3 = 0$ (unrestricted)
+$H_A: \beta_2 \neq 0$ OR $\beta_3 \neq 0$
+
+$y = \beta_0 + \beta_3 x_3$ (restricted)
+
+The number of restrictions would be 2: there are two simultaneous restrictions being tested.
+
+The F distribution is derived from the Student's *t*-distribution. The ratio compares two variances: the variance *between* samples, which is the variation due to treatment or the explained variation, and the variance within samples, or the variation due to error or unexplained variation. It is the ratio of two chi-square random variables, divided by their respective degrees of freedom.
+
+The practical procedure is to estimate the two regressions and to calculate the $F$ statistic.
+
+The F-test determines whether the two independent estimates of variance differ significantly.
+ 
+## Testing simultaneous hypotheses
+
+What if we wanted to test the coefficients on both *tothrs* and *athlete* at the same time?
+
+We would write our new hypotheses:
+
+$H_0: \beta_{tothrs} = 0$ and $\beta_{athlete} = 0$
+
+$H_1: \beta{tothrs} \neq 0$ or $\beta_{athlete} \neq 0$
+
+The null hypothesis says that the two estimators are equal, and this hypothesis implies that the populations have the same normal distribution. That is why we can use the F distribution to test for equality of variances from two normal populations.
+
+
+### F Distribution Assumptions
+
+`mod1 = lm(colgpa ~ tothrs + athlete + sat, data = gpa2)`
+
+* Both populations are normally distributed
+
+* Both are independent of one another
+
+* The larger sample variance goes in the numerator to make the right-tailed test, which is easier to calculate.
+
+Let's create our $F$ statistic in steps before using a package.
+
+```{r}
+alpha <- 0.05
+# K includes intercept
+K <- length(summary(mod1)$coefficients[,1])
+N <- length(gpa2$colgpa) #number of obs
+q <- 2 # H0 has two restrictions
+fcr = qr(1 - alpha, q, N-K) #getting the F critical value given alpha,  numerator q and denominator N-K degrees of freedom
+mod1 <- lm(colgpa ~ tothrs + athlete + sat, data = gpa2)
+
+# simple anova results
+#anova(mod1) #anova for the unrestricted model
+
+```
+
+Using `reporting.R` for accessible ANOVA results:
+
+```{r, results='asis'}
+mk_anova(
+  mod1,
+  term_labels = c(
+    tothrs  = "Total study hours",
+    athlete = "Athlete",
+    sat     = "SAT score"
+  ),
+  caption = "ANOVA for GPA regression model"
+)
+```
+
+```{r}
+SSR_u <- anova(mod1)[4,2] #unrestricted residual sum of squares
+mod2 <- lm(colgpa ~ sat, data = gpa2) #restricted model
+
+#simple ANOVA results
+#anova(mod2)
+```
+
+Using `reporting.R` for accessible ANOVA results:
+
+```{r, results='asis'}
+mk_anova(
+  mod2,
+  term_labels = c(
+    sat     = "SAT score"
+  ),
+  caption = "ANOVA for simple GPA regression model"
+)
+```
+
+$F = \frac{(SSR_R - SSR_U)/q}{SSR_U/(n-k-1)} \sim F(q, n-k-1)$,
+
+```{r}
+SSR_r <- anova(mod2)[2,2]
+fval <- ((SSR_r - SSR_u)/q) / (SSR_u / (N-K))
+fval
+pval <- 1 - pf(fval, q, N-K)
+pval
+```
+
+We can also use the "car" package and the linearHypothesis() function in R to test this and get the F-statistic and p-value from its results.
+
+```{r}
+lh <- linearHypothesis(mod1, c("tothrs = 0", "athlete = 0"))
+p_val <- lh[2, "Pr(>F)"]
+f_stat <- lh[2, "F"]
+cat('The F-statistic is', f_stat, 'and its associated p-value is', p_val)
+```
+
+What R is doing is using restricted and unrestricted models. The restricted model does not include *tothrs* and *athlete* -- it sets their coefficients to zero.
+
+The unrestricted model includes all of the variables. This full model is the model thought to be most appropriate for the data. The restricted model, or the reduced model, is the model described by the null hypothesis. 
+
+The linear hypothesis test then sees whether the $R^2$ improved by enough to be statistically significant. If our unrestricted model fits significantly better than the restricted model, we should reject the null.
+
+We can see that it did by looking at the F-statistic and its associated p-value. The p-value is less than 0.05, so we can reject the null hypothesis that both coefficients equal zero at the 5% level.
+
+The F test lets us decide if the restricted or unrestricted model does a better job at describing the data by letting us quantify how much error remains after fitting both models to our data. If that difference between the two models is big enough, we are able to justify using the unrestricted model.
+
+We can also look at the overall significance of the model using the $F$ statistic. This tests the joint hypothesis that all the slope coefficients are zero:
+
+
+```{r}
+fval <- summary(mod1)$fstatistic
+fval
+```
+
+
+## Confidence sets for multiple coefficients
+
+You can create confidence ellipses for multiple coefficients as a way to visualize them.
+
+For example, if we wanted to build a 95% confidence set for the coefficients on *total hours* and *athlete*, we would do the following:
+
+```{r, fig.alt = "95% confidence set for the coefficients on total hours and athlete."}
+confidenceEllipse(mod1,
+                  fill = T,
+                  lwd = 0,
+                  which.coef = c('tothrs', 'athlete'),
+                  main = '95% confidence set'
+                  )
+```
+
+
+We see that the confidence ellipse does not include (0, 0). This is also evidence that we can reject our null hypothesis that $\beta_{tothrs} = 0$ and $\beta_{athlete} = 0$.
+
+
+## Testing equality between two coefficients
+
+What if we wanted to estimate a new regression equation and test whether the coefficients on *hsrank* and *hsperc* are statistically different from one another? The null is that they are the same, the alternative is that they are different.
+
+First we'll write our new regression equation:
+$colgpa = \beta_0 + \beta_1 tothrs + \beta_2 hsrank + \beta_2 hsperc + u$
+
+Then we will write our null and alternative hypotheses:
+
+$H_0: \beta_{hsrank} - \beta_{hsperc} = 0$
+
+$H_1: \beta_{hsrank} - \beta_{tenure} \neq 0$
+
+Next we will estimate it:
+
+```{r, results='asis'}
+mod2 <- lm(colgpa ~ tothrs + hsrank + hsperc, data = gpa2)
+
+
+mk_coeftab(
+  mod2,
+  mode = 'simple',
+  term_labels = c(
+    tothrs = "total hours",
+    hsrank = "rank in graduating class",
+    hsperc = "high school percentile, from top"
+  ),
+  caption = "Model (simple): College GPA on total hours, high school rank, high school percentile"
+)
+```
+
+Finally, we will test our hypothesis. We will pull the p-value from `linearHypothesis` and test if it is less than our $\alpha$ value.
+
+```{r}
+alpha <- 0.05
+
+lh2 <- linearHypothesis(mod2, "hsrank = hsperc")
+p_val2 <- lh2[2, "Pr(>F)"]
+
+p_val2 < alpha
+
+```
+
+We see that we have enough evidence at the 5% level to reject the null that the coefficients are equal in favor of the alternative. 
+
+
+# Model specification
+
+**1. Identify the variable of interest**
+
+**2. Think of the omitted causal effects that could result in omitted variable bias**
+
+When you’re estimating a causal effect, figuring out which variables to include in your multiple regression can be challenging. There’s not one hard and fast rule :( 
+
+You need to think through the application and use your judgment. The main tools of building a model should be economic theory, sound reasoning based on economic principles, and making sure that the model satisfies the Gauss-Markof assumptions. This will help to consider the possibility of omitted variable bias and the exclusion of irrelevant variables that may increase variability in the estimates.
+
+But we do have some guidelines we can use! The starting point is thinking critically about possible sources of omitted variable bias. This relies on subject matter knowledge and your knowledge of the empirical problem.
+
+**3. Include those omitted causal effects if you can or, if you can’t, include variables correlated with them that serve as control variables**
+
+The control variables are effective if the conditional mean independence assumption plausibly holds, that is, if *u* is uncorrelated with the independent variable of interest once the control variables are included.
+
+
+**4. Also specify a range of plausible alternative models, which include additional candidate variables**
+
+This will give you a path to move down as you iteratively improve your models!
+
+**5. Estimate your base model and plausible alternative specifications (“sensitivity checks”)**
+
+A core or base set of regressors should be chosen using a combination of subject matter expertise and judgment, economic theory, and knowledge of how your data were collected.
+
+The base specification should contain the variables of primary interest and the control variables suggested through judgment and theory.
+
+But often even the variables suggested by theory aren’t available...there usually requires some creativity?
+
+Does a candidate variable in your alternative specified model change the coefficient of interest in your base model?
+
+If not, then this provides evidence that the estimates from your base specification are reliable.
+
+If the coefficient does change a lot, this provides evidence that the original specification  might be suffering from omitted variable bias.
+
+Another thing to consider is whether a candidate variable is statistically signifiant. But use judgment here, not a mechanical recipe. Don't fall into the goodness-of-fit trap and just try to maximize the $R^2$!
+
+
+**7. Consider other quantities that help compare models: $R^2$ and adjusted $R^2$, the Akaike information criterion, and the Bayesian information criterion**
+
+We've already seen the formula for the $R^2$.
+
+The formula for the adjusted $R^2$ is:
+
+$\bar{R^2} = 1 - \frac{SSR / (n - k - 1)}{SST / (n-1)}$
+
+It penalizes you for adding more regressors, as one of the disadvantages of the $R^2$ is it increases every time you add a new regressor, whether it's relevant or not.
+
+The idea behind both the $AIC$ and the $BIC$ is the same.
+
+$AIC = ln \left( \frac{SSR}{n}\right) + \frac{2(k+1)}{n}$
+
+$BIC = ln \left( \frac{SSR}{n} \right) + \frac{(k+1) ln(n)}{n}$
+
+Among several models, the best fit is often the one that maximizes the $R^2$ or $\bar{R^2}$. On the other hand, the best model should minimize $AIC$ or $BIC$.
+
+```{r}
+smod1 <- summary(mod1)
+rsq <- smod1$r.squared
+adj_rsq <- smod1$adj.r.squared
+aic <- AIC(mod1)
+bic <- BIC(mod1)
+c(r_squared = rsq, adjusted_r_squared = adj_rsq, AIC = aic, BIC = bic)
+```
+
+
+Another useful tool for considering the most appropriate model is the Ramsey specification test, RESET. This method automatically adds higher order polynomial terms to your model and tests the joint hypothesis that their coefficients are all zero.
+
+```{r}
+mod2 <- lm(colgpa ~ sat + tothrs, data = gpa2)
+
+
+rt <- resettest(mod2, power = 2, type = 'fitted')  # default: powers = 2:3, type = "fitted"
+
+reset_df <- data.frame(
+  Test = "RESET test",
+  Statistic = unname(rt$statistic),
+  df1 = unname(rt$parameter[1]),
+  df2 = unname(rt$parameter[2]),
+  `p value` = fmt_p(rt$p.value),
+  check.names = FALSE
+)
+```
+
+```{r, results='asis'}
+k <- knitr::kable(
+  reset_df,
+  format = "html",
+  caption = "Ramsey RESET test, power 2",
+  align = c("l","r","r","r","r"),
+  row.names = FALSE
+)
+
+k <- .make_first_col_rowheaders(k)
+k
+
+```
+
+```{r}
+rt <- resettest(mod2, power = 2:3, type = 'fitted')  # default: powers = 2:3, type = "fitted"
+
+reset_df <- data.frame(
+  Test = "RESET test",
+  Statistic = unname(rt$statistic),
+  df1 = unname(rt$parameter[1]),
+  df2 = unname(rt$parameter[2]),
+  `p value` = fmt_p(rt$p.value),
+  check.names = FALSE
+)
+```
+
+```{r, results='asis'}
+k <- knitr::kable(
+  reset_df,
+  format = "html",
+  caption = "Ramsey RESET test, power 2:3",
+  align = c("l","r","r","r","r"),
+  row.names = FALSE
+)
+
+k <- .make_first_col_rowheaders(k)
+k
+
+```
+
+The number labeled as RESET in the output is the $F$-statistic of the test under the null hypothesis followed by the two types of degrees of freedom of the $F$ distribution and the $p$-value. In our case the first $p$-value is slightly higher than 0.05, and the second much higher. In the first test, this indicates that exploring a second order term may be useful to explore, but exploring a third order term in that model will not be. 
+
+# Testing for collinearity
+
+We also need to consider collinearity. We can do that using a VIF, or variance inflation factor test.
+
+$VIF_k = \frac{1}{1-R^2_k}$
+
+The rule of thumb is that a regressor produces collinearity if its VIF is greater than 10.
+
+Let's take a look at an example.
+
+```{r}
+mod4 <- lm(colgpa ~ sat + verbmath + tothrs + hsrank + hsperc, data = gpa2)
+
+v <- car::vif(mod4)
+
+vif_df <- data.frame(
+  Term = names(v),
+  VIF  = round(as.numeric(v), 2),
+  row.names = NULL
+)
+```
+
+```{r, results='asis'}
+k <- knitr::kable(
+  vif_df,
+  format  = "html",
+  caption = "Variance inflation factors",
+  align   = c("l", "r"),
+  row.names = FALSE
+)
+
+k <- .make_first_col_rowheaders(k)
+k
+```
+
+We can see that none of our variables fail the collinearity test by having $VIFs$ greater than 10.
+
+
+
