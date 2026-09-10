@@ -1,0 +1,406 @@
+---
+title: "In-Class Activity Notebook — Nonlinear Regression Functions"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+#library(here)
+#here::i_am("in-class-notebooks/inclass_nonlinear.Rmd")
+```
+
+```{r}
+need <- c("tidyverse", "wooldridge", "sandwich", "lmtest", "car", "modelsummary", "kableExtra")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have])
+invisible(lapply(need, library, character.only = TRUE))
+#source(here("scripts", "reporting.R"))
+source("reporting.R")
+```
+
+
+# Goals for today
+
+1. Diagnose when a linear regression function is not the best choice and propose a better functional form.
+2. Fit and interpret polynomial models (especially quadratics) and compute a turning point.
+3. Fit and interpret log models (linear–log, log–linear, log–log).
+4. Fit and interpret interaction models, (including interactions with nonlinear terms if we have time)
+5. Compare models with adjusted $R^2$ and interpretability.
+
+
+---
+
+# 1. Load and understand the data
+
+We will use `benefits` from the `wooldridge` package (school-level data).
+
+To use the built-in R summaries as opposed to the summary from `reporting.R` (also `glimpse`, which is from `tidyvserse`), remove the hash marks from in front of those lines of code. 
+
+```{r, results = "asis"}
+data("benefits", package = "wooldridge")
+df <- benefits
+#summary(df)
+#glimpse(df)
+
+mk_dataset_summary(df)
+```
+
+## 1.1 Variables
+
+Let's take a look at the dataset:
+
+```{r}
+?benefits
+```
+
+
+For today, we’ll treat:
+
+- Outcome variable: `avgben` (average teacher non-salary benefits, $)
+- Candidate predictors: `avgsal`, `lunch`, `enroll`, `staff`, `exppp`
+- Some useful transformations already there: `lavgsal`, `lenroll`, `lstaff`, and `bs = avgben/avgsal`
+
+**Question:** In 2–3 sentences, describe what `lunch` measures and what kind of confounding you worry about in a benefits–salary relationship.
+
+**Answer:**
+
+---
+
+# 2. Is linearity plausible?
+
+## 2.1 Scatterplot: benefits vs salary
+
+Use ggplot to create a scatterplot of average salary (`avgsal`) vs. average non-salary benefits (`avgben`). Put `avgsal` on the x-axis and `avgben` on the y-axis.
+
+```{r, fig.alt = "Scatter plot of average salary vs. average non-salary benefits."}
+# create your scatterplot here
+
+```
+
+**Question:** Does a straight line look reasonable? If not, what kinds of nonlinearity do you see (curvature, diminishing returns, etc.)?
+
+
+**Answer:**
+
+
+---
+
+## 2.2 Baseline linear model
+
+Create a linear model:
+
+$avgben = \beta_0 + \beta_1 avgsal + \beta_2 lunch + \beta_3 enroll + \beta_4 staff + \beta_5 exppp + u$. 
+
+Look at the model results.
+
+```{r, results = "asis"}
+# create your linear model
+
+# look at the model results
+
+```
+
+**Question:** Interpret the coefficient on `avgsal` as a *ceteris paribus* effect. How does this interpretation square with what you saw in your scatterplot? 
+
+**Answer:**
+
+---
+
+# 3. Log models: three common cases
+
+We will work with these families:
+
+- **Linear–log:** $Y = \beta_0 + \beta_1 \ln(X) + u$
+- **Log–linear:** $\ln(Y) = \beta_0 + \beta_1 X + u$
+- **Log–log:** $\ln(Y) = \beta_0 + \beta_1 \ln(X) + u$
+
+## 3.1 Check positivity before logging
+
+**Question**: Why is it important to check positivity before logging?
+
+
+**Answer**:
+
+
+---
+
+
+
+## 3.2 Linear–log: benefits on log(salary)
+
+Create a linear-log model:
+
+$avgben = \beta_0 + \beta_1 ln(avgsal) + \beta_2 lunch + \beta_3 ln(enroll) + \beta_4 ln(staff) + \beta_5 exppp + u$. 
+
+Look at the model results.
+
+```{r}
+# create your linear-log model
+
+# look at your model results
+
+
+```
+
+
+**Question:** Interpret $\hat\beta_1$ on `ln(avgsal)` in a linear–log model. How is this different from the level model? Is this easier to interpret? Harder? Why?
+
+
+**Answer:**
+
+
+---
+
+## 3.3 Log–log: log(benefits) on log(salary)
+
+Create a log-log model:
+
+$ln(avgben) = \beta_0 + \beta_1 ln(avgsal) + \beta_2 lunch + \beta_3 ln(enroll) + \beta_4 ln(staff) + \beta_5 exppp + u$. 
+
+Look at the model results.
+
+```{r}
+# create your log-log model
+
+# look at your model results
+
+
+```
+
+**Question:** Interpret $\hat\beta_1$ on `lavgsal` as an elasticity. What is an elasticity? Which (out of the three models) do you prefer from an interpretation standpoint?
+
+**Answer:**
+
+
+
+---
+
+# 4. Polynomial models 
+
+A quadratic regression function is:
+
+
+$E[Y|X] = \beta_0 + \beta_1 X + \beta_2 X^2$
+
+
+## 4.1 Quadratic in salary
+
+Create a model that is quadratic in salary: 
+
+
+$avgben = \beta_0 + \beta_1 avgsal + \beta_2 avgsal^2 + \beta_3 lunch + \beta_4 enroll + \beta_5 staff + \beta_6 exppp + u$. 
+
+Look at the model results.
+
+
+```{r, results = "asis"}
+# create your quadratic model
+
+# look at your model results
+
+
+```
+
+**Question:** Why is it incorrect to include $X^2$ without $X$?
+
+**Answer:**
+
+
+---
+
+
+
+## 4.2 Turning point + inside/outside the data range
+
+Compute the turning point $-\beta_1/(2\beta_2)$. Then compare it to the observed salary range.
+
+```{r}
+# compute the turning point
+
+```
+
+
+**Question:** Is the turning point inside the observed range of `avgsal`? Does that matter for interpretation? Why or why not? 
+
+
+**Answer:**
+
+
+---
+
+
+
+## 4.3 RESET test
+
+RESET tests whether functions of the fitted values add explanatory power. 
+
+So after fitting a polynomial model, RESET checks whether higher-order nonlinear combinations of the prediction still matter.
+
+If yes, your polynomial may be misspecified (like the degree too low).
+
+Use `?resettest` to look at the documentation for the RESET Test.
+
+```{r}
+?resettest
+```
+
+
+First, fit a simplified quadratic model:
+
+$avgben = avgsal + avgsal^2 + u$
+
+And fit a RESET test up to the cubed value of $avgsal$:
+
+```{r}
+# fit your RESET test here
+
+```
+
+**Question:** What does the `power` argument mean in the RESET test? What is it testing? What test statistic is it using?
+
+
+**Answer:**
+
+
+
+
+---
+
+
+
+# 5. Interactions 
+
+An interaction lets the effect of one variable depend on another.
+
+We’ll start with an interaction between salary and poverty exposure (`lunch`).
+
+$avgben = \beta_0 + \beta_1 avgsal \cdot lunch + \beta_2 enroll + \beta_3 staff + \beta_4 exppp + u$. 
+
+Create your model and look at your results.
+
+## 5.1 Interaction: salary × lunch
+
+```{r, results = "asis"}
+# create your interaction model
+
+# look at your model results
+
+```
+
+**Question:** Write down the fitted regression function $\widehat{E[avgben|avgsal,lunch,\dots]}$ and the partial effect
+$\partial \widehat{E[avgben|\cdot]}/\partial avgsal$. How does it depend on `lunch`?
+
+
+**Answer:**
+
+
+---
+
+## 5.2 Interaction + curvature (quadratic × lunch)
+
+Now allow salary to be nonlinear **and** allow the relationship to differ with lunch.
+
+
+$avgben = \beta_0 + \beta_1 [(avgsal_c \cdot avgsal_c^2) \cdot lunch] + \beta_2 enroll + \beta_3 staff + \beta_4 exppp + u$. 
+
+Create your model and look at your results.
+
+```{r, results = "asis"}
+# create your nonlinear interaction model here
+
+# look at your model summary
+
+
+```
+
+**Question:** Is there evidence that the salary–benefits relationship differs by `lunch` *and* varies nonlinearly? Point to the specific coefficients you used as evidence.
+
+**Answer:**
+
+
+
+---
+
+# 6. Compare models: fit *and* interpretability
+
+Compare:
+1. Linear (no interaction)
+2. Linear with interaction
+3. Quadratic (no interaction)
+4. Quadratic with interaction
+
+```{r}
+# display your linear model results
+
+# display your linear model with interaction results
+
+# display your quadratic model without interaction results
+
+# display your quadratic model with interaction results
+
+
+
+```
+
+
+
+**Question:** Which model would you recommend to a policymaker, and why? Your answer should emphasize interpretation and plausibility, not just fit.
+
+
+**Answer:**
+
+
+
+
+
+---
+
+# 7. Prediction + interpretation check
+
+Create a hypothetical school and produce predicted benefits under two models.
+
+Assign plausible values to your new school.
+
+```{r}
+#new_school <- tibble(
+#  avgsal = # assign a value for average salary here,
+#  lunch  = # assign a value for lunch here,
+#  enroll = # assign a value for enrollment here,
+#  staff  = # assign a value for staff here,
+#  exppp  = # assign a value for expenditures here
+#) %>%
+#  mutate(avgsal_c = avgsal - mean(df$avgsal, na.rm = TRUE))
+
+#new_school
+```
+
+
+Make your predictions using your two favorite models from task 6 and your new_school predictions dataframe:
+
+```{r}
+# make your benefits predictions here
+```
+
+**Question:** In 2–3 sentences: are these predictions sensible? What’s one limitation of predicting from a model that includes polynomials/interactions?
+
+
+**Answer:**
+
+---
+
+# Wrap-up 
+
+Before you leave, write a 3–5 sentence reflection:
+
+1. What regression function did you prefer?
+2. What did you learn about why we use logs/polynomials/interactions?
+3. What would you check next if this were a real policy brief?
+
+

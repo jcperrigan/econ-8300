@@ -1,0 +1,313 @@
+---
+title: "ECON-8300"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+# Homework06
+
+Grading Rubric (per question):  
+3 points if complete and correct  
+0 points otherwise 
+
+
+## Retrieving your work
+
+This and all future homework .Rmd files are written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing. 
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment. 
+
+## Submitting your work
+
+When you upload your files to Canvas, you are to submit ***two*** files:
+
+a. Your reproducible document file (.Rmd) which should be saved as homework##-ID.Rmd. For example, my homework06 file would be saved as homework06-jperrigan.Rmd.
+
+b. Your rendered reproducible document file (.html) which should be saved as homework##-ID.html. For example, my homework06 file would be saved as homework06-jperrigan.html.
+
+Your ID is your Canvas username. It is also the text before the "@" symbol in your UNO email address.
+
+You have an unlimited number of submissions, but only the latest submission will be viewed and graded. **Proper means that the file is correctly named and formatted. Latest means that the file is the most recent submission prior to the deadline. Remember the .Rmd file needs to render properly to .html before submitting.** 
+
+
+***
+
+All students are expected to complete all problems. If any problem asks you a particular question, be sure to answer it completely (with code, written sentences, or both).
+
+***Do not change anything in this file above the double line. Doing so will prevent your homework from being graded.***
+
+***
+***
+
+We will be using the same dataset from the sample notebook. It contains data from 172 U.S. cities in 1900. 
+
+These data were provided by Professor Karen Clay of Carnegie Mellon University and are a subset of the data used in her paper with Werner Troesken and Michael Haines “Lead and Mortality,” Review of Economics
+and Statistics, 2014. 
+
+* *infrate*: Infant mortality rate (deaths per 100 in population)
+
+* *lead*: Indicator =1 if city had lead pipes. (These are “lead-only” or “mixedlead” cities.)
+
+* *ph*: Water pH
+
+* *hardness*: Water hardness index
+
+* *population*: City population (in 100s)
+
+* *typhoid_rate*: Typhoid death rate
+
+* *np_tub_rate*: Non-pulmonary tuberculosis death rate
+
+* *mom_rate*: Fraction of population who are women of child-bearing age
+
+* *age*: Average Age
+
+* *foreign_share*: Fraction of population who are foreign born
+
+* *precipitation*:  Average precipitation in state
+
+* *temperature*: Average temperature in state
+
+* *city*: City
+
+* *state*: State
+
+* *year*: Year
+
+```{r}
+lead_data <- read_csv("https://raw.githubusercontent.com/ahdvnd/ss154-data/refs/heads/main/lead_mortality.csv")
+```
+
+**#1** 
+
+**Problem:** Estimate a linear model:
+
+`infrate ~ lead + pH + typhoid rate`
+
+Report coefficients with robust (HC1) standard errors. Briefly interpret the coefficient on lead.
+
+Save your answer as a string to "prob01."
+
+**Answer:**
+
+```{r, problem01}
+#prob01
+
+```
+
+
+***
+
+**#2** 
+
+**Problem:** Make sure to complete all parts.
+
+a) Estimate a model that adds the interaction between lead and pH. 
+
+b) Write the regression equation in symbols.
+
+c) Identify which coefficient(s) represent:
+
+* the effect of lead when pH = 0
+
+* how the effect of lead changes as pH changes
+
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your answers to parts b and c as a string to "prob02."
+
+**Answer:**
+
+```{r, problem02}
+#prob02
+
+```
+
+
+
+***
+
+**#3** 
+
+**Problem:** Using your estimated coefficients from your model in question 2, compute the total effect of lead at:
+
+* pH = 6
+
+* pH = 7.5
+
+* pH = 9
+
+Show the formula you are using and report numerical values.
+
+Assign your answer as a vector to "prob03", with pH = 6 first, then pH = 7.5, then pH = 9.
+
+**Answer:**
+
+```{r, problem03}
+#prob03
+```
+
+
+***
+
+**#4** 
+
+**Problem:** Suppose the main effect of lead is not statistically significant, but the interaction term is statistically significant. Explain why it is still incorrect to drop lead from the model.
+
+Save your answer as a string to "prob04."
+
+**Answer:**
+
+```{r, problem04}
+#prob04
+```
+
+
+***
+
+
+**#5** 
+
+**Problem:** Create a plot showing predicted infant mortality as a function of pH separately for cities with and without lead pipes, holding other covariates at their sample means.
+
+Make sure to label the axes clearly.
+
+Include a short paragraph explaining what the plot reveals that the regression table alone does not. Save your answer to the short paragraph as a string to "prob05."
+
+**Answer:**
+
+```{r, problem05}
+#prob05
+
+```
+
+
+***
+
+
+**#6** 
+
+**Problem:** Estimate a model that replaces pH with a quadratic in pH:
+
+`infrate ~ pH + pH^2 + controls`
+
+You may include whichever controls you would like out of the available variables. Explain why it is incorrect to include pH^2 without pH. 
+
+This R code should be written in the code chunk of the **Answer** section below. Save your answer as a string to "prob06."
+
+**Answer:**
+
+```{r, problem06}
+#prob06
+```
+
+
+***
+
+**#7** 
+
+**Problem:** Make sure to answer all parts.
+
+a) Compute the implied turning point of the quadratic.
+
+b) State whether the turning point lies inside or outside the observed range of pH values in the data.
+
+c) Explain why this matters for interpretation.
+
+This R code should be written in the code chunk of the **Answer** section below. Save your answers to parts b and c as a string to "prob07." Make sure to clearly label your turning point.
+
+**Answer:**
+
+```{r, problem07}
+#prob07
+```
+
+
+***
+
+**#8** 
+
+**Problem:** Re‑estimate the quadratic model using centered pH and report VIFs for the raw and centered models.
+
+In 2–3 sentences, explain what centering does and what it does not change. Why are the VIFs different?
+
+This R code should be written in the code chunk of the **Answer** section below. Save your answer as a string to "prob08."
+
+
+**Answer:**
+
+```{r, problem08}
+#prob08
+```
+
+
+***
+
+**#9** 
+
+**Problem:** Estimate a model that includes:
+
+* lead
+
+* pH and pH^2 (centered)
+
+* lead × pH (centered)
+
+* typhoid rate
+
+Answer the following:
+
+a) Does allowing for curvature change your conclusions about the interaction between lead and pH?
+
+b) Is there evidence that the effect of pH on infant mortality differs by pipe type and varies nonlinearly?
+
+This R code should be written in the code chunk of the **Answer** section below. Save your answer as a string to "prob09". 
+
+**Answer:**
+
+```{r, problem09}
+#prob09
+```
+
+
+***
+
+**#10** 
+
+**Problem:** Compare the following models using adjusted $R^2$ and interpretability:
+
+* Linear pH, no interaction
+
+* Linear pH with interaction
+
+* Quadratic pH, no interaction
+
+* Quadratic pH with interaction
+
+Which model would you recommend to a policymaker, and why? Your answer should emphasize interpretation and plausibility, not just fit.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your answer as a string to "prob10".
+
+**Answer:**
+
+```{r, problem10}
+#prob10
+```
+
+
+
+***

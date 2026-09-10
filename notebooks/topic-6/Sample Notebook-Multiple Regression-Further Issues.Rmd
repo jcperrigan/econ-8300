@@ -1,0 +1,980 @@
+---
+title: "Sample Notebook - Multiple Regression: Further Issues"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+#library(here)
+#here::i_am("Sample-notebooks/Sample Notebook-Multiple Regression-Further Issues.Rmd")
+```
+
+```{r}
+need <- c("tidyverse", "wooldridge", "sandwich", "lmtest", "car", "kableExtra")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have])
+invisible(lapply(need, library, character.only = TRUE))
+#source(here("scripts", "reporting.R"))
+source("reporting.R")
+```
+
+This sample notebook will focus on interaction terms and polynomial models, since we've talked about logs quite a bit!
+
+# Interaction effects
+
+Interaction effects occur when the effect of one variable depends on another variable. One way to think of interaction effects is as an "it depends" effect. For example, do you like chocolate sauce and mustard on your food? It probably depends on what you're eating for dinner!
+
+Analysts use models to assess the relationship between each independent variable and the dependent variable. This kind of effect is called a main effect, and main effects do not depend on the value of other variables.
+
+In more complex study areas, the independent variables might interact with each other. Interaction effects indicate that a third variable influences the relationship between an independent and dependent variable. This type of effect makes the model more complex, but if the real world behaves this way it's critical to incorporate it into your model.
+
+
+## Loading the data
+
+We will be using a dataset that contains data from 172 U.S. cities in 1900. 
+
+These data were provided by Professor Karen Clay of Carnegie Mellon University and are a subset of the data used in her paper with Werner Troesken and Michael Haines “Lead and Mortality,” Review of Economics and Statistics, 2014. 
+
+
+* *infrate*: Infant mortality rate (deaths per 100 in population)
+
+* *lead*: Indicator =1 if city had lead pipes. (These are “lead-only” or “mixedlead” cities.)
+
+* *ph*: Water pH
+
+* *hardness*: Water hardness index
+
+* *population*: City population (in 100s)
+
+* *typhoid_rate*: Typhoid death rate
+
+* *np_tub_rate*: Non-pulmonary tuberculosis death rate
+
+* *mom_rate*: Fraction of population who are women of child-bearing age
+
+* *age*: Average Age
+
+* *foreign_share*: Fraction of population who are foreign born
+
+* *precipitation*:  Average precipitation in state
+
+* *temperature*: Average temperature in state
+
+* *city*: City
+
+* *state*: State
+
+* *year*: Year
+
+We'll be reading in the data from github:
+
+```{r}
+lead_data <- read_csv("https://raw.githubusercontent.com/ahdvnd/ss154-data/refs/heads/main/lead_mortality.csv")
+```
+
+First we'll take a look at the first few rows of the data:
+
+```{r}
+lead_data %>%
+  head(6) %>%
+  kable(
+    format = "html",
+    caption = "Preview of lead exposure and infant mortality data",
+    col.names = names(.),
+    align = "l"
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped"),
+    full_width = FALSE
+  )
+```
+
+
+Let's take a look at the summary statistics (this uses the `reporting.R` script, so make sure it's saved in the same folder as this notebook!):
+
+```{r, results = 'asis'}
+mk_numeric_summary(
+  lead_data,
+  caption = "lead data summary statistics (numeric variables)"
+  )
+```
+
+
+
+## Interaction: Average infant mortality with lead vs. nonleaded pipes
+
+First we will look at the average average infant mortality rate (*infrate*) for cities with lead pipes and for cities with nonleaded pipes. We will then see if there is a statistically significant difference in the groups.
+
+To do this, we will find the means of the two groups, the standard error of the means, and then see if we have evidence to say they are significantly different.
+
+### The longer way
+
+#### **Step 1: Calculate the means in the two different groups**
+
+```{r}
+lead_data %>%
+  dplyr::mutate(
+    pipe_type = dplyr::if_else(
+      lead == 1,
+      "Cities with lead pipes",
+      "Cities without lead pipes"
+    )
+  ) %>%
+  dplyr::group_by(pipe_type) %>%
+  dplyr::summarise(
+    mean_infrate = mean(infrate, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  knitr::kable(
+    col.names = c(
+      "Pipe type",
+      "Mean infant mortality rate per 100"
+    ),
+    caption = paste(
+      "Mean infant mortality rate in cities",
+      "with and without lead pipes."
+    ),
+    digits = 2,
+    align = c("l", "r")
+  )
+```
+
+#### **Step 2: Calculate the difference in means between the two groups**
+```{r}
+infrate_mean_diff <- lead_data %>%
+  dplyr::summarise(
+    mean_difference =
+      mean(infrate[lead == 1], na.rm = TRUE) -
+      mean(infrate[lead == 0], na.rm = TRUE)
+  ) %>%
+  dplyr::pull(mean_difference)
+
+cat(
+  "Infant mortality rate is",
+  round(infrate_mean_diff, 2),
+  "higher in cities with lead pipes than in cities without lead pipes."
+)
+```
+
+#### **Step 3: Test whether the difference is statistically significant**
+
+To do this, we will calculate the variance of *infrate* in each group, and get the number of observations. We will then use those to construct the standard error of the difference.
+
+I will report the standard deviation because it is in the same units as the variable.
+
+```{r}
+infrate_group_stats <- lead_data %>%
+  dplyr::filter(
+    lead %in% c(0, 1),
+    !is.na(infrate)
+  ) %>%
+  dplyr::group_by(lead) %>%
+  dplyr::summarise(
+    mean_infrate = mean(infrate),
+    variance_infrate = var(infrate),
+    sd_infrate = sd(infrate),
+    n = dplyr::n(),
+    .groups = "drop"
+  ) %>%
+  dplyr::mutate(
+    pipe_type = dplyr::if_else(
+      lead == 1,
+      "Cities with lead pipes",
+      "Cities without lead pipes"
+    )
+  )
+
+infrate_group_stats %>%
+  dplyr::select(pipe_type, mean_infrate, sd_infrate, n) %>%
+  knitr::kable(
+    col.names = c(
+      "Pipe type",
+      "Mean infant mortality rate",
+      "Standard deviation",
+      "Number of observations"
+    ),
+    caption = paste(
+      "Summary statistics for infant mortality rates",
+      "by the presence of lead pipes."
+    ),
+    digits = 2,
+    align = c("l", "r", "r", "r")
+  )
+```
+
+We can then use the variances and number of observations to construct our standard error of the difference and calculate our t-value. 
+
+We are using the Welch degrees of freedom because we are assuming unequal variances:
+
+$df_{Welch} = \frac{(s^2_1/n_1 + s^2_0/n_0)^2}{\frac{(s^2_1/n_1)^2}{n_1-1} + \frac{(s^2_0/n_0)^2}{n_0 - 1}}$
+
+Where $s^2_1$ is the sample variance for one group and $n_1$ is the size of one group, and $s^2_0$ is the sample variance for the other group and $n_0$ is the size of the other group.
+
+Welch’s two-sample $t$-test allows the two groups to have different population variances. Unlike the pooled two-sample $t$-test, it doesn't impose a common-variance assumption. 
+
+When the equal-variance assumption is violated, the pooled standard error, and therefore the resulting $t$-statistic and $p$-value, may be inaccurate.
+
+One important caveat here: Welch’s test allows unequal variances, but it still assumes the observations are independent. If the data have repeated observations for the same entity, that assumption wouldn't hold and you would need to account for clustering by city.
+
+```{r}
+lead_data %>%
+  dplyr::summarise(
+    `Total obs` = dplyr::n(),
+    `Unique city names` = dplyr::n_distinct(city),
+    `Unique city–state combos` =
+      dplyr::n_distinct(city, state)
+  ) %>%
+  knitr::kable(
+    caption = paste(
+      "Unique city–state combinations in the lead-pipe data"
+    ),
+    align = "r"
+  )
+```
+
+
+We are also using Welch's formula for the difference-in-means t-statistic:
+
+$t = \frac{\bar{y_1} - \bar{y_0}}{\sqrt{s^2_1/n_1 + s^2_0/n_0}}$,
+
+so our standard error assumes unequal variances.
+
+```{r}
+infrate_test <- infrate_group_stats %>%
+  dplyr::summarise(
+    mean_difference =
+      mean_infrate[lead == 1] -
+      mean_infrate[lead == 0],
+
+    standard_error = sqrt(
+      variance_infrate[lead == 1] / n[lead == 1] +
+      variance_infrate[lead == 0] / n[lead == 0]
+    ),
+
+    t_value = mean_difference / standard_error,
+
+    df_welch =
+      (
+        variance_infrate[lead == 1] / n[lead == 1] +
+        variance_infrate[lead == 0] / n[lead == 0]
+      )^2 /
+      (
+        (variance_infrate[lead == 1] / n[lead == 1])^2 /
+          (n[lead == 1] - 1) +
+        (variance_infrate[lead == 0] / n[lead == 0])^2 /
+          (n[lead == 0] - 1)
+      ),
+
+    p_value = 2 * pt(
+      abs(t_value),
+      df = df_welch,
+      lower.tail = FALSE
+    )
+  )
+
+infrate_test %>%
+  knitr::kable(
+    col.names = c(
+      "Difference in means",
+      "Standard error",
+      "t-statistic",
+      "Welch degrees of freedom",
+      "Two-sided p-value"
+    ),
+    caption = paste(
+      "Welch two-sample test of the difference in mean",
+      "infant mortality rates."
+    ),
+    digits = 5,
+    align = rep("r", 5)
+  )
+```
+
+Although the sample mean infant mortality rate differs between cities with and without lead pipes, the two-sided $p$-value is greater than 0.05. We therefore fail to reject the null hypothesis that the two population means are equal.
+
+
+### The shorter way
+
+Of course, there's a shorter way to do this! We can run a simple linear regression. We will use robust standard errors since we assumed unequal variance above (used Welch standard errors and degrees of freedom).
+
+```{r, results = 'asis'}
+mod1 <- lm(infrate ~ lead, data = lead_data)
+
+
+mk_coeftab_robust(
+  mod1,
+  mode = "simple",
+  term_labels = c(lead = "Leaded pipes (1=yes)"),
+  caption = "Infant mortality on lead indicator (robust SEs, HC1)",
+  digits = 5,
+  robust_type = "HC1"
+)
+```
+Note that the standard error using the robust standard errors is slightly different than we calculated "by hand". The Welch's two-sample t-test doesn't use the same variance estimator.
+
+$SE_{Welch} = \sqrt{\frac{s^2_2}{n_2} + \frac{s^2_1}{n_2}$.
+
+While the robust HC1 standard errors uses squared residuals and a different correction method. 
+
+### Standard error digression
+
+Let's look at our simple model here. (This is but a teaser, we'll go into more depth during heteroskedasticity! Just wanted to give you a brief overview as to why the standard errors don't exactly match up.)
+
+For `lm(infrate ~ lead)`, with an intercept, our model is actually estimating:
+
+`lm(y_i = infrate_i ~ 1 + lead_i)`,
+
+where `lead` is binary (0/1).
+
+So if we write the model as:
+
+$y_i = \beta_0 + \beta_1 lead_i + u_i$, 
+
+OLS is choosing the parameters to minimize $\sum u^2_i$
+
+#### What the fitted values look like with a binary regressor
+
+Because lead is 0/1:
+
+* if `lead_i = 0`:
+
+$\hat y_i = \hat\beta_0$
+
+* if `lead_i = 1`:
+
+$\hat y_i = \hat\beta_0 + \hat\beta_1$
+
+And we remember the formulas for $\hat\beta_0$ and $\hat\beta_1$:
+
+$\hat\beta_0 = \bar{y} - \hat\beta_1 \bar{x}$ 
+
+$\hat\beta_1 = \frac{\sum(x_i - \bar{x})(y_i - \bar{y})}{\sum(x_i - \bar{x})^2}$.
+
+Because we're dealing with an $x$ that can only take the values of 0 and 1, we then get:
+
+$\hat\beta_0 = \bar{y_0}$ 
+
+and 
+
+$\hat\beta_1 = \bar{y_1} = \bar{y_0}$
+
+where 
+
+* $\bar{y_0}$ is the mean of $y$ where `lead = 0`
+
+* $\bar{y_1}$ is the mean of $y$ where `lead = 1`
+
+So fitted values are literally group means:
+
+If `lead = 0`:
+
+$\hat{y_i} = \bar{y_0}$
+
+If `lead = 1`:
+
+$\hat{y_i} = \bar{y_1}$
+
+We saw this above!
+
+#### So what are our residuals?
+
+By definition:
+
+$\hat{u_i} = y_i - \hat{y_i}$
+
+**So in the lead group ($g = 1$):**
+
+$\hat{u_i} = y_i - \bar{y_1}$
+
+**And in the non-lead group ($g = 0$):**
+
+$\hat{u_i} = y_i - \bar{y_0}$
+
+**And within group g**:
+
+$\sum\hat{u_i} = \sum(y_i - \bar{y_g}) = \sum(y_i - n_g \bar{y_g}) = 0$
+
+#### The sample variance within group g
+
+Within group $g$ with $n_g$ observations:
+
+$s^2_g = \frac{1}{n_g - 1} \sum(y_i - \bar{y_g})^2$
+
+Rearranging:
+
+$\sum(y_i - \bar{y_g})^2 = (n_g - 1)s^2_g$
+
+And we just showed that:
+
+$\hat{u_i} = y_i - \bar{y_g}$
+
+So:
+
+$\sum \hat{u_i}^2 = (n_g - 1)s^2_g$
+
+#### Robust Standard Errors
+
+The robust standard variance is built from the averages of squared residuals within a group.
+
+For HC0 (no df correction), it's:
+
+$SE_{HC0} = \frac{(n_1 - 1)s^2_1}{n^2_1} + \frac{(n_1 - 1)s^2_0}{n^2_0}$.
+
+So a couple key differences from Welch:
+
+* Welch has $s^2_g/n_g$
+
+* HC0 has $(n_g - 1)s^2_g/n^2_g$
+
+So HC0 is Welch multiplied by $(n_g - 1)/n_g$ within each group.
+
+Then HC1 multiplies the HC0 by a global correction factor $n / (n-k)$ (here $k = 2$, intercept + dummy):
+
+$SE_{HC1} = \frac{n}{n-2}SE_{HC0}$
+
+This correction pushes the standard error back up, but it still generally won't equal the Welch standard error because Welch's correction is by group, but HC1 is a single overall correction multiplier. 
+
+So checking our own numbers:
+
+```{r}
+infrate_group_stats %>%
+  dplyr::summarise(
+    `Welch standard error` = sqrt(
+      variance_infrate[lead == 1] / n[lead == 1] +
+      variance_infrate[lead == 0] / n[lead == 0]
+    ),
+
+    `HC0 standard error` = sqrt(
+      (n[lead == 1] - 1) *
+        variance_infrate[lead == 1] / n[lead == 1]^2 +
+      (n[lead == 0] - 1) *
+        variance_infrate[lead == 0] / n[lead == 0]^2
+    ),
+
+    n_total = sum(n)
+  ) %>%
+  dplyr::mutate(
+    `HC1 standard error` =
+      sqrt(n_total / (n_total - 2)) *
+      `HC0 standard error`
+  ) %>%
+  dplyr::select(
+    `Welch standard error`,
+    `HC0 standard error`,
+    `HC1 standard error`
+  ) %>%
+  knitr::kable(
+    caption = paste(
+      "Comparison of standard errors for the estimated",
+      "difference in mean infant mortality rates."
+    ),
+    digits = 5,
+    align = rep("r", 3)
+  )
+```
+
+
+## Adding interactions
+
+The amount of lead leached from lead pipes depends on the chemistry of the water running through the pipes. The more acidic the water (the lower its pH), the more lead is leeched. 
+
+We will examine the effect of pH on lead leeching and infant mortality.
+
+### Running our regression
+
+To add an interaction term, we can use a colon. For an interaction term between *lead* and *ph*, we will write "lead:ph" as one of our variables.
+
+Quick note: when running an interaction term with ":" in the name, you need to quote it when using `reporting.R`, because otherwise R thinks it's code.
+
+```{r, results= 'asis'}
+int_model = lm(infrate ~ lead + ph + lead:ph, data = lead_data)
+
+# pulling the model coefficients for later
+model_coefficients <- coef(int_model)
+
+b0 <- unname(model_coefficients["(Intercept)"])
+b_lead <- unname(model_coefficients["lead"])
+b_ph <- unname(model_coefficients["ph"])
+
+interaction_name <- intersect(
+  c("lead:ph", "ph:lead"),
+  names(model_coefficients)
+)
+
+b_interaction <- unname(model_coefficients[interaction_name])
+
+# formatting the model coefficients for later use 
+signed_coefficient <- function(x, digits = 3) {
+  ifelse(
+    x >= 0,
+    paste0("+ ", round(x, digits)),
+    paste0("- ", abs(round(x, digits)))
+  )
+}
+
+# model summary results
+mk_coeftab_robust(
+  int_model,
+  mode = "simple",
+  term_labels = c(
+    lead = "Leaded pipes (1=yes)",
+    ph = 'ph level',
+    "lead:ph" = 'lead x ph'),
+  caption = "Infant mortality on lead, ph, lead/ ph interaction (robust SEs, HC1)",
+  digits = 4,
+  robust_type = "HC1"
+)
+```
+
+
+### Interpreting a model with interactions
+
+#### General interpretation
+
+With interaction terms in our model, we have two types of effects:
+
+* **Main effect**: the portion of an independent variable's effect on the dependent variable that does not depend on the values of the other variables in the model.
+
+* **Interaction effect**: the portion of an independent variable's effect that does depend on the value of at least one other independent variable in the model.
+
+So the total effect of an independent variable = main effect + interaction effect. When either type of effect is not statistically significant, you have insufficient evidence to conclude that the effect is different from zero. When an effect is not significant, you can zero it out of the equation.
+
+We have some possibilities here. Let's build a hypothetical model that includes A and B as main effects, and A*B as the interaction effect.
+
+1. **Main effects are signifiant, but the interaction term is not significant.** In this model, the total effect of A and the total effect of B are contained in the main effects because the interaction effect is not significant. All of A's effect is due to the value of A and not influenced by B, and all of B's effect is due to the value of B and not influenced by A.
+
+2. **Main effects are significant, and the interaction term is significant.** In this model, the total effect for A and the total effect of B include both main effects and the interaction effects. In other words, a portion of A's effect does not depend on the value of B, while another portion of A's effect does depend on B. You need to sum the main effect and interaction effect to understand the total effect for either independent variable. For example, the total effect of $A = A + A \cdot B$ and $B = B + A\cdot B$.
+
+3. **Only the interaction effect is significant.** In this model, the total effect of A and the total effect of B both entirely depend on the value of the other variable. Neither variable has a portion of its full effect that is independent of the other variable. The total effect for either variable is $A \cdot B$. Even if the main effects are not significant, the general rule is to include them in the model anyway because it lets us estimate the interaction effect better.
+
+
+
+#### Interpreting our model's coefficients
+
+Let's think about what our coefficients mean, leaving aside statistical significance for now. We will return to that in the next section.
+
+Our estimated regression equation is:
+
+\[
+\widehat{infrate}
+=
+`r round(b0, 3)`
+`r signed_coefficient(b_lead)`lead
+`r signed_coefficient(b_ph)`ph
+`r signed_coefficient(b_interaction)` (lead \times ph)
+\]
+
+The intercept, `r round(b0, 3)`, is the predicted infant mortality rate when $lead=0$ and $ph=0$.
+
+The coefficients on $lead$ and $(lead \times ph)$ jointly describe how the presence of lead pipes is associated with the predicted infant mortality rate.
+
+When we compare two cities—one with lead pipes $(lead=1)$ and one without $(lead=0)$, while holding $ph$ constant, the difference in their predicted infant mortality rates is:
+
+\[
+\widehat{infrate}(lead=1)
+-
+\widehat{infrate}(lead=0)
+=
+`r round(b_lead, 3)`
+`r signed_coefficient(b_interaction)`ph
+\]
+
+So the estimated association between lead pipes and infant mortality depends on the city's $ph$.
+
+The coefficients on $ph$ and $(lead \times ph)$ jointly describe how changes in $ph$ are associated with changes in the predicted infant mortality rate.
+
+Comparing two cities, one with $ph=6$ and the other with $ph=5$, while holding $lead$ constant, the difference in their predicted infant mortality rates is:
+
+\[
+\widehat{infrate}(ph=6)
+-
+\widehat{infrate}(ph=5)
+=
+`r round(b_ph, 3)`
+`r signed_coefficient(b_interaction)`lead
+\]
+
+So the estimated association between $ph$ and infant mortality depends on whether the city has lead pipes.
+
+### Is the difference statistically significant?
+
+When the interaction effect is statistically significant, you can't interpret the main effects without considering the interaction. 
+
+Let's take a look at a plot. I will be using ggplot for this. I will also create a variable to make the legend easier to read.
+
+
+```{r}
+lead_data <- lead_data %>%
+  dplyr::mutate(
+    lead_string = dplyr::if_else(
+      lead == 1,
+      "lead pipes",
+      "no lead pipes"
+    )
+  )
+```
+
+```{r, fig.alt = "Scatter plot of ph level vs. infant mortality with lead and non-lead pipes in different colors to show different slopes."}
+ggplot(lead_data, 
+       aes(x = ph, 
+           y = infrate, 
+           color = lead_string)) +
+  geom_point() +
+  geom_smooth(method = 'lm', fill = NA)
+
+```
+
+We can see that the infant mortality rate is higher for cities with lead pipes, but the difference declines as the pH level increases.
+
+As the pH level increases (less lead is leached from pipes), the difference in infant mortality for lead and no-lead cities changes.
+
+To see if the difference is statistically significant, we test $H_0$: the slopes of the lines are the same vs. $H_1$: the slopes of the lines of the lines are different.
+
+When the interaction term is significant, you can reject the null hypothesis. Let's check whether our interaction term's $p$-value is significant at 5%: 
+
+```{r}
+int_p_value <- summary(int_model)$coefficients[4, 4]
+
+decision <- dplyr::if_else(
+  int_p_value < 0.05,
+  "reject the null",
+  "fail to reject the null"
+)
+
+cat(
+  "The p-value is",
+  round(int_p_value, 4),
+  "so we",
+  decision
+)
+```
+
+
+While the slopes appear different on the plot, we cannot say that the difference in the slopes is statistically significant at the 5% level.
+
+We therefore estimate a model containing only the main effects:
+
+```{r}
+main_effects_model <- update(
+  int_model,
+  . ~ . - lead:ph
+)
+
+model_coefficients <- coef(main_effects_model)
+
+b0 <- model_coefficients["(Intercept)"]
+b_lead <- model_coefficients["lead"]
+b_ph <- model_coefficients["ph"]
+
+lead_term <- ifelse(
+  b_lead >= 0,
+  paste0("+ ", round(b_lead, 3), "lead"),
+  paste0("- ", abs(round(b_lead, 3)), "lead")
+)
+
+ph_term <- ifelse(
+  b_ph >= 0,
+  paste0("+ ", round(b_ph, 3), "ph"),
+  paste0("- ", abs(round(b_ph, 3)), "ph")
+)
+```
+
+
+\[
+\widehat{infrate}
+= `r round(b0, 3)` `r lead_term` `r ph_term`
+\]
+
+For two cities with the same $ph$, but with one having lead pipes $(lead=1)$ and the other not having lead pipes $(lead=0)$, the difference in predicted infant mortality rates is:
+
+\[
+\widehat{infrate}(lead=1)
+-
+\widehat{infrate}(lead=0)
+=
+`r round(b_lead, 3)`
+\]
+
+If we compare two cities with the same value of $lead$, but with $ph=6$ in one city and $ph=5$ in the other, the difference in predicted infant mortality rates is:
+
+\[
+\widehat{infrate}(ph=6)
+-
+\widehat{infrate}(ph=5)
+=
+`r round(b_ph * (6 - 5), 3)`
+\]
+
+## Could our analysis suffer from omitted variable bias?
+
+Our analysis doesn't include other factors that affect infant mortality that may also be correlated with *lead* and *ph*. 
+
+Let's take a look at the correlations between the variables not included in the original regression and the independent variables that were, along with the dependent variable.
+
+First, let's cut our dataset down a bit and then look at a correlations matrix.
+
+```{r}
+names(lead_data)
+```
+
+```{r}
+vars <- c("infrate", "ph", "lead", "hardness", "typhoid_rate", "population", "temperature")
+
+corr_tibble <- lead_data %>%
+  select(all_of(vars)) %>%
+  mutate(across(everything(), as.numeric)) %>%
+  cor(use = "complete.obs") %>%          # correct correlation matrix
+  as.data.frame() %>%
+  tibble::rownames_to_column("var1") %>%
+  pivot_longer(
+    cols = -var1,
+    names_to = "var2",
+    values_to = "correlation"
+  )
+
+corr_matrix <- corr_tibble %>%
+  pivot_wider(names_from = var2, values_from = correlation)
+
+
+```
+
+```{r}
+corr_matrix %>%
+  rename(Variable = var1) %>%
+  kable(
+    format = "html",
+    digits = 2,
+    caption = "Correlation matrix",
+    align = "l"
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    bootstrap_options = "striped"
+  ) %>%
+  column_spec(2:ncol(corr_matrix), width = "6em")
+```
+
+
+Let's pick the variable with the highest correlation with *infrate*, *ph*, and *lead*,  *typhoid_rate*, and add it to our regression:
+
+```{r, results= 'asis'}
+mod2 = lm(infrate ~ lead + ph + lead:ph +  typhoid_rate, data = lead_data)
+
+mk_coeftab_robust(
+  mod2,
+  mode = "simple",
+  term_labels = c(
+    lead = "Leaded pipes (1=yes)",
+    ph = 'ph level',
+    "lead:ph" = 'lead x ph',
+    typhoid_rate = 'typhoid rate'),
+  caption = "Infant mortality on lead, ph, lead/ ph interaction, typhoid rate (robust SEs, HC1)",
+  robust_type = "HC1"
+)
+```
+
+
+Let's take a look at what changed. The coefficients on *lead*, *ph*, and *lead * ph* changed slightly, which indicates potential omitted variable bias.
+
+The coefficient of *typhoid_rate* is also statistically significant and our $R^2$ improved, indicating that this is a useful variable to add to our model.
+
+
+# Polynomial regression models
+
+A polynomial multivariate regression model may include several independent variables at various powers. In these models, the partial (or marginal) effect of a regressor  $x_k$ on the dependent variable $y$ is determined by the partial derivative $\frac{\delta y}{\delta x_k}$ 
+
+## Model set-up
+
+Let's take a look at our model. Consider again the basic model but with an added *ph* quadratic term:
+
+$infrate_i = \beta_0 + \beta_1 lead_i + \beta_2 ph_i + \beta_3 ph^2_i + u_i$.
+
+Water pH has an obvious “too low / too high is bad” logic, so a quadratic is easy to motivate:
+
+* very acidic (low pH) can corrode pipes / mobilize metals
+
+* very basic (high pH) can also create different water chemistry issues
+
+We can think that infant mortality minimized at an intermediate pH / U-shape in risk (or inverted-U in “health”).
+
+The quadratic term is introduced into the model using the function I() to indicate the presence of a mathematical operator. 
+
+### Centering a variable
+
+We're going to use centered pH so the quadratic term is interpretable and doesn’t blow up collinearity.
+
+Also, if we didn't center `ph`, and instead estimated 
+
+$infrate_i = \beta_0 + \beta_1 ph_i + \beta_2 ph^2_i + u_i$
+
+with the raw `ph` value,
+
+* $\beta_0$ would be the predicted infant mortality when `ph = 0`, which doesn't make sense because `ph = 0` is impossible.  
+
+* $\beta_1$ would be the slope of infant mortality with respect to `ph` at `ph = 0`, which doesn't make sense for the same reason.
+
+* $\beta_2$ is the curvature. If it's greater than zero then the curve is U-shaped, and if it's less than zero than it's an inverted U. This is the only coefficient that's actually interpretable when we use the raw ph levels.
+
+The marginal effect is what really matters here.:
+
+$\frac{\delta infrate}{\delta ph} = \beta_{ph} + 2 \beta_{ph^2} ph$,
+
+which is the effect of increasing `ph` by one unit, and it depends on the current `ph` levels.
+
+On the other hand, the model with the centered `ph` levels, where we define:
+
+$ph_c = ph - \bar{ph}$, 
+
+that lets us estimate
+
+$infrate_i = \alpha_0 + \alpha_1 ph\_c_i + \alpha_2 ph\_c^2_i + u_i$
+
+Now we can interpret the centered coefficients:
+
+* $\alpha_0$ is the predicted infant mortality at the average ph level.
+
+* $\alpha_1$ is the marginal effect of increasing ph at the average ph.
+
+* $\apha_2$ is the curvature (same as $\beta_2$).
+
+Note: centering doesn't change the predicted values, the fitted curve, the location of the minimum or maximum, or the model fit. It's just an algebraic re-expression that makes the model easier to interpret.
+
+
+```{r, results = 'asis'}
+lead_data <- lead_data %>%
+  mutate(ph_c = ph - mean(ph, na.rm = TRUE),
+         temp_c = temperature - mean(temperature, na.rm = TRUE))
+
+m_quad <- lm(infrate ~ lead + ph_c + I(ph_c^2), data = lead_data)
+m_raw <- lm(infrate ~ lead + ph + I(ph^2), data = lead_data)
+
+mk_coeftab_robust(
+  m_quad,
+  mode = "simple",
+  term_labels = c(
+    lead = "Leaded pipes (1=yes)",
+    ph_c = 'ph level',
+    "I(ph_c^2)" = 'ph level squared'),
+  caption = "Infant mortality on lead, ph, and ph squared (robust SEs, HC1)",
+  robust_type = "HC1"
+)
+
+
+```
+
+## Marginal Effects and Minimum/ Maximum
+
+Let's calculate the marginal effect of `ph` on `infrate` for three levels of  `ph` using the relevant partial derivative from the raw model. We'll do the first quartile, the mean, and the third quartile of the centered value.
+
+$\frac{\delta infrate}{\delta ph} = \beta_{ph} + 2 \beta_{ph^2} ph$
+
+
+```{r}
+phlevels = c(quantile(lead_data$ph_c, .25), 0, quantile(lead_data$ph_c, .75))
+
+alpha_ph <- coef(m_quad)[[3]]
+alpha_ph2 <- coef(m_quad)[[4]]
+
+
+DiDp <- alpha_ph + 2 * alpha_ph2 * phlevels
+DiDp
+
+ph_star = mean(lead_data$ph, na.rm = TRUE) - alpha_ph / (2 * alpha_ph2)
+ph_star
+
+```
+
+So the ph that maximizes (because the coefficient on the quadratic term is negative) infant mortality is:
+
+$ph^*_c = -\frac{\alpha_{ph}}{2\alpha_{ph^2}}$
+
+and in raw terms:
+
+$ph^* = \bar{ph} - \frac{\alpha_{ph}}{2\alpha_{ph^2}}$
+
+or 
+
+$ph^* = -\frac{\beta_{ph}}{2\beta_{ph^2}}$
+
+Since `ph_star` is outside the observed range, the quadratic term is capturing curvature, not an interior optimum.
+
+That’s not an error, it’s a warning about extrapolation.
+
+Infant mortality changes roughly linearly over the observed pH range, with weak curvature that only implies a minimum outside of real pH values.
+
+Even when we include a quadratic term, the data don't have to imply a meaningful interior minimum or maximum. If the estimated turning point lies outside the range of observed values, the quadratic is simply approximating a monotonic relationship over the relevant domain. Interpreting the “optimal” value in that case would require extrapolation beyond the data and is not substantively meaningful.
+
+```{r, fig.alt = "Scatterplot of ph level vs. infant mortality showing that curvature doesn't occur within our data range."}
+ggplot(lead_data, aes(x = ph, y = infrate)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(
+    method = "lm",
+    formula = y ~ x + I(x^2),
+    se = TRUE
+  ) +
+  labs(
+    x = "Water pH",
+    y = "Infant mortality rate (per 100)",
+    title = "Infant mortality vs water pH with quadratic fit"
+  ) +
+  theme_minimal()
+```
+
+
+Now let's take a look at our turning point:
+
+```{r, fig.alt = "Scatterplot of ph level vs. infant mortality showing that the turning point doesn't occur within our data range."}
+# turning point in raw pH units
+b_ph  <- coef(m_raw)["ph"]
+b_ph2 <- coef(m_raw)["I(ph^2)"]
+ph_star <- -b_ph / (2 * b_ph2)
+
+ph_rng <- range(lead_data$ph, na.rm = TRUE)
+
+ggplot(lead_data, aes(x = ph, y = infrate)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(
+    method = "lm",
+    formula = y ~ x + I(x^2),
+    se = TRUE
+  ) +
+  geom_vline(
+    xintercept = ph_star,
+    linetype = "dashed"
+  ) +
+  geom_vline(
+    xintercept = ph_rng,
+    linetype = "dotted"
+  ) +
+  labs(
+    x = "Water pH",
+    y = "Infant mortality rate (per 100)",
+    title = "Quadratic fit/ turning point relative to observed pH range",
+    subtitle = paste0(
+      "Turning point at pH ≈ ",
+      round(ph_star, 2),
+      ", observed pH range shown with dotted lines"
+    )
+  ) +
+  theme_minimal()
+
+```
+
+The dashed line shows the mathematical turning point of the quadratic. The dotted lines show the range of pH values we actually see in our data. Because the turning point lies outside the observed range, the quadratic doesn't show an interior optimum in the data.
+
+And in this case, the quadratic term isn't statistically significant, so we really don't want to include it anyway.
+
+Centering also reduces collinearity between `ph` and `ph^2`, which is nice. To check for yourself, take a look at the VIF for the raw and the centered models.
+
+
+**Note: as with interaction terms, if using a quadratic (or higher order polynomial) you will want to include both the main and the quadratic term in your model, never just the polynomial term**
+
+
+
