@@ -1,0 +1,327 @@
+---
+title: "In-Class Activity: Simple Linear Regression"
+output: 
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Learning goals
+
+By the end of this activity, you should be able to:
+
+- describe the population and sample simple regression models;
+- estimate an OLS regression in R;
+- calculate the OLS slope and intercept from their formulas;
+- interpret coefficients, fitted values, residuals, and $R^2$; and
+- distinguish an association from a causal effect.
+
+
+# 1. Set up and meet the data
+
+We will use `wage2` from the `wooldridge` package. Each observation represents one person. Our main variables are:
+
+- `wage`: monthly earnings in dollars;
+- `lwage`: the natural log of monthly earnings; and
+- `educ`: years of education.
+
+If needed, install a package once in the Console with `install.packages("package_name")`. Do not include installation commands in the notebook.
+
+```{r packages}
+library(wooldridge)
+library(tidyverse)
+library(knitr)
+```
+
+Use the help file, `glimpse()`, and `summary()` to explore the data.
+
+(`glimpse()` is from `tidyverse`.)
+
+```{r inspect-data}
+# View the documentation for wage2
+
+# Inspect the structure of wage2
+
+# Summarize educ, wage, and lwage
+
+```
+
+1. What is the unit of observation?
+
+
+
+2. How many observations are in the data? Are any values missing for `educ`, `wage`, or `lwage`?
+
+
+
+3. Record the mean years of education and mean monthly earnings. Why is it useful to inspect descriptive statistics before fitting a model?
+
+
+
+# 2. Visualize the relationship
+
+Create a scatterplot with `educ` on the horizontal axis and `lwage` on the vertical axis. Add a fitted linear regression line, informative labels, and alt text. 
+
+```{r scatterplot, fig.alt="Scatterplot of log monthly earnings against years of education, with a fitted linear regression line."}
+# Create the scatterplot here
+
+```
+
+4. Describe the direction, strength, and form of the relationship. Identify anything else that stands out.
+
+
+
+5. Calculate the correlation between `educ` and `lwage`. Does it agree with what you saw in the plot? Explain.
+
+```{r correlation}
+# Calculate the correlation here
+
+```
+
+
+
+# 3. Connect the population model to the sample
+
+The population regression model is
+
+$$
+Y_i = \beta_0 + \beta_1X_i + u_i,
+$$
+
+where $u_i$ includes all factors other than $X_i$ that affect $Y_i$.
+
+For this application, write the population model using the variable names `lwage` and `educ`.
+
+
+
+6. In words, what does $\beta_1$ represent?
+
+
+
+7. Name two factors that could belong in $u_i$. For each, explain why it might also be related to education.
+
+
+
+The sample regression line is
+
+$$
+\widehat{Y}_i = \widehat{\beta}_0 + \widehat{\beta}_1X_i.
+$$
+
+The residual for observation $i$ is
+
+$$
+\widehat{u}_i = Y_i-\widehat{Y}_i.
+$$
+
+8. What does a positive residual mean here? What does a negative residual mean?
+
+
+
+# 4. Calculate OLS estimates from the formulas
+
+OLS chooses the intercept and slope that minimize the sum of squared residuals:
+
+$$
+\min_{b_0,b_1}\sum_{i=1}^{n}(Y_i-b_0-b_1X_i)^2.
+$$
+
+For simple linear regression,
+
+$$
+\widehat{\beta}_1 =
+\frac{\sum_{i=1}^{n}(X_i-\bar{X})(Y_i-\bar{Y})}
+{\sum_{i=1}^{n}(X_i-\bar{X})^2}
+$$
+
+and
+
+$$
+\widehat{\beta}_0=\bar{Y}-\widehat{\beta}_1\bar{X}.
+$$
+
+Complete the code to calculate both coefficients. Do not use `lm()` yet.
+
+```{r coefficients-by-hand}
+
+x_bar <- # mean of educ
+y_bar <- # mean of lwage
+
+numerator <- # sum of (educ - x_bar) * (lwage - y_bar)
+denominator <- # sum of (educ - x_bar)^2
+
+beta_1_hat <- # numerator divided by denominator
+beta_0_hat <- # intercept formula
+
+beta_0_hat
+beta_1_hat
+```
+
+9. Why do we square the residuals instead of just adding them?
+
+
+
+10. Check two properties of an OLS regression with an intercept:
+
+- the residuals sum to approximately zero and
+- the sample regression line passes through $(\bar{X},\bar{Y})$.
+
+```{r verify-properties}
+# Calculate fitted values and residuals using your hand-calculated coefficients
+
+# Check the sum of the residuals
+
+# Compare y_bar with the fitted value at x_bar
+
+```
+
+**What did you find?**
+
+
+
+# 5. Estimate the model with `lm()`
+
+Fit the model
+
+$$
+lwage_i=\beta_0+\beta_1 educ_i+u_i.
+$$
+
+```{r fit-model}
+# Fit the model and save it as wage_model
+
+# Display the model summary
+
+```
+
+11. Check that the `lm()` coefficients match your calculations. Write the estimated regression equation.
+
+
+
+12. Interpret the slope using both approximations below.
+
+- Approximate: a one-unit increase in $X$ is associated with a $100\widehat{\beta}_1\%$ change in $Y$.
+- Exact: $100(e^{\widehat{\beta}_1}-1)\%$.
+
+```{r slope-percent}
+# Calculate the approximate percent change
+
+# Calculate the exact percent change
+
+```
+
+
+13. Interpret the intercept. Is it actually useful here? Use the range of `educ` to support your answer.
+
+
+```{r education-range}
+# Find the minimum and maximum of educ
+
+```
+
+
+
+# 6. Predictions and residuals
+
+Use `predict()` to estimate `lwage` for people with 12 and 16 years of education. Then convert each prediction back to dollars with `exp()`.
+
+```{r predictions}
+new_people <- tibble(educ = c(12, 16))
+
+# Add predicted lwage and predicted wage to new_people
+
+```
+
+14. Report and compare the predicted monthly earnings. Why is the dollar difference not constant even though the regression is linear in `lwage`?
+
+
+
+Add fitted values and residuals to a copy of the data. Then identify the observations with the largest positive and largest negative residuals.
+
+```{r residual-observations}
+wage2_results <- wage2 |>
+  mutate(
+    fitted_lwage = # fitted values,
+    residual = # residuals 
+  )
+  
+
+# Show the observations with the largest positive and negative residuals
+
+```
+
+15. Interpret each of those two residuals in context.
+
+
+
+# 7. Measure model fit
+
+Using the standard sums-of-squares notation:
+
+$$
+TSS=\sum(Y_i-\bar{Y})^2, \qquad
+SSR=\sum(Y_i-\widehat{Y}_i)^2 = \sum\hat{u_i}^2, \qquad
+ESS=\sum(\widehat{Y}_i-\bar{Y})^2.
+$$
+
+They satisfy $SST=SSR+SSE$, and
+
+$$
+R^2=\frac{ESS}{TSS}=1-\frac{SSR}{TSS}.
+$$
+
+Calculate the three sums of squares and $R^2$ from the fitted values and residuals. Compare your result with the value from `summary(wage_model)`.
+
+```{r r-squared-by-hand}
+TSS <- # total sum of squares
+SSR <- # sum of squares residuals
+ESS <- # explained sum of squares
+
+r_squared_hand <- # calculate R-squared
+
+# Verify the decomposition and compare R-squared values
+
+```
+
+16. Interpret $R^2$ in context. Does a small $R^2$ mean the slope estimate is useless? Explain.
+
+
+# 8. Examine residuals and causal language
+
+Create a residual plot with `educ` on the horizontal axis and the residuals on the vertical axis. Include a horizontal line at zero and alt text.
+
+```{r residual-plot, fig.alt="Residuals from the regression of log monthly earnings on education plotted against years of education, with a horizontal reference line at zero."}
+
+# create the residual plot here
+```
+
+17. Are the residuals randomly scattered around zero, or do you see a systematic pattern? What does this plot reveal—and what can it not prove—about the zero conditional mean assumption $E(u\mid X)=0$?
+
+
+18. A classmate writes: “One additional year of education causes earnings to rise by about 6%.” Rewrite this conclusion so it is supported by this regression. Then explain what extra evidence or research design would be needed to make a causal claim.
+
+
+
+# 9. Final synthesis
+
+In 3–5 sentences, summarize what this analysis shows. Include the direction and magnitude of the estimated relationship, model fit, and one important limitation.
+
+
+
+# Optional extension
+
+Fit a level-level model using `wage` instead of `lwage`. Compare its plot, coefficient interpretation, residual plot, and $R^2$ with the log-level model. Which specification seems more useful, and why?
+
+```{r extension, eval=FALSE}
+# Optional extension code
+
+```
+
