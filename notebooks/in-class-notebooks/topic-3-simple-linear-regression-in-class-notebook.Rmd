@@ -310,7 +310,7 @@ Create a residual plot with `educ` on the horizontal axis and the residuals on t
 
 
 
-# 9. Final synthesis
+# 9. Final summary
 
 In 3–5 sentences, summarize what this analysis shows. Include the direction and magnitude of the estimated relationship, model fit, and one important limitation.
 
