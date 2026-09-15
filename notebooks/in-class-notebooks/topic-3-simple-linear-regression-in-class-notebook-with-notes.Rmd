@@ -36,12 +36,21 @@ We will use `wage2` from the `wooldridge` package. Each observation represents o
 If needed, install a package once in the Console with `install.packages("package_name")`. Do not include installation commands in the notebook.
 
 ```{r packages}
-install.packages("wooldridge")
+#install.packages("wooldridge")
 library(wooldridge)
 library(tidyverse)
 library(knitr)
 
 ```
+
+
+To use the `reporting.R` functions, make sure the file is saved in the same folder as this file. So your structure would look like:
+
+-folder_name
+--topic-3-simple-linear-regression.Rmd
+--reporting.R
+--wcag-overrides.html
+
 
 ```{r}
 source('reporting.R')
@@ -51,30 +60,53 @@ Use the help file, `glimpse()`, and `summary()` to explore the data.
 
 (`glimpse()` is from `tidyverse`.)
 
+I'm just renaming the `wage2` data so I don't need to type the "2" in all the time:
+
 ```{r}
 data('wage2')
+wage <- wage2
+
 ```
 
 
 ```{r inspect-data}
 # View the documentation for wage2
+?wage2
 
 # Inspect the structure of wage2
+glimpse(wage)
 
-# Summarize educ, wage, and lwage
+# Summarize educ, wage, and lwage using the built-in summary option
+
+summary(wage)
 
 
 ```
 
-1. What is the unit of observation?
+```{r, results = "asis"}
+# using the function in reporting.R
+# choosing variables using numeric_vars
+# can also choose factor variables using factor_vars = c("variable_name", "variable_name")
+mk_dataset_summary(wage, numeric_vars = c("educ", "wage", "lwage"))
+```
 
+1. What is the unit of observation?
+wage: month earnings. lwage: log of monthly earnings. educ: years of education.
 
 
 2. How many observations are in the data? Are any values missing for `educ`, `wage`, or `lwage`?
+There should be 935 for all three variables. Are there? Yes, none missing.
+
+```{r}
+sum(is.na(wage$educ))
+sum(is.na(wage$wage))
+```
 
 
 
 3. Record the mean years of education and mean monthly earnings. Why is it useful to inspect descriptive statistics before fitting a model?
+Mean of education: about 13.5 years. Mean of wages: about 960 currency units. 
+Useful to know the shape of our data, missing values (any patterns), any implausible values, variation in our data/ limited variation
 
 
 
@@ -84,20 +116,25 @@ Create a scatterplot with `educ` on the horizontal axis and `lwage` on the verti
 
 ```{r scatterplot, fig.alt="Scatterplot of log monthly earnings against years of education, with a fitted linear regression line."}
 # Create the scatterplot here
+ggplot(wage, aes(x = educ, y = lwage)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, color = "darkorchid") +
+  labs(x = "years of education",
+       y = "log of monthly earnings")
 
 ```
 
 4. Describe the direction, strength, and form of the relationship. Identify anything else that stands out.
-
+Positive/ moderate relationship. Pretty big spread, can have low income no matter the years of education.
 
 
 5. Calculate the correlation between `educ` and `lwage`. Does it agree with what you saw in the plot? Explain.
 
 ```{r correlation}
 # Calculate the correlation here
-
+cor(wage$educ, wage$lwage)
 ```
-
+Positive, moderate. Matches what we saw in the visualization but the visual gives more information.
 
 
 # 3. Connect the population model to the sample
@@ -112,13 +149,16 @@ where $u_i$ includes all factors other than $X_i$ that affect $Y_i$.
 
 For this application, write the population model using the variable names `lwage` and `educ`.
 
-
+$lwage_i = \beta_0 + \beta_1 \times educ_i + u_i$
 
 6. In words, what does $\beta_1$ represent?
-
-
+The slope, the population change in expected log monthly earnings associated with one additional year of education.
 
 7. Name two factors that could belong in $u_i$. For each, explain why it might also be related to education.
+Location, industry/ type of career.
+Brand effect/ prestige
+
+Other options could be family background, school quality, work experience, motivation, and labor market conditions. The key issue is whether a factor affects earnings and is correlated with education.
 
 
 
@@ -135,7 +175,9 @@ $$
 $$
 
 8. What does a positive residual mean here? What does a negative residual mean?
+Positive residual means the actual person in the data sample made more than expected given the years of education (mean earnings for that level of education). 
 
+Negative residual means the actual person in the data sample made less than expected given the years of education (mean earnings for that level of education). 
 
 
 # 4. Calculate OLS estimates from the formulas
@@ -163,22 +205,29 @@ $$
 Complete the code to calculate both coefficients. Do not use `lm()` yet.
 
 ```{r coefficients-by-hand}
+a <- 1:100
+a_bar <- mean(a)
+a - a_bar
+```
 
-x_bar <- # mean of educ
-y_bar <- # mean of lwage
+This is on the homework, so will leave it to your problem set!
 
-numerator <- # sum of (educ - x_bar) * (lwage - y_bar)
-denominator <- # sum of (educ - x_bar)^2
+```{r coefficients-by-hand}
+#x_bar <- # mean of educ
+#y_bar <- # mean of lwage
 
-beta_1_hat <- # numerator divided by denominator
-beta_0_hat <- # intercept formula
+#numerator <- # sum of (educ - x_bar) * (lwage - y_bar)
+#denominator <- # sum of (educ - x_bar)^2
 
-beta_0_hat
-beta_1_hat
+#beta_1_hat <- # numerator divided by denominator
+#beta_0_hat <- # intercept formula
+
+#beta_0_hat
+#beta_1_hat
 ```
 
 9. Why do we square the residuals instead of just adding them?
-
+If we just added them up, they would offset each other. Squaring makes everything non negative, penalizes further distances even more heavily.
 
 
 10. Check two properties of an OLS regression with an intercept:
@@ -209,19 +258,31 @@ $$
 
 ```{r fit-model}
 # Fit the model and save it as wage_model
+wage_model <- lm(lwage ~ educ, data = wage)
 
 # Display the model summary
+summary(wage_model)
+
+```
+
+```{r, results = "asis"}
+mk_coeftab(wage_model)
 
 ```
 
 11. Check that the `lm()` coefficients match your calculations. Write the estimated regression equation.
 
+$\widehat{lwage} = \beta_0 + \beta_1 educ$
+
+(here's where in insert the estimated coefficients from the model)
 
 
 12. Interpret the slope using both approximations below.
 
 - Approximate: a one-unit increase in $X$ is associated with a $100\widehat{\beta}_1\%$ change in $Y$.
 - Exact: $100(e^{\widehat{\beta}_1}-1)\%$.
+
+
 
 ```{r slope-percent}
 # Calculate the approximate percent change
@@ -232,6 +293,13 @@ $$
 
 
 13. Interpret the intercept. Is it actually useful here? Use the range of `educ` to support your answer.
+
+The observed range is 9-18, zero is outside of that, the intercept is an extrapolation, doesn't have a lot of substance for us. 
+
+```{r, results = "asis"}
+mk_dataset_summary(wage, numeric_vars = c("lwage", "educ", "wage"))
+```
+
 
 
 ```{r education-range}
@@ -246,32 +314,43 @@ $$
 Use `predict()` to estimate `lwage` for people with 12 and 16 years of education. Then convert each prediction back to dollars with `exp()`.
 
 ```{r predictions}
-new_people <- tibble(educ = c(12, 16))
+new_people <- tibble(educ = c(11, 12, 13, 14))
 
 # Add predicted lwage and predicted wage to new_people
+exp(predict(wage_model, newdata = new_people))
 
 ```
 
 14. Report and compare the predicted monthly earnings. Why is the dollar difference not constant even though the regression is linear in `lwage`?
 
+Approximate percent change per year is 6%.
+
+A constant change in log earnings corresponds to a constant percent change, not a constant dollar change. The same percentage applied to a bigger base gives a bigger dollar difference. 
 
 
 Add fitted values and residuals to a copy of the data. Then identify the observations with the largest positive and largest negative residuals.
 
 ```{r residual-observations}
-wage2_results <- wage2 |>
+wage_results <- wage |>
   mutate(
-    fitted_lwage = # fitted values,
-    residual = # residuals 
+    fitted_lwage = fitted(wage_model),
+    residual = resid(wage_model),
+    row_id = row_number()
   )
   
 
 # Show the observations with the largest positive and negative residuals
 
+bind_rows(
+  wage_results |> slice_max(residual, n = 1) |> mutate(extreme = "Largest positive"),
+  wage_results |> slice_min(residual, n = 1) |> mutate(extreme = "Largest negative")
+) |>
+  select(extreme, row_id, educ, wage, lwage, fitted_lwage, residual)
+
 ```
 
 15. Interpret each of those two residuals in context.
-
+The largest positive residual shows the person whose log earnings are bigger than the education only prediction by the biggest amount. The largest negative residual shows the person whose log earnings fall below the prediction by the biggest amount. Residuals are in log points. Exponentiating a residual gives the actual-to-predicted earnings ratio.
 
 
 # 7. Measure model fit
@@ -293,17 +372,22 @@ $$
 Calculate the three sums of squares and $R^2$ from the fitted values and residuals. Compare your result with the value from `summary(wage_model)`.
 
 ```{r r-squared-by-hand}
-TSS <- # total sum of squares
-SSR <- # sum of squares residuals
-ESS <- # explained sum of squares
+SST <- sum((wage2$lwage - mean(wage2$lwage))^2)
+SSE <- sum(resid(wage_model)^2)
+SSR <- sum((fitted(wage_model) - mean(wage2$lwage))^2)
 
-r_squared_hand <- # calculate R-squared
+r_squared_hand <- SSR / SST
+
 
 # Verify the decomposition and compare R-squared values
+c(SST = SST, SSR_plus_SSE = SSR + SSE)
 
+c(hand = r_squared_hand, lm = summary(wage_model)$r.squared)
 ```
 
 16. Interpret $R^2$ in context. Does a small $R^2$ mean the slope estimate is useless? Explain.
+
+About 9.7% of the sample variation in log monthly earnings is explained by its linear association with education. A modest $R^2$ doesn't by itself make a slope useless, outcomes like earnings have a lot of determinants, and the slope may still describe an important relationship. $R^2$ also doesn't establish causality.
 
 
 # 8. Examine residuals and causal language
@@ -313,12 +397,25 @@ Create a residual plot with `educ` on the horizontal axis and the residuals on t
 ```{r residual-plot, fig.alt="Residuals from the regression of log monthly earnings on education plotted against years of education, with a horizontal reference line at zero."}
 
 # create the residual plot here
+
+ggplot(wage_results, aes(x = educ, y = residual)) +
+  geom_point(color = "steelblue", alpha = 0.55) +
+  geom_hline(yintercept = 0, color = "darkorchid", linewidth = 0.8) +
+  labs(
+    title = "Residuals from the Education–Earnings Model",
+    x = "Years of education",
+    y = "Residual"
+  ) +
+  theme_minimal()
 ```
 
 17. Are the residuals randomly scattered around zero, or do you see a systematic pattern? What does this plot reveal—and what can it not prove—about the zero conditional mean assumption $E(u\mid X)=0$?
 
+The residuals are centered around zero by construction, and the plot can show obvious nonlinear patterns or changing spread. It can't verify $E(u|X) = 0$, because omitted factors can be correlated with education without creating a visible residual pattern.
 
 18. A classmate writes: “One additional year of education causes earnings to rise by about 6%.” Rewrite this conclusion so it is supported by this regression. Then explain what extra evidence or research design would be needed to make a causal claim.
+
+Supported version: “One additional year of education is associated with about 6% higher monthly earnings in this sample.” A causal claim needs a credible source of exogenous variation, like random assignment, a natural experiment, or another design that addresses omitted variable bias and reverse causality.
 
 
 
