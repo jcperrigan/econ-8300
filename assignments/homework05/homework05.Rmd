@@ -227,7 +227,7 @@ $$
 **Problem:**
 
 1. Calculate the residual sums of squares for the restricted and unrestricted models. Save them, in that order, as a named vector called `f_rss`.
-2. Identify the number of restrictions $q$, the numerator degrees of freedom, and the denominator degrees of freedom. Save them as a named vector called `f_df`.
+2. Save the unrestricted residual sum of squares, the restricted residual sum of squares, the number of restrictions $q$, the number of observations $n$, and the denominator degrees of freedom $df_{den} = n - k - 1$ in a named vector called `f_inputs`. (note: $k$ does not include the intercept). Save them in that order.
 
 **Answer:**
 
