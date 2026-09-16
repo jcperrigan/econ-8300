@@ -207,6 +207,230 @@ window.buildTabsets = function(tocID) {
 };
 
 </script>
+<script>$(document).ready(function(){
+    if (typeof $('[data-toggle="tooltip"]').tooltip === 'function') {
+        $('[data-toggle="tooltip"]').tooltip();
+    }
+    if ($('[data-toggle="popover"]').popover === 'function') {
+        $('[data-toggle="popover"]').popover();
+    }
+});
+</script>
+<style type="text/css">
+.lightable-minimal {
+border-collapse: separate;
+border-spacing: 16px 1px;
+width: 100%;
+margin-bottom: 10px;
+}
+.lightable-minimal td {
+margin-left: 5px;
+margin-right: 5px;
+}
+.lightable-minimal th {
+margin-left: 5px;
+margin-right: 5px;
+}
+.lightable-minimal thead tr:last-child th {
+border-bottom: 2px solid #00000050;
+empty-cells: hide;
+}
+.lightable-minimal tbody tr:first-child td {
+padding-top: 0.5em;
+}
+.lightable-minimal.lightable-hover tbody tr:hover {
+background-color: #f5f5f5;
+}
+.lightable-minimal.lightable-striped tbody tr:nth-child(even) {
+background-color: #f5f5f5;
+}
+.lightable-classic {
+border-top: 0.16em solid #111111;
+border-bottom: 0.16em solid #111111;
+width: 100%;
+margin-bottom: 10px;
+margin: 10px 5px;
+}
+.lightable-classic tfoot tr td {
+border: 0;
+}
+.lightable-classic tfoot tr:first-child td {
+border-top: 0.14em solid #111111;
+}
+.lightable-classic caption {
+color: #222222;
+}
+.lightable-classic td {
+padding-left: 5px;
+padding-right: 5px;
+color: #222222;
+}
+.lightable-classic th {
+padding-left: 5px;
+padding-right: 5px;
+font-weight: normal;
+color: #222222;
+}
+.lightable-classic thead tr:last-child th {
+border-bottom: 0.10em solid #111111;
+}
+.lightable-classic.lightable-hover tbody tr:hover {
+background-color: #F9EEC1;
+}
+.lightable-classic.lightable-striped tbody tr:nth-child(even) {
+background-color: #f5f5f5;
+}
+.lightable-classic-2 {
+border-top: 3px double #111111;
+border-bottom: 3px double #111111;
+width: 100%;
+margin-bottom: 10px;
+}
+.lightable-classic-2 tfoot tr td {
+border: 0;
+}
+.lightable-classic-2 tfoot tr:first-child td {
+border-top: 3px double #111111;
+}
+.lightable-classic-2 caption {
+color: #222222;
+}
+.lightable-classic-2 td {
+padding-left: 5px;
+padding-right: 5px;
+color: #222222;
+}
+.lightable-classic-2 th {
+padding-left: 5px;
+padding-right: 5px;
+font-weight: normal;
+color: #222222;
+}
+.lightable-classic-2 tbody tr:last-child td {
+border-bottom: 3px double #111111;
+}
+.lightable-classic-2 thead tr:last-child th {
+border-bottom: 1px solid #111111;
+}
+.lightable-classic-2.lightable-hover tbody tr:hover {
+background-color: #F9EEC1;
+}
+.lightable-classic-2.lightable-striped tbody tr:nth-child(even) {
+background-color: #f5f5f5;
+}
+.lightable-material {
+min-width: 100%;
+white-space: nowrap;
+table-layout: fixed;
+font-family: Roboto, sans-serif;
+border: 1px solid #EEE;
+border-collapse: collapse;
+margin-bottom: 10px;
+}
+.lightable-material tfoot tr td {
+border: 0;
+}
+.lightable-material tfoot tr:first-child td {
+border-top: 1px solid #EEE;
+}
+.lightable-material th {
+height: 56px;
+padding-left: 16px;
+padding-right: 16px;
+}
+.lightable-material td {
+height: 52px;
+padding-left: 16px;
+padding-right: 16px;
+border-top: 1px solid #eeeeee;
+}
+.lightable-material.lightable-hover tbody tr:hover {
+background-color: #f5f5f5;
+}
+.lightable-material.lightable-striped tbody tr:nth-child(even) {
+background-color: #f5f5f5;
+}
+.lightable-material.lightable-striped tbody td {
+border: 0;
+}
+.lightable-material.lightable-striped thead tr:last-child th {
+border-bottom: 1px solid #ddd;
+}
+.lightable-material-dark {
+min-width: 100%;
+white-space: nowrap;
+table-layout: fixed;
+font-family: Roboto, sans-serif;
+border: 1px solid #FFFFFF12;
+border-collapse: collapse;
+margin-bottom: 10px;
+background-color: #363640;
+}
+.lightable-material-dark tfoot tr td {
+border: 0;
+}
+.lightable-material-dark tfoot tr:first-child td {
+border-top: 1px solid #FFFFFF12;
+}
+.lightable-material-dark th {
+height: 56px;
+padding-left: 16px;
+padding-right: 16px;
+color: #FFFFFF60;
+}
+.lightable-material-dark td {
+height: 52px;
+padding-left: 16px;
+padding-right: 16px;
+color: #FFFFFF;
+border-top: 1px solid #FFFFFF12;
+}
+.lightable-material-dark.lightable-hover tbody tr:hover {
+background-color: #FFFFFF12;
+}
+.lightable-material-dark.lightable-striped tbody tr:nth-child(even) {
+background-color: #FFFFFF12;
+}
+.lightable-material-dark.lightable-striped tbody td {
+border: 0;
+}
+.lightable-material-dark.lightable-striped thead tr:last-child th {
+border-bottom: 1px solid #FFFFFF12;
+}
+.lightable-paper {
+width: 100%;
+margin-bottom: 10px;
+color: #444;
+}
+.lightable-paper tfoot tr td {
+border: 0;
+}
+.lightable-paper tfoot tr:first-child td {
+border-top: 1px solid #00000020;
+}
+.lightable-paper thead tr:last-child th {
+color: #666;
+vertical-align: bottom;
+border-bottom: 1px solid #00000020;
+line-height: 1.15em;
+padding: 10px 5px;
+}
+.lightable-paper td {
+vertical-align: middle;
+border-bottom: 1px solid #00000010;
+line-height: 1.15em;
+padding: 7px 5px;
+}
+.lightable-paper.lightable-hover tbody tr:hover {
+background-color: #F9EEC1;
+}
+.lightable-paper.lightable-striped tbody tr:nth-child(even) {
+background-color: #00000008;
+}
+.lightable-paper.lightable-striped tbody td {
+border: 0;
+}
+</style>
 <style>
 
 pre, pre code, .sourceCode, .sourceCode pre {
@@ -820,28 +1044,140 @@ hypothesis</strong>, which says that returns on holding a firm’s stock
 should not be systematically related to information known before buying
 the stock.</p>
 <p>To test this, they estimate the following model:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(return<span class="sc">~</span>dkr <span class="sc">+</span> netinc <span class="sc">+</span> eps <span class="sc">+</span> sp90, <span class="at">data =</span> return))</span></code></pre></div>
-<pre><code>## 
-## Call:
-## lm(formula = return ~ dkr + netinc + eps + sp90, data = return)
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -70.661 -27.418  -4.919  19.361 120.705 
-## 
-## Coefficients:
-##              Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)  2.611702   7.201732   0.363 0.717426    
-## dkr          0.248660   0.195209   1.274 0.204887    
-## netinc      -0.001723   0.004494  -0.383 0.701995    
-## eps          0.057751   0.075184   0.768 0.443738    
-## sp90        -0.220351   0.063340  -3.479 0.000676 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 37.92 on 137 degrees of freedom
-## Multiple R-squared:  0.101,  Adjusted R-squared:  0.0748 
-## F-statistic:  3.85 on 4 and 137 DF,  p-value: 0.005368</code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(return<span class="sc">~</span>dkr <span class="sc">+</span> netinc <span class="sc">+</span> eps <span class="sc">+</span> sp90, <span class="at">data =</span> return)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">mk_coeftab_robust</span>(mod1,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>                  <span class="at">mode =</span> <span class="st">&quot;full&quot;</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>                  <span class="at">robust_type =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+Model summary (robust SEs)
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;font-weight: bold;">
+Term
+</th>
+<th style="text-align:right;font-weight: bold;">
+Estimate
+</th>
+<th style="text-align:right;font-weight: bold;">
+Std. Error (robust)
+</th>
+<th style="text-align:right;font-weight: bold;">
+t/z value
+</th>
+<th style="text-align:right;font-weight: bold;">
+p value
+</th>
+<th style="text-align:right;font-weight: bold;">
+95% CI
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+Intercept
+</th>
+<td style="text-align:right;">
+2.612
+</td>
+<td style="text-align:right;">
+7.202
+</td>
+<td style="text-align:right;">
+0.36
+</td>
+<td style="text-align:right;">
+0.717
+</td>
+<td style="text-align:right;">
+-11.629 to 16.853
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+dkr
+</th>
+<td style="text-align:right;">
+0.249
+</td>
+<td style="text-align:right;">
+0.195
+</td>
+<td style="text-align:right;">
+1.27
+</td>
+<td style="text-align:right;">
+0.205
+</td>
+<td style="text-align:right;">
+-0.137 to 0.635
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+netinc
+</th>
+<td style="text-align:right;">
+-0.002
+</td>
+<td style="text-align:right;">
+0.004
+</td>
+<td style="text-align:right;">
+-0.38
+</td>
+<td style="text-align:right;">
+0.702
+</td>
+<td style="text-align:right;">
+-0.011 to 0.007
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+eps
+</th>
+<td style="text-align:right;">
+0.058
+</td>
+<td style="text-align:right;">
+0.075
+</td>
+<td style="text-align:right;">
+0.77
+</td>
+<td style="text-align:right;">
+0.444
+</td>
+<td style="text-align:right;">
+-0.091 to 0.206
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+sp90
+</th>
+<td style="text-align:right;">
+-0.220
+</td>
+<td style="text-align:right;">
+0.063
+</td>
+<td style="text-align:right;">
+-3.48
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+-0.346 to -0.095
+</td>
+</tr>
+</tbody>
+</table>
 <p>where</p>
 <ul>
 <li><span class="math inline">\(return\)</span> is the total return from
@@ -867,7 +1203,7 @@ value to “prob10.” Assign the answer TRUE if the explanatory variables
 are jointly significant, and FALSE if the explanatory variables are not
 jointly significant.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co">#prob10 = </span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co">#prob10 = </span></span></code></pre></div>
 <hr />
 <p><strong>#11</strong></p>
 <p><strong>Problem:</strong> In this sample, some firms have zero debt
@@ -876,9 +1212,9 @@ and some have negative earnings. Should we try to use <span class="math inline">
 <strong>Answer</strong> section below. Assign your answer as a string to
 “prob11.”</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co">#prob11 = </span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co">#prob11 = </span></span></code></pre></div>
 <hr />
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&#39;injury&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&#39;injury&#39;</span>)</span></code></pre></div>
 <p><strong>Description:</strong> Use this description for questions 12,
 13, 14, and 15.</p>
 <p>A researcher is examining workers’ compensation and injury duration.
@@ -903,31 +1239,160 @@ and</p></li>
 <p><span class="math inline">\(indust\)</span> is a code to control for
 the worker’s industry.</p>
 <p>The researcher estimates the following equation:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(ldurat <span class="sc">~</span> male <span class="sc">+</span> male<span class="sc">:</span>upextr <span class="sc">+</span> lprewage <span class="sc">+</span> lage <span class="sc">+</span> indust, <span class="at">data =</span> injury))</span></code></pre></div>
-<pre><code>## 
-## Call:
-## lm(formula = ldurat ~ male + male:upextr + lprewage + lage + 
-##     indust, data = injury)
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -3.3639 -0.7790  0.0539  0.7789  4.2548 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept) -1.75665    0.20520  -8.561  &lt; 2e-16 ***
-## male        -0.07724    0.04275  -1.807  0.07081 .  
-## lprewage     0.34116    0.03231  10.560  &lt; 2e-16 ***
-## lage         0.32323    0.04521   7.150 9.56e-13 ***
-## indust       0.05114    0.01744   2.933  0.00336 ** 
-## male:upextr -0.10354    0.03852  -2.688  0.00720 ** 
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 1.285 on 7100 degrees of freedom
-##   (44 observations deleted due to missingness)
-## Multiple R-squared:  0.03449,    Adjusted R-squared:  0.03381 
-## F-statistic: 50.72 on 5 and 7100 DF,  p-value: &lt; 2.2e-16</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>mod2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(ldurat <span class="sc">~</span> male <span class="sc">+</span> male<span class="sc">:</span>upextr <span class="sc">+</span> lprewage <span class="sc">+</span> lage <span class="sc">+</span> indust, <span class="at">data =</span> injury)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="fu">mk_coeftab_robust</span>(mod2,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>                  <span class="at">mode =</span> <span class="st">&quot;full&quot;</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>                  <span class="at">robust_type =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+Model summary (robust SEs)
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;font-weight: bold;">
+Term
+</th>
+<th style="text-align:right;font-weight: bold;">
+Estimate
+</th>
+<th style="text-align:right;font-weight: bold;">
+Std. Error (robust)
+</th>
+<th style="text-align:right;font-weight: bold;">
+t/z value
+</th>
+<th style="text-align:right;font-weight: bold;">
+p value
+</th>
+<th style="text-align:right;font-weight: bold;">
+95% CI
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+Intercept
+</th>
+<td style="text-align:right;">
+-1.757
+</td>
+<td style="text-align:right;">
+0.205
+</td>
+<td style="text-align:right;">
+-8.56
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+-2.159 to -1.354
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+male
+</th>
+<td style="text-align:right;">
+-0.077
+</td>
+<td style="text-align:right;">
+0.043
+</td>
+<td style="text-align:right;">
+-1.81
+</td>
+<td style="text-align:right;">
+0.071
+</td>
+<td style="text-align:right;">
+-0.161 to 0.007
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+lprewage
+</th>
+<td style="text-align:right;">
+0.341
+</td>
+<td style="text-align:right;">
+0.032
+</td>
+<td style="text-align:right;">
+10.56
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.278 to 0.404
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+lage
+</th>
+<td style="text-align:right;">
+0.323
+</td>
+<td style="text-align:right;">
+0.045
+</td>
+<td style="text-align:right;">
+7.15
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.235 to 0.412
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+indust
+</th>
+<td style="text-align:right;">
+0.051
+</td>
+<td style="text-align:right;">
+0.017
+</td>
+<td style="text-align:right;">
+2.93
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;">
+0.017 to 0.085
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+male:upextr
+</th>
+<td style="text-align:right;">
+-0.104
+</td>
+<td style="text-align:right;">
+0.039
+</td>
+<td style="text-align:right;">
+-2.69
+</td>
+<td style="text-align:right;">
+0.007
+</td>
+<td style="text-align:right;">
+-0.179 to -0.028
+</td>
+</tr>
+</tbody>
+</table>
 <p><strong>#12</strong></p>
 <p><strong>Problem:</strong> Holding all other variables constant, what
 is the estimated percentage point difference in the duration of benefits
@@ -938,67 +1403,344 @@ and <span class="math inline">\(upextr = 1\)</span>?</p>
 <strong>Answer</strong> section below. Assign your answer as a number to
 “prob12.”</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co">#prob12 = </span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co">#prob12 = </span></span></code></pre></div>
 <hr />
 <p><strong>#13</strong></p>
 <p>Compare the two model summaries:</p>
 </div>
 <div id="model-1" class="section level3">
 <h3>Model 1:</h3>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(ldurat <span class="sc">~</span> male <span class="sc">+</span> male<span class="sc">:</span>upextr <span class="sc">+</span> lprewage <span class="sc">+</span> lage <span class="sc">+</span> indust, <span class="at">data =</span> injury))</span></code></pre></div>
-<pre><code>## 
-## Call:
-## lm(formula = ldurat ~ male + male:upextr + lprewage + lage + 
-##     indust, data = injury)
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -3.3639 -0.7790  0.0539  0.7789  4.2548 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept) -1.75665    0.20520  -8.561  &lt; 2e-16 ***
-## male        -0.07724    0.04275  -1.807  0.07081 .  
-## lprewage     0.34116    0.03231  10.560  &lt; 2e-16 ***
-## lage         0.32323    0.04521   7.150 9.56e-13 ***
-## indust       0.05114    0.01744   2.933  0.00336 ** 
-## male:upextr -0.10354    0.03852  -2.688  0.00720 ** 
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 1.285 on 7100 degrees of freedom
-##   (44 observations deleted due to missingness)
-## Multiple R-squared:  0.03449,    Adjusted R-squared:  0.03381 
-## F-statistic: 50.72 on 5 and 7100 DF,  p-value: &lt; 2.2e-16</code></pre>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>mod3 <span class="ot">&lt;-</span> <span class="fu">lm</span>(ldurat <span class="sc">~</span> male <span class="sc">+</span> male<span class="sc">:</span>upextr <span class="sc">+</span> lprewage <span class="sc">+</span> lage <span class="sc">+</span> indust, <span class="at">data =</span> injury)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="fu">mk_coeftab_robust</span>(mod3,</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>                  <span class="at">mode =</span> <span class="st">&quot;full&quot;</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>                  <span class="at">robust_type =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+Model summary (robust SEs)
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;font-weight: bold;">
+Term
+</th>
+<th style="text-align:right;font-weight: bold;">
+Estimate
+</th>
+<th style="text-align:right;font-weight: bold;">
+Std. Error (robust)
+</th>
+<th style="text-align:right;font-weight: bold;">
+t/z value
+</th>
+<th style="text-align:right;font-weight: bold;">
+p value
+</th>
+<th style="text-align:right;font-weight: bold;">
+95% CI
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+Intercept
+</th>
+<td style="text-align:right;">
+-1.757
+</td>
+<td style="text-align:right;">
+0.205
+</td>
+<td style="text-align:right;">
+-8.56
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+-2.159 to -1.354
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+male
+</th>
+<td style="text-align:right;">
+-0.077
+</td>
+<td style="text-align:right;">
+0.043
+</td>
+<td style="text-align:right;">
+-1.81
+</td>
+<td style="text-align:right;">
+0.071
+</td>
+<td style="text-align:right;">
+-0.161 to 0.007
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+lprewage
+</th>
+<td style="text-align:right;">
+0.341
+</td>
+<td style="text-align:right;">
+0.032
+</td>
+<td style="text-align:right;">
+10.56
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.278 to 0.404
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+lage
+</th>
+<td style="text-align:right;">
+0.323
+</td>
+<td style="text-align:right;">
+0.045
+</td>
+<td style="text-align:right;">
+7.15
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.235 to 0.412
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+indust
+</th>
+<td style="text-align:right;">
+0.051
+</td>
+<td style="text-align:right;">
+0.017
+</td>
+<td style="text-align:right;">
+2.93
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;">
+0.017 to 0.085
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+male:upextr
+</th>
+<td style="text-align:right;">
+-0.104
+</td>
+<td style="text-align:right;">
+0.039
+</td>
+<td style="text-align:right;">
+-2.69
+</td>
+<td style="text-align:right;">
+0.007
+</td>
+<td style="text-align:right;">
+-0.179 to -0.028
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="model-2" class="section level3">
 <h3>Model 2:</h3>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(ldurat <span class="sc">~</span> male <span class="sc">+</span> upextr <span class="sc">+</span> male<span class="sc">:</span>upextr <span class="sc">+</span> lprewage <span class="sc">+</span> lage <span class="sc">+</span> indust, <span class="at">data =</span> injury))</span></code></pre></div>
-<pre><code>## 
-## Call:
-## lm(formula = ldurat ~ male + upextr + male:upextr + lprewage + 
-##     lage + indust, data = injury)
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -3.3622 -0.7838  0.0554  0.7799  4.2347 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept) -1.72857    0.20754  -8.329  &lt; 2e-16 ***
-## male        -0.09759    0.04831  -2.020   0.0434 *  
-## upextr      -0.06296    0.06964  -0.904   0.3660    
-## lprewage     0.34080    0.03231  10.548  &lt; 2e-16 ***
-## lage         0.32256    0.04522   7.134 1.07e-12 ***
-## indust       0.04974    0.01750   2.842   0.0045 ** 
-## male:upextr -0.04087    0.07930  -0.515   0.6063    
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 1.285 on 7099 degrees of freedom
-##   (44 observations deleted due to missingness)
-## Multiple R-squared:  0.0346, Adjusted R-squared:  0.03378 
-## F-statistic:  42.4 on 6 and 7099 DF,  p-value: &lt; 2.2e-16</code></pre>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>mod4 <span class="ot">&lt;-</span> <span class="fu">lm</span>(ldurat <span class="sc">~</span> male <span class="sc">+</span> upextr <span class="sc">+</span> male<span class="sc">:</span>upextr <span class="sc">+</span> lprewage <span class="sc">+</span> lage <span class="sc">+</span> indust, <span class="at">data =</span> injury)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="fu">mk_coeftab_robust</span>(mod4,</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>                  <span class="at">mode =</span> <span class="st">&quot;full&quot;</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>                  <span class="at">robust_type =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+Model summary (robust SEs)
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;font-weight: bold;">
+Term
+</th>
+<th style="text-align:right;font-weight: bold;">
+Estimate
+</th>
+<th style="text-align:right;font-weight: bold;">
+Std. Error (robust)
+</th>
+<th style="text-align:right;font-weight: bold;">
+t/z value
+</th>
+<th style="text-align:right;font-weight: bold;">
+p value
+</th>
+<th style="text-align:right;font-weight: bold;">
+95% CI
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+Intercept
+</th>
+<td style="text-align:right;">
+-1.729
+</td>
+<td style="text-align:right;">
+0.208
+</td>
+<td style="text-align:right;">
+-8.33
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+-2.135 to -1.322
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+male
+</th>
+<td style="text-align:right;">
+-0.098
+</td>
+<td style="text-align:right;">
+0.048
+</td>
+<td style="text-align:right;">
+-2.02
+</td>
+<td style="text-align:right;">
+0.043
+</td>
+<td style="text-align:right;">
+-0.192 to -0.003
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+upextr
+</th>
+<td style="text-align:right;">
+-0.063
+</td>
+<td style="text-align:right;">
+0.070
+</td>
+<td style="text-align:right;">
+-0.90
+</td>
+<td style="text-align:right;">
+0.366
+</td>
+<td style="text-align:right;">
+-0.199 to 0.074
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+lprewage
+</th>
+<td style="text-align:right;">
+0.341
+</td>
+<td style="text-align:right;">
+0.032
+</td>
+<td style="text-align:right;">
+10.55
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.277 to 0.404
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+lage
+</th>
+<td style="text-align:right;">
+0.323
+</td>
+<td style="text-align:right;">
+0.045
+</td>
+<td style="text-align:right;">
+7.13
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.234 to 0.411
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+indust
+</th>
+<td style="text-align:right;">
+0.050
+</td>
+<td style="text-align:right;">
+0.018
+</td>
+<td style="text-align:right;">
+2.84
+</td>
+<td style="text-align:right;">
+0.005
+</td>
+<td style="text-align:right;">
+0.015 to 0.084
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+male:upextr
+</th>
+<td style="text-align:right;">
+-0.041
+</td>
+<td style="text-align:right;">
+0.079
+</td>
+<td style="text-align:right;">
+-0.52
+</td>
+<td style="text-align:right;">
+0.606
+</td>
+<td style="text-align:right;">
+-0.196 to 0.115
+</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Problem:</strong></p>
 <p>Comparing the two models, which do you think is more appropriate when
 considering the effect of gender and upper extremity injuries on workers
@@ -1007,7 +1749,7 @@ compensation duration? Justify your answer.</p>
 <strong>Answer</strong> section below. Assign your answer as a string to
 “prob13.”</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="co">#prob13 = </span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co">#prob13 = </span></span></code></pre></div>
 <hr />
 <p><strong>#14</strong></p>
 <p>The researcher estimates the equation again, removing <span class="math inline">\(upextr\)</span> and the interaction term but
@@ -1015,30 +1757,160 @@ adding <span class="math inline">\(ky\)</span> as a separate variable,
 where <span class="math inline">\(ky = 1\)</span> if the worker is
 located in KY and <span class="math inline">\(= 0\)</span> if in
 Michigan (the two states in the dataset):</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(ldurat <span class="sc">~</span> male <span class="sc">+</span> lprewage <span class="sc">+</span> lage <span class="sc">+</span> indust <span class="sc">+</span> ky, <span class="at">data =</span> injury))</span></code></pre></div>
-<pre><code>## 
-## Call:
-## lm(formula = ldurat ~ male + lprewage + lage + indust + ky, data = injury)
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -3.4367 -0.7933  0.0644  0.7729  4.2548 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept) -1.54641    0.21539  -7.180 7.71e-13 ***
-## male        -0.10308    0.04094  -2.518 0.011832 *  
-## lprewage     0.31730    0.03314   9.574  &lt; 2e-16 ***
-## lage         0.32662    0.04513   7.237 5.09e-13 ***
-## indust       0.06482    0.01760   3.683 0.000233 ***
-## ky          -0.15425    0.03904  -3.952 7.84e-05 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 1.285 on 7100 degrees of freedom
-##   (44 observations deleted due to missingness)
-## Multiple R-squared:  0.03563,    Adjusted R-squared:  0.03495 
-## F-statistic: 52.46 on 5 and 7100 DF,  p-value: &lt; 2.2e-16</code></pre>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>mod5 <span class="ot">&lt;-</span> <span class="fu">lm</span>(ldurat <span class="sc">~</span> male <span class="sc">+</span> lprewage <span class="sc">+</span> lage <span class="sc">+</span> indust <span class="sc">+</span> ky, <span class="at">data =</span> injury)</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="fu">mk_coeftab_robust</span>(mod5,</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>                  <span class="at">mode =</span> <span class="st">&quot;full&quot;</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>                  <span class="at">robust_type =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+Model summary (robust SEs)
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;font-weight: bold;">
+Term
+</th>
+<th style="text-align:right;font-weight: bold;">
+Estimate
+</th>
+<th style="text-align:right;font-weight: bold;">
+Std. Error (robust)
+</th>
+<th style="text-align:right;font-weight: bold;">
+t/z value
+</th>
+<th style="text-align:right;font-weight: bold;">
+p value
+</th>
+<th style="text-align:right;font-weight: bold;">
+95% CI
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+Intercept
+</th>
+<td style="text-align:right;">
+-1.546
+</td>
+<td style="text-align:right;">
+0.215
+</td>
+<td style="text-align:right;">
+-7.18
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+-1.969 to -1.124
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+male
+</th>
+<td style="text-align:right;">
+-0.103
+</td>
+<td style="text-align:right;">
+0.041
+</td>
+<td style="text-align:right;">
+-2.52
+</td>
+<td style="text-align:right;">
+0.012
+</td>
+<td style="text-align:right;">
+-0.183 to -0.023
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+lprewage
+</th>
+<td style="text-align:right;">
+0.317
+</td>
+<td style="text-align:right;">
+0.033
+</td>
+<td style="text-align:right;">
+9.57
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.252 to 0.382
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+lage
+</th>
+<td style="text-align:right;">
+0.327
+</td>
+<td style="text-align:right;">
+0.045
+</td>
+<td style="text-align:right;">
+7.24
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.238 to 0.415
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+indust
+</th>
+<td style="text-align:right;">
+0.065
+</td>
+<td style="text-align:right;">
+0.018
+</td>
+<td style="text-align:right;">
+3.68
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.03 to 0.099
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+ky
+</th>
+<td style="text-align:right;">
+-0.154
+</td>
+<td style="text-align:right;">
+0.039
+</td>
+<td style="text-align:right;">
+-3.95
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+-0.231 to -0.078
+</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Problem:</strong> Accounting for other variables in the
 model, is there evidence that being in a KY area affects compensation
 benefit duration? Test the appropriate hypothesis.</p>
@@ -1047,43 +1919,173 @@ benefit duration? Test the appropriate hypothesis.</p>
 as a <em>logical value</em> to “prob14.” Answer TRUE if you have enough
 evidence to reject the null hypothesis, and FALSE if you do not.</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="co">#prob14 = </span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="co">#prob14 = </span></span></code></pre></div>
 <hr />
 <p><strong>#15</strong></p>
 <p>The researcher estimates the equation again, this time adding <span class="math inline">\(ky\)</span> as a separate variable, where <span class="math inline">\(ky = 1\)</span> if the worker is located in KY and
 <span class="math inline">\(= 0\)</span> if in Michigan (the two states
 in the dataset):</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(ldurat <span class="sc">~</span> male <span class="sc">+</span> lprewage <span class="sc">+</span> lage <span class="sc">+</span> indust <span class="sc">+</span> ky, <span class="at">data =</span> injury))</span></code></pre></div>
-<pre><code>## 
-## Call:
-## lm(formula = ldurat ~ male + lprewage + lage + indust + ky, data = injury)
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -3.4367 -0.7933  0.0644  0.7729  4.2548 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept) -1.54641    0.21539  -7.180 7.71e-13 ***
-## male        -0.10308    0.04094  -2.518 0.011832 *  
-## lprewage     0.31730    0.03314   9.574  &lt; 2e-16 ***
-## lage         0.32662    0.04513   7.237 5.09e-13 ***
-## indust       0.06482    0.01760   3.683 0.000233 ***
-## ky          -0.15425    0.03904  -3.952 7.84e-05 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 1.285 on 7100 degrees of freedom
-##   (44 observations deleted due to missingness)
-## Multiple R-squared:  0.03563,    Adjusted R-squared:  0.03495 
-## F-statistic: 52.46 on 5 and 7100 DF,  p-value: &lt; 2.2e-16</code></pre>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>mod6 <span class="ot">&lt;-</span> <span class="fu">lm</span>(ldurat <span class="sc">~</span> male <span class="sc">+</span> lprewage <span class="sc">+</span> lage <span class="sc">+</span> indust <span class="sc">+</span> ky, <span class="at">data =</span> injury)</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a><span class="fu">mk_coeftab_robust</span>(mod6,</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>                  <span class="at">mode =</span> <span class="st">&quot;full&quot;</span>,</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>                  <span class="at">robust_type =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+Model summary (robust SEs)
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;font-weight: bold;">
+Term
+</th>
+<th style="text-align:right;font-weight: bold;">
+Estimate
+</th>
+<th style="text-align:right;font-weight: bold;">
+Std. Error (robust)
+</th>
+<th style="text-align:right;font-weight: bold;">
+t/z value
+</th>
+<th style="text-align:right;font-weight: bold;">
+p value
+</th>
+<th style="text-align:right;font-weight: bold;">
+95% CI
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+Intercept
+</th>
+<td style="text-align:right;">
+-1.546
+</td>
+<td style="text-align:right;">
+0.215
+</td>
+<td style="text-align:right;">
+-7.18
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+-1.969 to -1.124
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+male
+</th>
+<td style="text-align:right;">
+-0.103
+</td>
+<td style="text-align:right;">
+0.041
+</td>
+<td style="text-align:right;">
+-2.52
+</td>
+<td style="text-align:right;">
+0.012
+</td>
+<td style="text-align:right;">
+-0.183 to -0.023
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+lprewage
+</th>
+<td style="text-align:right;">
+0.317
+</td>
+<td style="text-align:right;">
+0.033
+</td>
+<td style="text-align:right;">
+9.57
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.252 to 0.382
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+lage
+</th>
+<td style="text-align:right;">
+0.327
+</td>
+<td style="text-align:right;">
+0.045
+</td>
+<td style="text-align:right;">
+7.24
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.238 to 0.415
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+indust
+</th>
+<td style="text-align:right;">
+0.065
+</td>
+<td style="text-align:right;">
+0.018
+</td>
+<td style="text-align:right;">
+3.68
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+0.03 to 0.099
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+ky
+</th>
+<td style="text-align:right;">
+-0.154
+</td>
+<td style="text-align:right;">
+0.039
+</td>
+<td style="text-align:right;">
+-3.95
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+<td style="text-align:right;">
+-0.231 to -0.078
+</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Problem:</strong> What is the percent difference in benefit
 duration <span class="math inline">\(durat\)</span> if someone is in KY
 vs. not in KY?</p>
 <p>This R code should be written in the code chunk of the
 <strong>Answer</strong> section below. Assign a number to “prob15.”</p>
 <p><strong>Answer:</strong></p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="co">#prob15 = </span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="co">#prob15 = </span></span></code></pre></div>
 <hr />
 </div>
 </div>

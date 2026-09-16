@@ -14,6 +14,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 library(car)
 library(wooldridge)
+source('reporting.R')
 ```
 
 # Midterm Review
@@ -267,8 +268,12 @@ A researcher is testing the **efficient markets hypothesis**, which says that re
 
 To test this, they estimate the following model:
 
-```{r}
-summary(lm(return~dkr + netinc + eps + sp90, data = return))
+```{r, results = "asis"}
+mod1 <- lm(return~dkr + netinc + eps + sp90, data = return)
+
+mk_coeftab_robust(mod1,
+                  mode = "full",
+                  robust_type = "HC1")
 ```
 
 where 
@@ -284,6 +289,8 @@ where
 
 
 **Problem:** Using the description and regression results, test whether all of the explanatory variables are jointly significant at the 5% level ($H_0: \beta_1 = \beta_2 = \beta_3 = \beta_4 = 0$).
+
+
 
 This R code should be written in the code chunk of the **Answer** section below. Assign your answer as a logical value to "prob10." Assign the answer TRUE if the explanatory variables are jointly significant, and FALSE if the explanatory variables are not jointly significant.
 
@@ -345,8 +352,12 @@ $indust$ is a code to control for the worker's industry.
 
 The researcher estimates the following equation:
 
-```{r}
-summary(lm(ldurat ~ male + male:upextr + lprewage + lage + indust, data = injury))
+```{r, results = "asis"}
+mod2 <- lm(ldurat ~ male + male:upextr + lprewage + lage + indust, data = injury)
+
+mk_coeftab_robust(mod2,
+                  mode = "full",
+                  robust_type = "HC1")
 ```
 
 
@@ -375,14 +386,23 @@ This R code should be written in the code chunk of the **Answer** section below.
 Compare the two model summaries: 
 
 ### Model 1:
-```{r}
-summary(lm(ldurat ~ male + male:upextr + lprewage + lage + indust, data = injury))
+```{r, results = "asis"}
+mod3 <- lm(ldurat ~ male + male:upextr + lprewage + lage + indust, data = injury)
+
+mk_coeftab_robust(mod3,
+                  mode = "full",
+                  robust_type = "HC1")
 ```
 
 ### Model 2:
 
-```{r}
-summary(lm(ldurat ~ male + upextr + male:upextr + lprewage + lage + indust, data = injury))
+```{r, results = "asis"}
+mod4 <- lm(ldurat ~ male + upextr + male:upextr + lprewage + lage + indust, data = injury)
+
+mk_coeftab_robust(mod4,
+                  mode = "full",
+                  robust_type = "HC1")
+
 ```
 
 **Problem:** 
@@ -407,8 +427,12 @@ This R code should be written in the code chunk of the **Answer** section below.
 
 The researcher estimates the equation again, removing $upextr$ and the interaction term but adding $ky$ as a separate variable, where $ky = 1$ if the worker is located in KY and $= 0$ if in Michigan (the two states in the dataset):
 
-```{r}
-summary(lm(ldurat ~ male + lprewage + lage + indust + ky, data = injury))
+```{r, results = "asis"}
+mod5 <- lm(ldurat ~ male + lprewage + lage + indust + ky, data = injury)
+
+mk_coeftab_robust(mod5,
+                  mode = "full",
+                  robust_type = "HC1")
 ```
 
 **Problem:** Accounting for other variables in the model, is there evidence that being in a KY area affects compensation benefit duration? Test the appropriate hypothesis.
@@ -429,8 +453,12 @@ This R code should be written in the code chunk of the **Answer** section below.
 
 The researcher estimates the equation again, this time adding $ky$ as a separate variable, where $ky = 1$ if the worker is located in KY and $= 0$ if in Michigan (the two states in the dataset):
 
-```{r}
-summary(lm(ldurat ~ male + lprewage + lage + indust + ky, data = injury))
+```{r, results = "asis"}
+mod6 <- lm(ldurat ~ male + lprewage + lage + indust + ky, data = injury)
+
+mk_coeftab_robust(mod6,
+                  mode = "full",
+                  robust_type = "HC1")
 ```
 
 **Problem:** What is the percent difference in benefit duration $durat$ if someone is in KY vs. not in KY?
