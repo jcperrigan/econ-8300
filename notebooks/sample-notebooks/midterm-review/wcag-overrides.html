@@ -1,0 +1,192 @@
+<style>
+/* --- Base cleanup (no gray boxes) --- */
+pre, pre code, .sourceCode, .sourceCode pre {
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  color: #111 !important;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+/* --- High-contrast syntax colors (WCAG AA+) --- */
+.sourceCode .kw, .sourceCode .cf { color:#003366 !important; font-weight:600; }  /* keywords/control */
+.sourceCode .dt, .sourceCode .ty { color:#660033 !important; font-weight:600; }  /* types */
+.sourceCode .dv, .sourceCode .bn, .sourceCode .fl { color:#003399 !important; }  /* numbers */
+.sourceCode .st, .sourceCode .ch, .sourceCode .vs { color:#5C2E00 !important; }  /* strings */
+.sourceCode .co, .sourceCode .do { color:#4A4A4A !important; font-style:italic; }/* comments */
+.sourceCode .fu { color:#004D40 !important; }                                    /* functions */
+.sourceCode .va, .sourceCode .bu, .sourceCode .at { color:#163300 !important; }  /* vars/builtins */
+
+/* --- Operators & punctuation (the "orange" offenders) --- */
+.sourceCode .op,            /* Pandoc operator */
+.sourceCode .sc,            /* special char / punctuation */
+pre code .hl-operator,      /* highlight.js operator */
+pre code .hl-punctuation {  /* fallback */
+  color:#111 !important;    /* near-black for max contrast on white */
+  font-weight:600;
+}
+
+/* Remove any stray highlight backgrounds */
+pre.sourceCode code > span,
+.sourceCode span { background: none !important; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Find Pandoc code-line anchors like: <a class="sourceLine" id="cb1-3" href="#cb1-3"></a>
+  var anchors = document.querySelectorAll('a.sourceLine');
+  anchors.forEach(function(a){
+    // Replace each empty <a> with a <span> to eliminate "empty hyperlink" issues
+    var s = document.createElement('span');
+    s.className = a.className;
+    if (a.id) s.id = a.id;
+    if (a.getAttribute('title')) s.setAttribute('data-line', a.getAttribute('title'));
+    a.replaceWith(s);
+  });
+
+  // Defensive cleanup for any leftover empty anchors
+  document.querySelectorAll('pre code a[href]').forEach(function(a){
+    if (!a.textContent.trim()) {
+      var s = document.createElement('span');
+      s.className = a.className || '';
+      if (a.id) s.id = a.id;
+      a.replaceWith(s);
+    }
+  });
+});
+</script>
+
+<style>
+/* --------- Accessible table spacing & readability --------- */
+table {
+  border-collapse: separate !important;
+  border-spacing: 0.5em 0.25em !important;  /* column, row spacing */
+  width: auto;  /* let it size naturally */
+  margin: 1em 0;
+}
+
+th, td {
+  padding: 0.5em 1em !important;   /* inside-cell padding */
+  text-align: center;              /* center numeric values */
+  vertical-align: middle;
+  border: none;                    /* keep it clean */
+}
+
+caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: 0.25em;
+}
+
+/* optional subtle divider lines for clarity */
+thead th {
+  border-bottom: 2px solid #444;
+}
+tbody tr + tr td,
+tbody tr + tr th {
+  border-top: 1px solid #ccc;
+}
+
+tbody th[scope="row"] {
+  text-align: left !important;
+}
+
+</style>
+
+<script>
+// 1) Add scope="col" to header cells that are missing it
+document.querySelectorAll('table thead th:not([scope])').forEach(th => {
+  th.setAttribute('scope', 'col');
+});
+
+// 2) If a table has no caption, create a visually-hidden one
+//    using the nearest preceding heading as a fallback.
+document.querySelectorAll('table').forEach((tbl, idx) => {
+  if (!tbl.querySelector('caption')) {
+    let captionText = '';
+    // walk backwards to find a previous heading
+    let prev = tbl.previousElementSibling;
+    while (prev && !/^H[1-6]$/.test(prev.tagName)) prev = prev.previousElementSibling;
+    if (prev) captionText = prev.textContent.trim();
+    if (!captionText) captionText = 'Data table ' + (idx + 1);
+
+    const cap = document.createElement('caption');
+    cap.textContent = captionText;
+    cap.style.position = 'absolute';
+    cap.style.left = '-9999px';
+    cap.style.height = '1px';
+    cap.style.width = '1px';
+    cap.style.overflow = 'hidden';
+    tbl.insertBefore(cap, tbl.firstChild);
+  }
+});
+</script>
+
+<style>
+/* Line numbers + gutter */
+pre.numberSource code > span > a:first-child::before { color: #6b6b6b !important; }  /* from #aaaaaa */
+pre.numberSource { border-left: 1px solid #6b6b6b !important; }
+
+/* Operators / punctuation classes that were orange */
+code span.op, code span.sc { color: #7a2d00 !important; font-weight: 700; } /* darker than #ce5c00 */
+</style>
+
+<style>
+table thead th { padding-right: 1rem !important; white-space: nowrap; }
+</style>
+
+
+<script>
+  // Add missing scope attributes to table headers for accessibility checkers
+  document.querySelectorAll("table thead th:not([scope])").forEach(th => {
+    th.setAttribute("scope", "col");
+  });
+
+  // (Optional safety) If any header cells are in tbody (rare), set them too
+  document.querySelectorAll("table tbody th:not([scope])").forEach(th => {
+    th.setAttribute("scope", "row");
+  });
+</script>
+
+<style>
+/* --- Bootstrap low-contrast grays: override to darker --- */
+.text-muted,
+.help-block,
+.dropdown-header,
+.navbar-default .navbar-nav > li > a,
+.navbar-default .navbar-text,
+.navbar-default .navbar-brand {
+  color: #444 !important;
+}
+
+/* Placeholder text (often the one the checker flags) */
+.form-control::placeholder { color: #555 !important; opacity: 1 !important; }
+.form-control::-webkit-input-placeholder { color: #555 !important; }
+.form-control::-moz-placeholder { color: #555 !important; opacity: 1 !important; }
+.form-control:-ms-input-placeholder { color: #555 !important; }
+.form-control::-ms-input-placeholder { color: #555 !important; }
+</style>
+
+<style>
+table caption,
+p.caption,
+.caption,
+.table caption {
+  color: #111 !important;
+  opacity: 1 !important;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll("table").forEach(function (tbl) {
+    tbl.querySelectorAll("thead th").forEach(function (th) {
+      if (!th.hasAttribute("scope")) th.setAttribute("scope", "col");
+    });
+    tbl.querySelectorAll("tbody th").forEach(function (th) {
+      if (!th.hasAttribute("scope")) th.setAttribute("scope", "row");
+    });
+  });
+});
+</script>

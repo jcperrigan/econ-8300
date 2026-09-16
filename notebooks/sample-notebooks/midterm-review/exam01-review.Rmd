@@ -1,0 +1,450 @@
+---
+title: "exam01"
+output: 
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(car)
+library(wooldridge)
+```
+
+# Midterm Review
+
+## Retrieving your work
+
+This exam is written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing. 
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment. 
+
+### Submitting your work
+
+When you upload your exam files to Canvas, you are to submit ***two*** files:
+
+a. Your reproducible document file (.Rmd) which should be saved as exam01-ID.Rmd. For example, my midterm file would be saved as exam01-jperrigan.Rmd.
+
+b. Your rendered reproducible document file (.html) which should be saved as exam01-ID.html. For example, my midterm file would be saved as exam01-jperrigan.html.
+
+**A proper submission means that the files are correctly named and formatted. I will grade the final file submitted before the due date and time. Remember the .Rmd file needs to render properly to .html before submitting.** 
+
+
+***
+
+All students are expected to complete all problems.
+
+***Do not change anything in this file above the double line. Doing so will prevent your exam from being graded.***
+
+***
+***
+
+**Description:** Use the following description for questions 1 and 2:
+
+Using the dataset *attend* in the Wooldridge package, the following model was estimated using data on $n = 680$ observations on college freshmen and sophomores:
+
+$\widehat{final\_perc} = 56.82 + .097 \cdot atndrte$, $SE(\hat{\beta_0}) = 2.19$, $SE(\hat{\beta_1}) = 0.026$.
+
+where $final\_perc$ is the final exam score in percentage points (i.e., $10\% = 10$) and $atndrte$ is the percent of class sessions attended (out of 32 total classes in the semester), also in percentage points.
+
+**#1** 
+
+
+**Problem:** Does this simple regression necessarily capture a causal relationship between the percent of classes attended and the final exam grade? Keeping in mind the Gauss Markov assumptions, explain why or why not.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer as a string to "prob01."
+
+**Answer:**
+
+```{r, problem01}
+#prob01 = 
+
+```
+
+
+***
+
+**#2** 
+
+
+**Problem:** Do you have enough evidence to reject the null hypothesis $H_0: \beta_1 = 0$ (that the estimated coefficient for $atndrte$ is not statistically significant) at the 1% significance level level?
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the TRUE or FALSE answer as a *logical value* to "prob02." Answer TRUE if you have enough evidence to reject the null hypothesis, and FALSE if you do not.
+
+**Answer:**
+
+```{r, problem02}
+#prob02 = 
+```
+
+
+***
+
+**Description:** Use the following description for questions 3, 4, and 5:
+
+A researcher plans to study the causal effect of police force size on property crime, using data from a random sample of U.S. counties. They plan to regress the country's crime rate on the (per capita) size of the county's police force:
+
+$property\_crime\_rate_i = \beta_0 + \beta_1 \cdot force\_size + u_i$.
+
+**#3** 
+
+
+**Problem:** Will this regression suffer from omitted variable bias? Why or why not?
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer as a string to "prob03."
+
+**Answer:**
+
+```{r, problem03}
+#prob03 = 
+
+```
+
+***
+
+**#4** 
+
+
+**Problem:** Name one variable that you would you add to the regression. Justify your answer using the definition of what conditions are needed to cause omitted variable bias.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer as a string to "prob04."
+
+**Answer:**
+
+```{r, problem04}
+#prob04 = 
+
+```
+
+
+***
+
+
+**Description:** Use the following description for questions 5, 6, 7, and 8.
+
+A researcher studying the relationship between student-teacher ratio and standardized math test scores by district estimated the following equation:
+
+$\hat{TS} = 682.4 - 0.96 \cdot STR - 0.15 \cdot PctEL - 0.63 Sub\_Lunch + 0.039 \cdot Assistance$; 
+
+$SE(\hat{\beta_0}) = 6.1$, $SE(\hat{\beta_1}) = 0.31$, $SE(\hat{\beta_2}) = 0.046$, $SE(\hat{\beta_3}) = 0.032$, $SE(\hat{\beta_3}) = 0.067$;
+
+$SER = 9.08$, $\bar{R^2} = 0.734$, $n = 420$.
+
+where:
+
+- $TS$ is the mean district math test score
+
+- $STR$ is the mean student-teacher ratio in the district 
+
+- $PctEL$ is the percent of English learners in the district (in percentage points, i.e. $10\% = 10$)
+
+- $Sub\_Lunch$ is the percentage of students eligible for subsidized lunch (in percentage points, i.e. $10\% = 10$)
+
+- $Assistance$ is the percentage of students qualifying for income assistance (in percentage points, i.e. $10\% = 10$.)
+
+**#5** 
+
+
+**Problem:** Calculate the $R^2$ for the regression.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer as a number to "prob05."
+
+**Answer:**
+
+```{r, problem05}
+#prob05 = 
+
+```
+
+
+***
+
+
+
+**#7** 
+
+
+**Problem:** Complete the code chunk below to find the F critical value for a significance level of 5%.
+
+To find the F critical value in R, you can use the qf() function, which uses the following syntax:
+
+qf(p, df1, df2. lower.tail=TRUE)
+
+where:
+
+* p: The significance level to use 
+* df1: The numerator degrees of freedom
+* df2: The denominator degrees of freedom
+* lower.tail: If TRUE, the probability to the left of p in the F distribution is returned. If FALSE, the probability to the right is returned. Default is TRUE.
+
+This R code should be written in the code chunk of the **Answer** section below. Fill in the blanks and save the full expression to "prob07."
+
+**Answer:**
+
+```{r, problem07}
+#prob07 = qf(p = , df1 = , df2 = , lower.tail = )
+
+```
+
+
+
+***
+
+**#8** 
+
+
+**Problem:** Given the $F$-statistic found in question 8 and the critical value found in question 9, can you reject the null hypothesis $H_0: \beta_3 = 0$ and $\beta_4 = 0$ for the regression:
+
+$\hat{TS} = 682.4 - 0.96 \cdot STR - 0.15 \cdot PctEL - 0.63 Sub\_Lunch + 0.039 \cdot Assistance$?
+
+This R code should be written in the code chunk of the **Answer** section below. Use the logical values TRUE or FALSE to answer the question: TRUE if you have enough evidence to reject the null hypothesis, FALSE if you do not have enough evidence to reject. Assign your answer to "prob08."
+
+**Answer:**
+
+```{r, problem08}
+#prob08 = 
+
+```
+
+
+
+***
+
+**#9** 
+
+
+**Description:** A researcher is studying the relationship between student-teacher ratio and standardized math test scores.
+
+They start with the linear specification:
+
+$TS = \beta_0 + \beta_1 \cdot STR + \beta_2 PctEL + \beta_3 Sub\_Lunch + u$, 
+
+where:
+
+* $TS$ is the mean district math test score
+
+* $STR$ is the mean student-teacher ratio in the district 
+
+* $PctEL$ is the percent of English learners in the district
+
+* $Sub\_Lunch$ is the percentage of students eligible for subsidized lunch
+
+They then suspect that $Sub\_Lunch$ has a nonlinear effect on test scores. 
+
+In particular, they conjecture that increases in $Sub\_Lunch$ from 10% to 20% have little effect on test scores, but changes from 50% to 60% have a much larger effect on test scores.
+
+
+**Problem:** Describe a nonlinear specification that can be used to model this form of nonlinearity and how you could test whether the nonlinearity is better than the linear specification.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer as a string to "prob09."
+
+**Answer:**
+
+```{r, problem09}
+#prob09 = 
+
+```
+
+
+***
+
+
+
+```{r}
+library(wooldridge)
+data("return")
+```
+
+
+**Description:** Use the following description for questions 10, 11, and 12:
+
+A researcher is testing the **efficient markets hypothesis**, which says that returns on holding a firm's stock should not be systematically related to information known before buying the stock.
+
+To test this, they estimate the following model:
+
+```{r}
+summary(lm(return~dkr + netinc + eps + sp90, data = return))
+```
+
+where 
+
+* $return$ is the total return from holding the stock for four years, from the end of 1990 to the end of 1994
+* $dkr$ is the debt/ capital ratio, 1990
+* $netinc$ is the net income in millions, 1990
+* $eps$ is the earnings per share, 1990,
+* $sp90$ is the stock price at the end of 1990.
+
+
+**#10** 
+
+
+**Problem:** Using the description and regression results, test whether all of the explanatory variables are jointly significant at the 5% level ($H_0: \beta_1 = \beta_2 = \beta_3 = \beta_4 = 0$).
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your answer as a logical value to "prob10." Assign the answer TRUE if the explanatory variables are jointly significant, and FALSE if the explanatory variables are not jointly significant.
+
+**Answer:**
+
+```{r, problem10}
+#prob10 = 
+
+```
+
+
+
+***
+
+
+**#11** 
+
+
+**Problem:** In this sample, some firms have zero debt and some have negative earnings. Should we try to use $ln(dkr)$ or $ln(eps)$ in the model? Why or why not?
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your answer as a string to "prob11." 
+
+**Answer:**
+
+```{r, problem11}
+#prob11 = 
+
+```
+
+
+***
+
+
+```{r}
+data('injury')
+```
+
+**Description:** Use this description for questions 12, 13, 14, and 15.
+
+A researcher is examining workers' compensation and injury duration. They wondered whether upper extremity injuries might have a different effect on benefit duration depending on gender.
+
+They have the following model:
+
+$ldurat = \beta_0 + \beta_1 \cdot male + \beta_2 (male \cdot upextr) + \beta_3 \cdot lprewage + \beta_4 \cdot lage + \beta_5 \cdot indust + u$,
+
+where
+
+* $ldurat$ is $log(durat)$, where $durat$ is the duration of benefits in months,
+
+* $male = 1$ if male,
+
+* $upextr = 1$ if the injury is an upper extremity injury,
+
+* $lprewage$ is $log(prewage)$, where $prewage$ is the previous weekly wage, 1982 dollars,
+
+* $lage$ is $log(age)$, where $age$ is age at time of injury, and
+
+$indust$ is a code to control for the worker's industry.
+
+The researcher estimates the following equation:
+
+```{r}
+summary(lm(ldurat ~ male + male:upextr + lprewage + lage + indust, data = injury))
+```
+
+
+**#12** 
+
+**Problem:** Holding all other variables constant, what is the estimated percentage point difference in the duration of benefits in months when comparing $upextr = 0$ and $upextr = 1$?
+
+Remember that the dependent variable in the description is $log(durat)$!
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your answer as a number to "prob12." 
+
+**Answer:**
+
+```{r, problem12}
+#prob12 = 
+
+```
+
+
+***
+
+
+**#13** 
+
+
+Compare the two model summaries: 
+
+### Model 1:
+```{r}
+summary(lm(ldurat ~ male + male:upextr + lprewage + lage + indust, data = injury))
+```
+
+### Model 2:
+
+```{r}
+summary(lm(ldurat ~ male + upextr + male:upextr + lprewage + lage + indust, data = injury))
+```
+
+**Problem:** 
+
+Comparing the two models, which do you think is more appropriate when considering the effect of gender and upper extremity injuries on workers compensation duration? Justify your answer.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your answer as a string to "prob13." 
+
+**Answer:**
+
+```{r, problem13}
+#prob13 = 
+
+```
+
+
+***
+
+
+**#14** 
+
+
+The researcher estimates the equation again, removing $upextr$ and the interaction term but adding $ky$ as a separate variable, where $ky = 1$ if the worker is located in KY and $= 0$ if in Michigan (the two states in the dataset):
+
+```{r}
+summary(lm(ldurat ~ male + lprewage + lage + indust + ky, data = injury))
+```
+
+**Problem:** Accounting for other variables in the model, is there evidence that being in a KY area affects compensation benefit duration? Test the appropriate hypothesis.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the TRUE or FALSE answer as a *logical value* to "prob14." Answer TRUE if you have enough evidence to reject the null hypothesis, and FALSE if you do not.
+
+**Answer:**
+
+```{r, problem14}
+#prob14 = 
+
+```
+
+***
+
+**#15** 
+
+
+The researcher estimates the equation again, this time adding $ky$ as a separate variable, where $ky = 1$ if the worker is located in KY and $= 0$ if in Michigan (the two states in the dataset):
+
+```{r}
+summary(lm(ldurat ~ male + lprewage + lage + indust + ky, data = injury))
+```
+
+**Problem:** What is the percent difference in benefit duration $durat$ if someone is in KY vs. not in KY?
+
+This R code should be written in the code chunk of the **Answer** section below. Assign a number to "prob15."
+
+**Answer:**
+
+```{r, problem15}
+#prob15 = 
+
+```
+
+
+
+***
+
