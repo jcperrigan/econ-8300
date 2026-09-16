@@ -66,14 +66,16 @@ Make sure to also load `reporting.R` for your model summaries. This R script sho
 source("reporting.R")
 ```
 
-Throughout the assignment, use conventional homoskedasticity-only standard errors and the following model:
+Throughout the assignment, use conventional homoskedasticity-only standard errors.
+
+We will start with the following model.
 
 $$
-colgpa_i = \beta_0 + \beta_1 sat100_i + \beta_2 hsperc_i +
+colgpa_i = \beta_0 + \beta_1 sat_i + \beta_2 hsperc_i +
 \beta_3 tothrs_i + \beta_4 female_i + \beta_5 athlete_i + u_i.
 $$
 
-Here, `sat100` measures SAT scores in hundreds of points. Estimate the model once and save it as `full_model`.
+Estimate the model save it as `full_model`.
 
 ```{r full-model}
 # full_model <-
@@ -154,9 +156,9 @@ H_0: \beta_{sat100}=0.10 \qquad \text{against} \qquad H_1: \beta_{sat100}\neq 0.
 $$
 
 
-using `full_model` and a 5% significance level.
+using `full_model` and a 5% significance level. 
 
-1. Create `sat100 = sat / 100`, re-estimate the full model using `sat100`, and calculate the t statistic for $H_0:\beta_{sat100}=0.10$. Save it as `sat_t`.
+1. Create `sat100 = sat / 100`, re-estimate the full model using `sat100`, and calculate the t statistic for $H_0:\beta_{sat100}=0.10$. Save it as `sat_t`. Use this model with `sat100` for the rest of the assignment.
 2. Calculate the two-sided p-value, save it as `sat_p`.
 3. State your conclusion in context. Explain what rejecting or failing to reject this particular null would mean; do not reinterpret it as a test against zero.
 
