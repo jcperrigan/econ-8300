@@ -100,9 +100,9 @@ h <- h |>
 Check the distributions by creating histograms of `lprice` and `llotsize`:
 
 ```{r}
-ggplot(h, aes(x = lprice)) + #insert code for a histogram here
+ #insert code for a histogram of lprice here
 
-ggplot(h, aes(x = llotsize)) + #insert code for a histogram here
+#insert code for a histogram of llotsize here
 
 ```
 
