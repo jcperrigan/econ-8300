@@ -33,6 +33,8 @@ We’ll use the **Housing** cross-section data (1987) from the `Ecdat` package. 
 ```{r}
 # If needed - you only need to run it once:
 # install.packages("Ecdat", repos="http://R-Forge.R-project.org")
+install.packages("Ecdat")
+```
 
 library(tidyverse)
 library(Ecdat)

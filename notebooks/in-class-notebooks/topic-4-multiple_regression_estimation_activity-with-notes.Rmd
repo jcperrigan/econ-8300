@@ -1,0 +1,951 @@
+---
+title: "In-Class Activity Notebook: Multiple Regression (Estimation, OVB)"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+
+# 1. Learning goals
+
+By the end of tonight, you should be able to:
+
+1. Estimate a multiple regression model with `lm()` and interpret slopes
+2. Diagnose and demonstrate omitted variable bias (OVB) using nested models  
+3. Explain what multicollinearity does (and doesn’t) do, and check it in practice  
+4. Make predictions  
+
+---
+
+# 2. Load packages + data 
+
+We’ll use the **Housing** cross-section data (1987) from the `Ecdat` package. This is the same data as used in the sample notebook.
+
+```{r}
+# If needed - you only need to run it once:
+
+# install.packages("Ecdat")
+
+# install.packages("Ecdat", repos="http://R-Forge.R-project.org")
+
+#install.packages("remotes")
+#library(remotes)
+#install_github("sbgraves237/Ecdat")
+
+
+library(tidyverse)
+library(Ecdat)
+library(broom)
+library(car)       # VIF + linearHypothesis
+library(lmtest)    # coeftest
+library(sandwich)  # robust vcov
+library(effects)   # partial effects plots
+library(kableExtra) # accessible tables
+library(knitr)     # accessible tables
+
+data(Housing)
+
+# take a look at the data/ variable descriptions
+?Housing
+```
+
+To see the accessible tables, load `reporting.R`. To do so, save it in the same folder as you've saved this file:
+
+```{r}
+source("reporting.R")
+```
+
+
+
+**Create a smaller working tibble called `h`**
+
+
+```{r}
+h <- Housing |>
+  as_tibble()
+
+glimpse(h)
+# summary(h)
+```
+
+Summary stats using accessible results:
+
+```{r, results = "asis"}
+mk_dataset_summary(h)
+```
+
+
+**Your turn: keep only these variables from the `h` tibble:**
+ 
+- `price` (outcome)
+- `lotsize`, `bedrooms`, `bathrms`, `stories`, `garagepl`
+- `driveway`, `fullbase`, `airco`
+
+```{r}
+h <- h |>
+  select(price, lotsize, bedrooms, bathrms, stories, garagepl, driveway, fullbase, airco) |>
+  mutate(lprice = log(price),
+         llotsize = log(lotsize))
+  
+
+glimpse(h)
+# summary(h)
+```
+
+
+Summary stats using the `reporting.R` script:
+
+```{r, results = "asis"}
+mk_dataset_summary(h)
+```
+
+---
+
+# 3. Quick EDA + transformations
+
+## 3.1 Outcome distribution and scale
+
+
+```{r, fig.alt = "histogram of sales price"}
+h |> ggplot(aes(x = price)) + 
+  geom_histogram(fill = "steelblue", color = "black")
+```
+
+**Prompt (talk, don’t code yet!):**  
+Why might `log(price)` be a good idea here? (Think: skewness, interpreting % changes, diminishing marginal effects.)
+
+Price is typically right skewed and logging makes it more normal looking.
+
+Check the distributions by creating histograms of `lprice` and `llotsize`:
+
+```{r, fig.alt = "histogram of log(price)"}
+ #insert code for a histogram of lprice here
+h |> ggplot(aes(x = lprice)) + 
+  geom_histogram(fill = "steelblue", color = "black")
+```
+
+```{r, fig.alt = "histogram of log(lotsize)"}
+#insert code for a histogram of llotsize here
+h |> ggplot(aes(x = llotsize)) + 
+  geom_histogram(fill = "steelblue", color = "black")
+```
+
+
+
+---
+
+# 4. From simple regression to multiple regression 
+
+## 4.1 Simple regression (baseline)
+
+Estimate:
+
+$\ln(price)_i = \beta_0 + \beta_1 \ln(lotsize)_i + u_i$
+
+Save your model as `m1`.
+
+Look at your results.
+
+I'll be using the `reporting.R` script to create tables; base R has `summary(model name)` that you can use as well.
+
+```{r, results = "asis"}
+m1 <- lm(lprice ~ llotsize, data = h)
+
+# summary(m1)
+
+mk_coeftab(m1,
+           mode = "full",
+           caption = "log(price) on log(lotsize)")
+```
+
+**Task 4A (interpretation):**  
+Write 1–2 sentences interpreting $\hat\beta_1$. 
+
+The interpretation of $\hat{\beta}$ is an elasticity: a 1% larger lot (if $ln(lotsize)$ is the independent variable) is associated with an expected $\hat{\beta}_{ln(lotsize)}$% high price (approximately).
+
+
+## 4.2 Multiple regression 
+
+Estimate:
+
+$\ln(price)_i = \beta_0 + \beta_1 \ln(lotsize)_i + \beta_2 bedrooms_i + \beta_3 bathrms_i + \beta_4 stories_i + \beta_5 garagepl_i + u_i$
+
+Save your model as `m2`.
+
+Look at your results.
+
+
+```{r, results = "asis"}
+m2 <- lm(lprice ~ llotsize + bedrooms + bathrms + stories + garagepl, data = h)
+
+# summary(m2)
+
+mk_coeftab(m2,
+           mode = "full",
+           caption = "log(price) on log(lotsize) + bedrooms + bathrooms + stories + garage places")
+```
+
+**Task 4B (compare):**  
+
+For a simpler to produce result that is not an accessible table, you can use the code below. Just remove the "#" at the beginning of each line.
+
+```{r}
+# bind_rows(
+  # tidy(m1) |> mutate(model = "m1"),
+  # tidy(m2) |> mutate(model = "m2")
+# ) |>
+  # filter(term == "llotsize")
+```
+
+
+```{r}
+bind_rows(
+  tidy(m1) |> mutate(model = "m1"),
+  tidy(m2) |> mutate(model = "m2")
+) |>
+  filter(term == "llotsize") |>
+  select(model, term, estimate, std.error, statistic, p.value) |>
+  mutate(
+    model = dplyr::recode(
+      model,
+      m1 = "Simple regression",
+      m2 = "Multiple regression"
+    ),
+    term = "ln(lot size)",
+    across(c(estimate, std.error, statistic), ~ round(.x, 3)),
+    p.value = if_else(
+      p.value < 0.001,
+      "<0.001",
+      format(round(p.value, 3), nsmall = 3)
+    )
+  ) |>
+  knitr::kable(
+    col.names = c(
+      "Model",
+      "Regressor",
+      "Coefficient estimate",
+      "Standard error",
+      "t statistic",
+      "p value"
+    ),
+    caption = "Estimated relationship between lot size and house price across regression models",
+    align = c("l", "l", "r", "r", "r", "r")
+  )
+```
+
+Compare $\hat\beta_1$ in `m1` vs `m2`. Did it move? In which direction? 
+
+The $\hat{\beta}$ on llotsize often changes when adding controls because lot size is correlated with house characteristics. The direction of change depends on correlation patterns and depends on how the sign of the coefficient in the "true" model", often the simple model overstates lot size effect if lot size proxies for “bigger/better house.”
+
+
+
+---
+
+# 5. Omitted Variable Bias 
+
+## 5.1 Add “amenity” proxies
+
+$\ln(price)_i = \beta_0 + \beta_1 \ln(lotsize)_i + \beta_2 bedrooms_i + \beta_3 bathrms_i + \beta_4 stories_i + \beta_5 garagepl_i + u_i$
+
+
+Add `driveway`, `fullbase`, and `airco` to the model.
+
+Save your model as `m3`.
+
+Look at your results.
+
+```{r, results = "asis"}
+m3 <- lm(lprice ~ llotsize + bedrooms + bathrms + stories + garagepl + driveway + fullbase + airco, data = h)
+
+# summary(m3)
+
+mk_coeftab(m3,
+           mode = "full",
+           caption = "log(price) on full model plus amenities")
+
+```
+
+
+**Task 5A:**  
+
+For a simpler to produce result that is not an accessible table, you can use the code below. Just remove the "#" at the beginning of each line.
+
+```{r}
+# bind_rows(
+  # tidy(m2) |> mutate(model = "m2"),
+  # tidy(m3) |> mutate(model = "m3")
+# )
+```
+
+
+```{r}
+shared_terms <- intersect(
+  tidy(m2)$term,
+  tidy(m3)$term
+)
+
+bind_rows(
+  tidy(m2) |> mutate(model = "Model 2"),
+  tidy(m3) |> mutate(model = "Model 3")
+) |>
+  filter(term %in% shared_terms,
+         term != "(Intercept)") |>
+  select(model, term, estimate, std.error, statistic, p.value) |>
+  mutate(
+    term = factor(
+      term,
+      levels = c(
+        "(Intercept)",
+        "llotsize",
+        "bedrooms",
+        "bathrms",
+        "stories",
+        "garagepl"
+      )
+    )
+  ) |>
+  arrange(term, model) |>
+  mutate(
+    term = dplyr::recode(
+      as.character(term),
+      `(Intercept)` = "Intercept",
+      llotsize = "ln(lot size)",
+      bedrooms = "Bedrooms",
+      bathrms = "Bathrooms",
+      stories = "Stories",
+      garagepl = "Garage spaces"
+    ),
+    across(
+      c(estimate, std.error, statistic),
+      ~ round(.x, 3)
+    ),
+    p.value = if_else(
+      p.value < 0.001,
+      "<0.001",
+      format(round(p.value, 3), nsmall = 3)
+    )
+  ) |>
+  knitr::kable(
+    col.names = c(
+      "Model",
+      "Regressor",
+      "Coefficient estimate",
+      "Standard error",
+      "t statistic",
+      "p value"
+    ),
+    caption = "Coefficient estimates for Models 2 and 3",
+    align = c("l", "l", "r", "r", "r", "r")
+  ) |>
+  kableExtra::kable_styling(
+    full_width = FALSE,
+    position = "left"
+  ) |>
+  kableExtra::row_spec(0, bold = TRUE)
+
+
+
+```
+
+Pick **one coefficient** that changes noticeably from `m2` to `m3` (that's why this table only has the variables that appear in both models so you can look at changes in the estimates). Propose an OVB mechanism:
+
+
+- What omitted factor was being partially “loaded” into the coefficient before?
+
+
+- Why might it be correlated with the regressor?
+
+`airco` may capture neighborhood/quality unobservables (especially when looking at homes in 1987). When added, coefficients on bedrooms/stories sometimes shrink. 
+
+`driveway/fullbase` can be correlated with lot size and overall build quality, leaving them out can bias `llotsize` coefficient.
+
+Remember that coefficient movement isn't “proof” of bias, but it is consistent with OVB when the added variable plausibly proxies omitted factors **and** is correlated with included regressors.
+
+
+
+## 5.2 Partial effect visualization 
+
+Plot the partial effect of `llotsize` in `m2`. Then plot the partial effect of `llotsize` in `m3`. What changed? How does this tie into your answers in part 5A?
+
+
+A partial effect plot shows the relationship between one independent variable ($ln(lotsize)$ in this case) and the dependent variable (here $ln(price)$) after removing the effects of all the other independent variables in the model. It shows the marginal contribution of one predictor while controlling for everything else. 
+
+Here's what's going on under the hood of a partial effect plot.
+
+Let's start with a simple regression model with one explanatory variable:
+
+$$
+y_i = \beta_0 + \beta_1 x_i + u_i
+$$
+
+So here, after we estimate the model, $\hat{\beta}_1$ will tell us the effect of $x$ on $y$ without holding constant any other predictors (like $z$) that might also account for some variance of $y$ but that weren't included in the original model.
+
+So if we look at a multiple regression model:
+
+$$
+y_i = \gamma_0 + \gamma_1 x_i + \gamma_2 z_i + v_i
+$$
+Now that coefficient on $x$ will tell us the partial effect of $x$ on $y$, holding the other covariate $z$ constant.
+
+So to get the partial effect plot, we:
+
+1. Regress the outcome variable on $z$ (excluding $x$): 
+
+$$
+y_i = \alpha_0 + \alpha_1 z_i + v_i
+$$
+
+2. Regress $x$ on $z$:
+
+$$
+x_i = \lambda_0 + \lambda_1 z_i + \mu_i
+$$
+3. Plot the residuals from the first regression ($v_i$) against the second regression ($\mu_i$).
+
+
+Let's do this "by hand" for model 2:
+
+$\ln(price)_i = \beta_0 + \beta_1 \ln(lotsize)_i + \beta_2 bedrooms_i + \beta_3 bathrms_i + \beta_4 stories_i + \beta_5 garagepl_i + u_i$
+
+
+We want to plot the partial effect of `llotsize` on `lprice`, so we first need to regress `lprice` on all the covariates except `llotsize` and save the residuals:
+
+```{r}
+lm1 <- lm(lprice ~  bedrooms + bathrms + stories + garagepl, data = h)
+v <- resid(lm1)
+```
+
+
+Next we regress `llotsize` on all the other covariates from our original model and save the residuals:
+
+```{r}
+lm2 <- lm(llotsize ~ bedrooms + bathrms + stories + garagepl, data = h)
+mu <- resid(lm2)
+```
+
+Finally we plot the residuals from the first model against the residuals from the second model. We'll start by creating a data frame of our residuals, putting them on a scatter plot, and then adding a linear trend with a confidence interval:
+
+```{r, fig.alt = "partial effect of ln(lotsize) on ln(price) from model 2"}
+resid_data <- data.frame(
+  lotsize_resid = v,
+  price_resid = mu
+)
+
+ggplot(resid_data, aes(x = lotsize_resid, y = price_resid)) +
+  geom_point(color = "lightsteelblue3") +
+  geom_smooth(method = "lm", color = "darkorchid", fill = "plum2", se = TRUE) +
+  labs(
+    title = "partial effect plot",
+    x = "ln(lot size)",
+    y = "ln(price)"
+  ) +
+  theme_minimal()
+```
+
+Of course, we can also just use the `effects` library to make our lives easier.
+
+
+```{r, fig.alt = "plot of log(lotsize) partial effect from model 2"}
+eff_llotsize_m2 <- effect("llotsize", m2)
+plot(eff_llotsize_m2)
+# summary(eff_llotsize_m2)
+```
+
+
+
+```{r, fig.alt = "plot of log(lotsize) partial effect from model 3"}
+eff_llotsize_m3 <- effect("llotsize", m3)
+plot(eff_llotsize_m3)
+# summary(eff_llotsize_m3)
+```
+
+
+You'll notice that the axes are different even though the slopes are the same. That's because doing it "by hand" gives us axes that represent deviations from values predicted by the controls and the slope is the same way we did the partialling out method in class.
+
+The `effects` package instead builds out adjusted model preditions by creating a sequence of values for `llotsize` and setting other the other predictors to their mean values, then using the estimated model coefficients to calculate fitted values at each combination:
+
+$$
+\widehat{ln(price)} = \hat{\beta}_0 + \hat{\beta}_1 + \hat{\beta}_2 \overline{bedrooms} + \hat{\beta}_2 \overline{bathrms} +  \cdots 
+
+$$
+
+We can reproduce `effects` manually by creating our own sequence of values for `llotsize` and a data frame of mean values of the other variables, then plotting:
+
+```{r}
+llotsize_grid <- seq(
+  min(h$llotsize, na.rm = TRUE),
+  max(h$llotsize, na.rm = TRUE),
+  length.out = 100
+)
+
+effect_data <- data.frame(
+  llotsize = llotsize_grid,
+  bedrooms = mean(h$bedrooms, na.rm = TRUE),
+  bathrms  = mean(h$bathrms, na.rm = TRUE),
+  stories  = mean(h$stories, na.rm = TRUE),
+  garagepl = mean(h$garagepl, na.rm = TRUE)
+)
+
+effect_data <- cbind(
+  effect_data,
+  as.data.frame(
+    predict(
+      m2,
+      newdata = effect_data,
+      interval = "confidence"
+    )
+  )
+)
+```
+
+This time we'll using `geom_ribbon()` since if we added `geom_point()` they'd all just be in a straight line!
+
+```{r, fig.alt = "partial effect plot of ln(lot size) on ln(price) using model 2"}
+ggplot(effect_data, aes(x = llotsize, y = fit)) +
+  geom_ribbon(
+    aes(ymin = lwr, ymax = upr),
+    alpha = 0.2,
+    color = "lightsteelblue3",
+    fill = "lightsteelblue3"
+  ) +
+  geom_line(linewidth = 1, color = "steelblue4") +
+  labs(
+    x = "ln(lot size)",
+    y = "ln(price)",
+    title = "partial effect of ln(lot size) on ln(price)"
+  ) +
+  theme_minimal()
+```
+
+---
+
+# 6. Multicollinearity
+
+## 6.1 Correlation among regressors
+
+First select the following variables from `h`: `llotsize`, `bedrooms`, `bathrms`, `stories`, `garagepl`. Then the `cor` function calculate the correlations.
+
+```{r}
+
+# h |>
+  # select(llotsize, bedrooms, bathrms, stories, garagepl) |>
+  # cor(use = "complete.obs")
+
+
+h |>
+  select(llotsize, bedrooms, bathrms, stories, garagepl) |>
+  cor(use = "complete.obs") |>
+  as.data.frame() |>
+  tibble::rownames_to_column("Variable") |>
+  mutate(
+    Variable = dplyr::recode(
+      Variable,
+      llotsize = "ln(lot size)",
+      bedrooms = "Bedrooms",
+      bathrms = "Bathrooms",
+      stories = "Stories",
+      garagepl = "Garage spaces"
+    ),
+    across(
+      where(is.numeric),
+      ~ round(.x, 3)
+    )
+  ) |>
+  rename(
+    "ln(lot size)" = llotsize,
+    "Bedrooms" = bedrooms,
+    "Bathrooms" = bathrms,
+    "Stories" = stories,
+    "Garage spaces" = garagepl
+  ) |>
+  knitr::kable(
+    caption = "Correlation matrix for variables included in the regression model",
+    col.names = c(
+      "Variable",
+      "ln(lot size)",
+      "Bedrooms",
+      "Bathrooms",
+      "Stories",
+      "Garage spaces"
+    ),
+    align = c("l", "r", "r", "r", "r", "r")
+  ) |>
+  kableExtra::kable_styling(
+    full_width = FALSE,
+    position = "left"
+  ) |>
+  kableExtra::row_spec(0, bold = TRUE)
+```
+
+## 6.2 VIF (variance inflation factor)
+
+Next calculate the variance inflation factor for `m3`.
+
+Note: `vif(model name`) gives you the VIF for the model. The much longer code chunk is to produce an accessible table result.
+
+```{r}
+# calculate the VIF here
+
+m3 <- lm(lprice ~ llotsize + bedrooms + bathrms + stories + garagepl + driveway + fullbase + airco, data = h)
+
+# vif(m3)
+
+tibble::enframe(
+  car::vif(m3),
+  name = "Variable",
+  value = "Variance inflation factor"
+) |>
+  mutate(
+    Variable = dplyr::recode(
+      Variable,
+      llotsize = "ln(lot size)",
+      bedrooms = "Bedrooms",
+      bathrms = "Bathrooms",
+      stories = "Stories",
+      garagepl = "Garage spaces",
+      driveway = "Driveway",
+      fullbase = "Full basement",
+      airco = "Air conditioning",
+      .default = Variable
+    ),
+    `Variance inflation factor` =
+      round(`Variance inflation factor`, 2)
+  ) |>
+  knitr::kable(
+    caption = paste(
+      "Variance inflation factors for Model 3.",
+      "Larger values indicate greater multicollinearity with the other predictors."
+    ),
+    col.names = c(
+      "Regressor",
+      "Variance inflation factor"
+    ),
+    align = c("l", "r")
+  ) |>
+  kableExtra::kable_styling(
+    full_width = FALSE,
+    position = "left"
+  ) |>
+  kableExtra::row_spec(0, bold = TRUE)
+
+```
+
+**Task 6A:**  
+If a variable has a higher VIF, what does that mean about its SE and t-stat, holding everything else the same?
+
+Take the multiple regression model:
+
+$y = X \beta + u$
+
+For a given regressor $x_j$, define $R^2_j$ as the $R^2$ from the regression of $x_j$ on all the other regressors in the model:
+
+$x_j = \delta_0 + \delta_1 x_1 + \delta_2 x_2 + \cdots + \delta_n x_n + u$
+
+Remember, the general formula for the $R^2$ is 
+
+$$
+\begin{aligned}
+R^2 &= 1 - \frac{SSR}{SST}  \\
+&= 1 - \frac{\sum(y_i - \hat{y}_i)^2}{\sum{(y_i - \bar{y}})} \\
+\end{aligned}
+
+$$
+
+The 
+$$
+VIF_j = \frac{1}{1 - R^2_j}
+$$
+
+The VIF measures how much of the $X_j$'s variation is "explained away" by the other regressors. If $R^2_j$ is high (the other $x$'s do a really good job at explaining $x_j$/ they're highly correlated), then $x_j$ is redundant given the other variables.
+
+$$
+\begin{aligned}
+Var(\hat{\beta}_j) &= \frac{\sigma^2}{SST_j(1 - R^2_j)} \\
+&= \frac{\sigma^2}{[\sum(x_{ij} - \bar{x}_j)^2](1 - R^2_j)}
+
+\end{aligned}
+
+
+$$
+So the standard error is satisfying:
+
+$SE(\hat{\beta}_j) = \sqrt{VIF_j} \times SE_{\text{if } x_j \text{ were orthogonal to other regressors}}$
+
+So "variance inflation factor" isn't just a label, it's literally the multiplicative inflation factor for variance that's caused by the collinearity.
+
+How big is "big" when it comes to the VIF? How much does it inflate the variance?
+
+VIF = 1 -> SE inflation factor $\sqrt{VIF} = 1.00 \times$
+VIF = 2 -> SE inflation factor $\sqrt{VIF} = 1.41 \times$
+VIF = 4 -> SE inflation factor $\sqrt{VIF} = 2 \times$
+VIF = 9 -> SE inflation factor $\sqrt{VIF} = 3 \times$
+VIF = 9 -> SE inflation factor $\sqrt{VIF} = 4 \times$
+
+So a VIF = 9 means the SE is about three times what it would be if the regressor had independent variation.
+
+The “VIF > 10” rule is arbitrary and context dependent. Better questions:
+
+- Do we need this regressor for the estimand/theory?
+- Is the collinearity structural (e.g., bedrooms and house size)?
+- Do we care about the coefficient itself, or only about prediction?
+- Is the imprecision so large that the CI is not informative?
+
+High multicollinearity means that most of $x_j$'s variation is shared with other regressors, so the remaining "unique" variation is not that much. So that means a noisy estimate and a big SE. It doesn't bias the esitimate but instead it takes away the useable variation/ widens the convidence intervals.
+
+High VIF doesn't imply bias because under exogeneity OLS coefficients are still unbiased, multicollinearity is a precision problem.
+
+High VIF doesn't "invalidate" the regression. The model can have a high $R^2$ and still have imprecise individual coefficients. 
+
+Dropping a highly collinear variable can reduce SEs, but it can also create omitted variable bias if the dropped variable belongs in the model.
+
+Better options: 
+
+1. Live with it when theory demands the regressor (interpret with wider CIs). 
+
+2. Re-parameterize (combine variables or use ratios/indices that match the question). 
+
+3. Use joint tests for groups of correlated regressors. 
+
+4. Increase sample size (when feasible).
+
+### Why this can cause t-stats to shrink
+
+The t-statistic for testing $H_0: \beta_j = 0$ is:
+
+$$
+\begin{aligned}
+t_j &= \frac{\hat{\beta}_j - \beta_{j,0}}{SE(\hat{\beta}_j)} \\
+\text{usually tested at 0 so:} \\
+&= \frac{\hat{\beta}_j}{SE(\hat{\beta}_j)}
+\end{aligned}
+$$
+If multicollinearity increases $SE(\hat{\beta_j})$ while $\hat{\beta}_j$ stays the same/ similar, then $|t_j|$ falls and the p-values go up. That's why you can see weak individual t tests but strong joint significance / F tests for a group of correlated regressors.
+
+
+
+
+---
+
+# 7. Inference: CI, single tests, joint tests 
+
+## 7.1 95% confidence intervals (classical)
+
+Calculate the 95% confidence intervals for `m3`, using "normal" standard errors. The simpler way to do it is `confint(model name)`, the rest of the code is to produce accessible results.
+
+```{r}
+# calculate the 95% confidence intervals here.
+# confint(m3)
+
+confint(m3) |>
+  as.data.frame() |>
+  tibble::rownames_to_column("Variable") |>
+  rename(
+    "Lower confidence limit" = `2.5 %`,
+    "Upper confidence limit" = `97.5 %`
+  ) |>
+  mutate(
+    Variable = dplyr::recode(
+      Variable,
+      `(Intercept)` = "Intercept",
+      llotsize = "ln(lot size)",
+      bedrooms = "Bedrooms",
+      bathrms = "Bathrooms",
+      stories = "Stories",
+      garagepl = "Garage spaces",
+      driveway = "Driveway",
+      fullbase = "Full basement",
+      airco = "Air conditioning",
+      .default = Variable
+    ),
+    across(
+      c(`Lower confidence limit`, `Upper confidence limit`),
+      ~ round(.x, 3)
+    )
+  ) |>
+  knitr::kable(
+    caption = "Ninety-five percent confidence intervals for the Model 3 coefficients",
+    col.names = c(
+      "Regressor",
+      "Lower 95 percent confidence limit",
+      "Upper 95 percent confidence limit"
+    ),
+    align = c("l", "r", "r")
+  ) |>
+  kableExtra::kable_styling(
+    full_width = FALSE,
+    position = "left"
+  ) |>
+  kableExtra::row_spec(0, bold = TRUE)
+
+```
+
+## 7.2 Robust SEs (HC1)
+
+Calculate the 95% confidence intervals for `m3`, using robust standard errors.
+
+```{r}
+# calculate the 95% confidence intervals here, using robust standard errors.
+
+# coeftest(m3, vcov. = vcovHC(m3, type = "HC1"))
+
+lmtest::coeftest(
+  m3,
+  vcov. = sandwich::vcovHC(m3, type = "HC1")
+) |>
+  broom::tidy() |>
+  mutate(
+    term = dplyr::recode(
+      term,
+      `(Intercept)` = "Intercept",
+      llotsize = "ln(lot size)",
+      bedrooms = "Bedrooms",
+      bathrms = "Bathrooms",
+      stories = "Stories",
+      garagepl = "Garage spaces",
+      driveway = "Driveway",
+      fullbase = "Full basement",
+      airco = "Air conditioning",
+      .default = term
+    ),
+    across(
+      c(estimate, std.error, statistic),
+      ~ round(.x, 3)
+    ),
+    p.value = if_else(
+      p.value < 0.001,
+      "<0.001",
+      format(round(p.value, 3), nsmall = 3)
+    )
+  ) |>
+  select(term, estimate, std.error, statistic, p.value) |>
+  knitr::kable(
+    caption = paste(
+      "Model 3 coefficient estimates with HC1",
+      "heteroskedasticity-robust standard errors"
+    ),
+    col.names = c(
+      "Regressor",
+      "Coefficient estimate",
+      "Robust standard error",
+      "t statistic",
+      "p value"
+    ),
+    align = c("l", "r", "r", "r", "r")
+  ) |>
+  kableExtra::kable_styling(
+    full_width = FALSE,
+    position = "left"
+  ) |>
+  kableExtra::row_spec(0, bold = TRUE)
+
+```
+
+**Task 7A:**  
+Pick one coefficient whose “significance” changes (or nearly changes) when you move to robust SEs. Why might that happen?
+
+ Robust SE can increase (common under heteroskedasticity), changing borderline p-values. Inference depends on your SE estimator.
+
+
+# 8. Predictions + goodness-of-fit 
+
+## 8.1 Predict for a “typical” house
+
+Create a hypothetical observation using medians/modes.
+
+```{r}
+new_house <- tibble(
+  llotsize = log(median(h$lotsize, na.rm = TRUE)),
+  bedrooms = median(h$bedrooms, na.rm = TRUE),
+  bathrms  = median(h$bathrms, na.rm = TRUE),
+  stories  = median(h$stories, na.rm = TRUE),
+  garagepl = median(h$garagepl, na.rm = TRUE),
+  driveway = "yes",
+  fullbase = "yes",
+  airco    = "yes"
+)
+
+# use the new_house data to predict using confidence intervals
+predict(m3, newdata = new_house, interval = "confidence")
+
+#use the new_house data to predict using prediction intervals
+predict(m3, newdata = new_house, interval = "prediction")
+
+
+```
+
+**Task 8A:**  
+What’s the difference between a **confidence interval** for the mean and a **prediction interval** for an individual house?
+
+CI for mean: uncertainty about $E[y|x]$ 
+
+PI: adds irreducible error for an individual observation so it's wider
+
+## 8.2 R-squared vs adjusted R-squared
+
+```{r}
+# glance(m2) |> select(r.squared, adj.r.squared)
+# glance(m3) |> select(r.squared, adj.r.squared)
+
+
+bind_rows(
+  broom::glance(m2) |>
+    transmute(
+      Model = "Model 2",
+      `R squared` = r.squared,
+      `Adjusted R squared` = adj.r.squared
+    ),
+  broom::glance(m3) |>
+    transmute(
+      Model = "Model 3",
+      `R squared` = r.squared,
+      `Adjusted R squared` = adj.r.squared
+    )
+) |>
+  mutate(
+    across(
+      c(`R squared`, `Adjusted R squared`),
+      ~ round(.x, 3)
+    )
+  ) |>
+  knitr::kable(
+    caption = "R squared and adjusted R squared values for Models 2 and 3",
+    col.names = c(
+      "Model",
+      "R squared",
+      "Adjusted R squared"
+    ),
+    align = c("l", "r", "r")
+  ) |>
+  kableExtra::kable_styling(
+    full_width = FALSE,
+    position = "left"
+  ) |>
+  kableExtra::row_spec(0, bold = TRUE)
+```
+
+**Task 8B:**  
+Why can $R^2$ mechanically rise as you add variables? What does adjusted $R^2$ try to correct?
+
+$R^$ weakly increases with added regressors. The adjusted $R^2$ penalizes for extra variables relative to sample size, it can fall if added regressor doesn’t help enough.
+
+
+---
+
+# 9. Wrap-up 
+
+In 4–6 sentences, answer:
+
+1. What coefficient do you trust most for a causal story, and why?
+2. Where do you see the biggest OVB risk remaining?
+3. Did multicollinearity meaningfully affect your inference?
+
+
