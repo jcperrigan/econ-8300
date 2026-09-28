@@ -542,18 +542,24 @@ The null hypothesis says that the two estimators are equal, and this hypothesis 
 
 * Both are independent of one another
 
-* The larger sample variance goes in the numerator to make the right-tailed test, which is easier to calculate.
+* The variances among the populations or comparison groups should be roughly equal
+
+* Data must be gathered from random sampling/ assignment so it's a good representation of the population.
 
 Let's create our $F$ statistic in steps before using a package.
 
 ```{r}
+mod1 <- lm(colgpa ~ tothrs + athlete + sat, data = gpa2)
+
 alpha <- 0.05
 # K includes intercept
-K <- length(summary(mod1)$coefficients[,1])
+K <- length(summary(mod1)$coefficients[,1]) # includes intercept 
+# n - k - 1 = n - (k + 1)
+
 N <- length(gpa2$colgpa) #number of obs
 q <- 2 # H0 has two restrictions
-fcr = qr(1 - alpha, q, N-K) #getting the F critical value given alpha,  numerator q and denominator N-K degrees of freedom
-mod1 <- lm(colgpa ~ tothrs + athlete + sat, data = gpa2)
+fcr = qf(1 - alpha, q, N-K) #getting the F critical value given alpha,  numerator q and denominator N-K degrees of freedom
+
 
 # simple anova results
 #anova(mod1) #anova for the unrestricted model
@@ -600,7 +606,8 @@ $F = \frac{(SSR_R - SSR_U)/q}{SSR_U/(n-k-1)} \sim F(q, n-k-1)$,
 SSR_r <- anova(mod2)[2,2]
 fval <- ((SSR_r - SSR_u)/q) / (SSR_u / (N-K))
 fval
-pval <- 1 - pf(fval, q, N-K)
+pval <- pf(fval, df1 = q, df2 = df.residual(mod1),
+           lower.tail = FALSE)
 pval
 ```
 

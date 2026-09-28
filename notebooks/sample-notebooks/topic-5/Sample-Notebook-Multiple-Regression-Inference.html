@@ -1917,21 +1917,27 @@ equality of variances from two normal populations.</p>
 <ul>
 <li><p>Both populations are normally distributed</p></li>
 <li><p>Both are independent of one another</p></li>
-<li><p>The larger sample variance goes in the numerator to make the
-right-tailed test, which is easier to calculate.</p></li>
+<li><p>The variances among the populations or comparison groups should
+be roughly equal</p></li>
+<li><p>Data must be gathered from random sampling/ assignment so it’s a
+good representation of the population.</p></li>
 </ul>
 <p>Let’s create our <span class="math inline">\(F\)</span> statistic in
 steps before using a package.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fl">0.05</span></span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co"># K includes intercept</span></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">length</span>(<span class="fu">summary</span>(mod1)<span class="sc">$</span>coefficients[,<span class="dv">1</span>])</span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="fu">length</span>(gpa2<span class="sc">$</span>colgpa) <span class="co">#number of obs</span></span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>q <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="co"># H0 has two restrictions</span></span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>fcr <span class="ot">=</span> <span class="fu">qr</span>(<span class="dv">1</span> <span class="sc">-</span> alpha, q, N<span class="sc">-</span>K) <span class="co">#getting the F critical value given alpha,  numerator q and denominator N-K degrees of freedom</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(colgpa <span class="sc">~</span> tothrs <span class="sc">+</span> athlete <span class="sc">+</span> sat, <span class="at">data =</span> gpa2)</span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a></span>
-<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co"># simple anova results</span></span>
-<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#anova(mod1) #anova for the unrestricted model</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(colgpa <span class="sc">~</span> tothrs <span class="sc">+</span> athlete <span class="sc">+</span> sat, <span class="at">data =</span> gpa2)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fl">0.05</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co"># K includes intercept</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">length</span>(<span class="fu">summary</span>(mod1)<span class="sc">$</span>coefficients[,<span class="dv">1</span>]) <span class="co"># includes intercept </span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co"># n - k - 1 = n - (k + 1)</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="fu">length</span>(gpa2<span class="sc">$</span>colgpa) <span class="co">#number of obs</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>q <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="co"># H0 has two restrictions</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>fcr <span class="ot">=</span> <span class="fu">qf</span>(<span class="dv">1</span> <span class="sc">-</span> alpha, q, N<span class="sc">-</span>K) <span class="co">#getting the F critical value given alpha,  numerator q and denominator N-K degrees of freedom</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co"># simple anova results</span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co">#anova(mod1) #anova for the unrestricted model</span></span></code></pre></div>
 <p>Using <code>reporting.R</code> for accessible ANOVA results:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">mk_anova</span>(</span>
 <span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  mod1,</span>
@@ -2139,9 +2145,10 @@ SSR_U)/q}{SSR_U/(n-k-1)} \sim F(q, n-k-1)\)</span>,</p>
 <span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>fval <span class="ot">&lt;-</span> ((SSR_r <span class="sc">-</span> SSR_u)<span class="sc">/</span>q) <span class="sc">/</span> (SSR_u <span class="sc">/</span> (N<span class="sc">-</span>K))</span>
 <span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>fval</span></code></pre></div>
 <pre><code>## [1] 47.09328</code></pre>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>pval <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fu">pf</span>(fval, q, N<span class="sc">-</span>K)</span>
-<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>pval</span></code></pre></div>
-<pre><code>## [1] 0</code></pre>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>pval <span class="ot">&lt;-</span> <span class="fu">pf</span>(fval, <span class="at">df1 =</span> q, <span class="at">df2 =</span> <span class="fu">df.residual</span>(mod1),</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>           <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>pval</span></code></pre></div>
+<pre><code>## [1] 5.987013e-21</code></pre>
 <p>We can also use the “car” package and the linearHypothesis() function
 in R to test this and get the F-statistic and p-value from its
 results.</p>
