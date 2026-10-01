@@ -258,7 +258,9 @@ bwght_i=\beta_0+\beta_1 smoker_i+u_i
 $$
 
 and save the model as `prob07_model`.
+
 3. Show numerically how the two regression coefficients are related to the two group means.
+
 4. Interpret the intercept and slope in context and include their units. 
 
 Save your written response as `prob07`.

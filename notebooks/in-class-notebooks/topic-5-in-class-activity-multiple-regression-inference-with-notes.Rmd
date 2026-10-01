@@ -1,0 +1,512 @@
+---
+title: "In-Class Activity: Further Inference in Multiple Regression"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+#library(here)
+#here::i_am("in-class-notebooks/in-class-activity-multiple-regression-inference.Rmd")
+```
+
+```{r}
+source('reporting.R')
+```
+
+
+# Plan for today
+
+
+## Goals
+Practice the core inference ideas in multiple regression:
+
+* single-coefficient tests & confidence intervals,
+* heteroskedasticity-robust standard errors,
+* joint hypothesis testing (F-tests),
+* prediction / prediction intervals,
+* quick diagnostics (RESET, VIF).
+
+```{r}
+set.seed(123)
+
+n <-100
+x <- rnorm(n)
+y <- 2 + 3*x + rnorm(n, sd = 1)
+```
+
+```{r}
+beta0_bad <- 0
+beta1_bad <- 1
+
+u_bad <- y - beta0_bad - beta1_bad * x
+
+
+```
+
+```{r}
+sum(u_bad)
+sum(x * u_bad)
+```
+
+The errors still have patterns that the model hasn't removed (not close to zero).
+
+If we run OLS:
+
+```{r, results = "asis"}
+mod <- lm(y ~ x)
+mk_coeftab(mod)
+```
+
+```{r}
+u_hat <- resid(mod)
+y_hat <- fitted(mod)
+sum(u_hat)
+sum(x * u_hat)
+sum(1 * u_hat)
+```
+
+OLS chose coefficients that got the dot products extremely close to zero. We'll use `ggplot2` to plot. `ggplot2` is in tidyverse.
+
+```{r}
+library('tidyverse')
+```
+
+
+```{r, fig.alt = "fitted vs. residual plot"}
+ggplot(mod, aes(x = .fitted, y = .resid)) +
+  geom_point(alpha = 0.6) +                     # Scatter plot of residuals
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") + # zero-line
+  labs(
+    title = "Residual vs. Fitted Plot",
+    x = "Fitted Values",
+    y = "Residuals"
+  ) +
+  theme_minimal()
+```
+
+
+## Packages + data
+
+We’ll use the **gpa2** data (Wooldridge). If `wooldridge` is not installed, install it.
+
+```{r}
+need <- c("wooldridge", "sandwich", "lmtest", "car", "kableExtra")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have])
+invisible(lapply(need, library, character.only = TRUE))
+#source(here("scripts", "reporting.R"))
+source("reporting.R")
+
+data("gpa2")
+?gpa2
+```
+
+Quick variable recap:
+
+* `colgpa`: college GPA (dependent variable)
+* `tothrs`: total study hours
+* `athlete`: 1 if student-athlete
+* `sat`: SAT score
+
+We’ll estimate:
+
+
+$colgpa = \beta_0 + \beta_1 tothrs + \beta_2 athlete + \beta_3 sat + u$
+
+---
+
+# Task 1 — Fit the model + read the output 
+
+1. Estimate the model above and store it as `mod1`.
+2. Print the regression summary.
+3. In **1–2 sentences**, interpret **the slope on `tothrs`** in plain English.
+
+```{r, results = "asis"}
+# fit the model
+mod1 <- lm(colgpa ~ tothrs + athlete + sat, data = gpa2)
+
+# view results
+#summary(mod1)
+mk_coeftab(mod1)
+```
+
+**Interpretation (write here):**  
+The change in GPA per one unit change in total hours (.002 approximate increase in GPA associated with a one hour increase in total hours of studying).
+
+---
+
+# Task 2 — Test a single coefficient + build a 95% CI 
+
+## 2A. Hypothesis test (two-sided)
+Test:
+
+
+$H_0:\beta_{tothrs}=0 \quad \text{vs} \quad H_1:\beta_{tothrs}\neq 0$
+
+1. Extract the estimate and the usual (homoskedastic) standard error for `tothrs` and `sat`
+2. Compute the **t statistic** by hand for `tothrs` and `sat`
+3. Compute the **two-sided p-value** using `pt()` for both variables.
+
+```{r}
+#vcov(mod1)
+# extract beta_hat and se_hat for tothrs
+b1  <- coef(mod1)["tothrs"]
+se1 <- sqrt(vcov(mod1))["tothrs", "tothrs"]
+
+b2 <- coef(mod1)["sat"]
+se2 <- sqrt(vcov(mod1))["sat", "sat"]
+
+#  t statistic for H0: beta1 = 0
+t_stat1 <- (b1 - 0)/se1
+t_stat2 <- (b2 - 0)/se2
+
+#  two-sided p-value
+p_val1 <- 2 * pt(-abs(t_stat1), df = df.residual(mod1))
+p_val2 <- 2 * pt(-abs(t_stat2), df = df.residual(mod1))
+
+cat("the estimate for b1 is", b1, ", the estimated standard error for b1 is", se1, ", its t-stat is", t_stat1, ", and its p-value is", p_val1, "\n") 
+cat("the estimate for b2 is", b2, ", the estimated standard error for b2 is", se2, ", its t-stat is", t_stat2, ", and its p-value is", p_val2) 
+
+```
+
+## 2B. 95% confidence interval
+
+Construct a 95% CI for $\beta_{tothrs}$ and $\beta_{sat}$ using:
+
+$\hat\beta \pm t_{0.975, df}\cdot SE(\hat\beta)$
+
+```{r}
+# critical value
+t_crit <- qt(.975, df = df.residual(mod1))
+
+# CI endpoints
+ci1 <- c(lower = b1 - t_crit * se1,
+         upper = b1 + t_crit * se1)
+
+
+ci2 <- c(lower = b2 - t_crit * se2,
+         upper = b2 + t_crit * se2)
+
+
+
+confint(mod1, parm = c("tothrs", "sat"), level = 0.95) |>
+  as.data.frame() |>
+  tibble::rownames_to_column("Coefficient") |>
+  dplyr::rename(
+    `Lower bound` = `2.5 %`,
+    `Upper bound` = `97.5 %`
+  ) |>
+  knitr::kable(
+    digits = 3,
+    caption = "95% confidence intervals for selected regression coefficients",
+    col.names = c("Coefficient", "Lower bound", "Upper bound")
+  ) |>
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE
+  )
+```
+
+**Interpret the confidence intervals:**
+
+If we repeated and sampled and re estimated the model, 95% of these intervals would contain the true value of $\beta$.
+
+Measures the sampling variability of a statistic ($\hat{\beta}_1$), approximate standard deviation of a statistical sample population (analogous). How accurately a sample represents the population/ the accuracy with which a sample distribution represents the population. 
+
+---
+
+# Task 3 — Robust standard errors (HC1) (Driver 2)
+
+Real data often have heteroskedasticity. Re-do inference for `tothrs` using **HC1 robust** SEs.
+
+1. Compute a robust variance-covariance matrix with `vcovHC(mod1, type="HC1")`.
+2. Use `coeftest()` to print the coefficient table with robust SEs.
+3. Compare the usual vs robust SE for `tothrs` (which is bigger? Why?).
+
+```{r}
+res_df <- tibble(
+  fitted_m1 = fitted(mod1),
+  resid_m1 = resid(mod1)
+)
+```
+
+
+```{r, fig.alt = "residuals plot for model 1"}
+# create a residual / fitted values plot for model 1 
+ggplot(res_df, aes(x = fitted_m1, y = resid_m1^2)) +
+  geom_point(color = "steelblue") + 
+  geom_smooth(se = FALSE, color = "red") + 
+  labs(title = "residuals plot, model 1", x = "fitted values", y = "squared residuals") +
+  theme_minimal()
+```
+Why look at a residuals plot? 
+
+What is the definition of homoskedasticity?
+
+$Var(u_i | X_i) = \sigma^2$ for all $i = 1, \dots, n$
+
+$\hat{u_i} = y_i - \hat{y}_i$ 
+
+
+```{r}
+# Get the robust VCOV matrix
+V_hc1 <- vcovHC(mod1, type = "HC1")
+
+# Robust coefficient test table
+robust_test <- coeftest(mod1, vcov. = V_hc1)
+
+robust_results <- tibble::tibble(
+  Coefficient = rownames(robust_test),
+  Estimate = robust_test[, 1],
+  `Robust standard error` = robust_test[, 2],
+  `t statistic` = robust_test[, 3],
+  `p-value` = robust_test[, 4]
+)
+
+robust_results |>
+  knitr::kable(
+    digits = 3,
+    caption = "Regression results using HC1 robust standard errors"
+  ) |>
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE
+  )
+
+
+
+# Compare the usual and robust standard errors for tothrs
+se1_robust <- sqrt(V_hc1["tothrs", "tothrs"])
+
+tibble::tibble(
+  `Standard error type` = c("Usual", "HC1 robust"),
+  `Standard error for tothrs` = c(se1, se1_robust)
+) |>
+  knitr::kable(
+    digits = 7,
+    caption = "Comparison of usual and HC1 robust standard errors for the total-hours coefficient"
+  ) |>
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE
+  )
+```
+
+
+
+**1–2 sentence takeaway about residuals plots and robust standard errors:**  
+
+A squared-residuals plot (or absolute-residuals plot) can make heteroskedasticity easier to see than a standard residual plot because it focuses directly on the size of the errors instead of their direction. In a usual residuals vs fitted values plot, positive and negative residuals can cancel each other visually, which makes changing variance harder to see. 
+
+Plotting $\hat{u}^2$ or $|\hat{u}|$ against fitted values or a regressor shows whether the magnitude of the errors grows or shrinks with the level of the predicted outcome. Under homoskedasticity, the squared residuals should form a roughly flat band. Systematic patterns like an upward trend or a fan shape show that error variance depends on the level of $X$, which is evidence of heteroskedasticity.
+
+Now in this case, we see that the homoskedasticity assumed standard error for `tothrs` is lower than the heteroskedasticity robust standard error. This can happen! Robust doesn't necessarily mean larger, it just means that the standard error is calculated without assuming constant error variance.
+
+The usual variance estimator applies one common variance estimate to all observations. The HC1 estimator on the other hand weights observations according to their squared residuals and leverage.
+
+By "leverage", that just measures how unusual an observations predictor values are relative to the rest of the sample. A high leverage observation has an unusual combo of explanatory variable values and so has a lot of potential to affect the fitted regression line. 
+
+An observation with high leverage has a mechanically smaller residual, since a high leverage observation pulls the regression line towards itself. So the residual might be small even when the underlying error variance isn't. 
+
+So for `tothrs`, the robust SE can be lower if the observations that are really influential when its coefficient is estimated have smaller residual variance. So the heteroskedasticity pattern may actually make the usual homoskedastic estimator, where we're assuming constant variance, overstate the uncertainty for this coefficient.
+
+
+---
+
+# Task 4 — Joint hypothesis test (F-test)
+
+We want to test whether `tothrs` and `athlete` matter *jointly*:
+
+Unrestricted model
+$colgpa = \beta_0 + \beta_1 tothrs + \beta_2 athlete + \beta_3 sat + \beta_4 female + u$
+
+
+$H_0:\beta_{athlete}=0 \ \text{and } \beta_{female} = 0 \quad \text{vs} \quad H_1: \text{at least one is nonzero}.$
+
+Restricted model:
+$colgpa = \beta_0 + \beta_1 tothrs + \beta_3 sat + u$
+
+
+## 4A. Do it “by hand” using restricted vs unrestricted SSE
+
+Steps:
+1. Fit a **restricted** model that drops `tothrs` and `athlete` and `female` (keep `sat`).
+2. Extract SSE (sum of squared residuals) for restricted and unrestricted.
+3. Compute the F statistic:
+
+
+$F = \frac{(SSR_R - SSR_U)/q}{SSR_U/(N-p)}$
+
+where $q$ is the number of restrictions $p$ is number of parameters in the unrestricted model (including intercept).
+
+```{r}
+# restricted model 
+res_mod <- lm(colgpa ~ tothrs + sat, data = gpa2)
+
+# unrestricted model
+unr_mod <- lm(colgpa ~ tothrs + sat + athlete + female, data = gpa2)
+
+# SSRs
+SSR_U <- sum(residuals(unr_mod)^2)
+SSR_R <- sum(residuals(res_mod)^2)
+
+
+# pieces for F
+q <- 2
+N <- nobs(unr_mod) #from unrestricted model
+p <- length(coef(unr_mod))
+
+
+# F stat and p-value
+F_stat <- ((SSR_R - SSR_U)/q) / (SSR_U/(N - p))
+p_val_F <- pf(F_stat, df1 = q, df2 = N - p, lower.tail = FALSE)
+
+c(F_stat = F_stat, p_value = p_val_F)
+
+```
+
+## 4B. Do it with `linearHypothesis()`
+
+```{r}
+linearHypothesis(unr_mod, c("athlete = 0", "female = 0"))
+```
+
+**F-stat interpretation (3-4 sentences):**  
+
+An F statistic measures how much a set of regressors improves model fit relative to the remaining unexplained variation.
+
+The numerator $(SSR_R - SSR_U) / q/$ measures how much the model improves when the restrictions are removed, how much fit increases per restriction. 
+
+The denominator $SSR_U / (n - p)$, where $p$ includes the intercept, measure the average unexplained variation in the unrestricted model.
+
+IF restrictions are TRUE, if we relax them that shouldn't reduce the Sum of Squared Errors that much, so the F stat will be small.
+
+IF the restrictions are FALSE, if we include the variables in the regression that should reduce the SSE by a lot, makes the F stat big.
+
+---
+
+# Task 5 — Prediction + prediction interval (Driver 1)
+
+Let’s predict GPA for a hypothetical student:
+- `tothrs = 20`
+- `athlete = 0`
+- `sat = 1100`
+
+1. Create a one-row data frame called `new_student`.
+2. Compute the predicted mean GPA.
+3. Compute a **95% prediction interval**.
+
+```{r}
+# define new observation
+new_student <- data.frame(tothrs = 20, athlete = 0, sat = 1100)
+
+# point prediction
+predict(mod1, newdata = new_student)
+
+# 95% prediction interval
+predict(mod1, newdata = new_student, interval = "prediction", level = 0.95)
+
+predict(mod1, newdata = new_student, interval = "confidence", level = 0.95)
+```
+
+**Question:** Why is the *prediction interval* wider than a confidence interval for the conditional mean?  
+*(Answer in a few sentences.)*  
+
+A confidence interval is asking where the average outcome is at this particular $x_0$, so the estimated mean $x_0'\beta$. The only source of variability is the uncertainty in $\hat{\beta}$. The variance of the predicted mean is
+
+$Var(\hat{y_0}) = \sigma^2 x_0'(X'X)^{-1}x_0$.
+
+For a prediction interval for a new observation $y_0$ at $x_0$, we're asking where will a new individual observation fall? This means that there are two sources of uncertainty:
+
+1. Uncertainty about the regression line
+2. Random noise for the new observation
+
+Even if we knew the true regression line perfectly a new outcome would still vary randomly around it. A prediction interval includes both estimation uncertainty and individual randomness.
+
+If we start from the new observation:
+
+$y_0 = x_0'\beta + u_0$, 
+
+the prediction is:
+
+$\hat{y_0} = x_0' \hat\beta$.
+
+That means the prediction error is:
+
+$y_0 - \hat{y_0} = u_0 + \x_0'(\beta - \hat\beta)$.
+
+Now we take the variance:
+
+* $\u_0$ has variance $\sigma^2$ (assuming homoskedasticity)
+* $x_0'\beta + u_0$ has variance $Var(\hat{y_0})$ 
+* These two parts are independence
+
+This gives us the variance:
+
+$Var(y_0 - \hat{y_0}) = Var(u_0) + Var(\hat{y_0}) = \sigma^2 + Var(\hat{y_0})$
+
+Since $Var(\hat{y_0}) = \sigma^2 x_0'(X'X)^{-1}x_0$,
+
+We get
+
+$Var(y_0 - \hat{y_0}) = \sigma^2 + \sigma^2 x_0'(X'X)^{-1}x_0 = \sigma^2 (1 + x_0'(X'X)^{-1}x_0)$
+
+So the prediction variance is the variance from estimating the mean ($\sigma^2 x_0'(X'X)^{-1}x_0$) plus the variance from individual randomness ($\sigma^2$).
+
+---
+
+# Task 6 — Quick diagnostics: RESET + VIF 
+
+## 6A. RESET (functional form)
+
+Use `resettest()` (from `lmtest`) to check whether adding powers of fitted values suggests misspecification. First run a RESET test:
+
+```{r}
+# RESET test
+resettest(mod1, power = 2:3, type = "fitted")
+```
+
+**Interpretation:**  
+What do your results tell you about your model's specification? What is the RESET test doing "under the hood"?
+
+What do your results tell you about your model's specification? What is the RESET test doing "under the hood"?
+
+SAVE FOR POLYNOMIAL MODELS (in the next week's in-class notebook)
+
+## 6B. Collinearity via VIF
+Compute variance inflation factors (VIF). 
+
+```{r}
+#  VIFs
+vif(mod1)
+```
+
+**Interpretation:**  
+Why is it called a "Variance Inflation Factor"? What does the presence of multicollinearity do to the coefficients? What do your results tell you about your model?
+
+*What VIF is measuring (definition + link to identification)*
+
+Take the multiple regression model:
+
+$y = X\beta + u$
+
+For a given regressor $x_j$, define $R_j^2$ as the $R^2$ from an **auxiliary regression** of $x_j$ on all the other regressors in the model. Then the VIF is
+
+$\text{VIF}_j = \frac{1}{1 - R_j^2}$
+
+VIF measures how much of $x_j$'s variation is explained away by the other regressors. If $R_j^2$ is high, $x_j$ is pretty much redundant given the other $x$'s.
+
+
+---
+
+# Wrap-up (2 minutes)
+
+1. One thing you feel solid on:
+2. One thing you want to review before the homework:

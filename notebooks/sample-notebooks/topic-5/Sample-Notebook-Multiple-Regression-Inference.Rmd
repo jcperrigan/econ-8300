@@ -419,7 +419,7 @@ We have enough evidence to reject our null hypothesis that $\beta_{tothrs} = 0$ 
 
 In a linear-log model, the independent variable is log transformed. The literal interpretation of our estimated coefficient $\hat{\beta}$ is that a one-unit increase in $log(x)$ will produce an expected increase in *y* of $\hat{\beta}$ units.
 
-For a small increase *p* in X, $log([100 + p] / 100) \approx p/100$. For $p=1*, this means that $\hat{\beta} / 100$ can be interpreted as the approximate expected increase in *y* from a 1% increase in *x*.
+For a small increase *p* in X, $log([100 + p] / 100) \approx p/100$. For $p=1$, this means that $\hat{\beta} / 100$ can be interpreted as the approximate expected increase in *y* from a 1% increase in *x*.
 
 
 ### Log-linear models
