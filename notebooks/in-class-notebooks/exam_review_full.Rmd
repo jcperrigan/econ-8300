@@ -1,0 +1,578 @@
+---
+title: "Midterm Exam Review: Regression and Inference"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    df_print: paged
+---
+
+# Purpose of this review
+
+This review is designed to prepare you for the exam by focusing on the logic, interpretation, and statistical reasoning behind regression analysis instead of memorizing R commands.
+
+The review is based primarily on the material in Stock and Watson, *Introduction to Econometrics*, Chapters 4–8, with some selected ideas from Chapters 1–3 as background.
+
+You should be able to:
+
+- explain what an OLS regression coefficient means
+- distinguish fitted values, residuals, and population errors
+- reason through the assumptions needed for estimation and inference
+- interpret hypothesis tests and confidence intervals
+- understand omitted-variable bias and the logic of multiple regression
+- conduct and interpret single and joint hypothesis tests
+- interpret nonlinear regression specifications involving logs, quadratics, and interactions
+- distinguish statistical significance from economic or practical significance
+
+---
+
+# 1. Core regression ideas
+
+## 1.1 Population model versus estimated model
+
+Suppose the population relationship is
+
+$$
+Y_i = \beta_0 + \beta_1 X_i + u_i.
+$$
+
+The corresponding sample regression is
+
+$$
+\widehat{Y}_i = \widehat{\beta}_0 + \widehat{\beta}_1 X_i.
+$$
+
+The residual is
+
+$$
+\widehat{u}_i = Y_i - \widehat{Y}_i.
+$$
+
+### Questions
+
+- In words, what is the difference between $u_i$ and $\widehat{u}_i$?
+
+- Why can we observe $\widehat{u}_i$ but not $u_i$?
+
+- What does $\widehat{Y}_i$ represent?
+
+- Suppose a regression predicts a wage of \$22 per hour for a worker whose actual wage is \$25. What is that worker's residual? 
+
+---
+
+## 1.2 What OLS does
+
+Ordinary least squares chooses coefficient estimates to minimize
+
+$$
+\sum_{i=1}^{n} \widehat{u}_i^2.
+$$
+
+### Questions
+
+- Why does OLS square the residuals instead of just adding the residuals?
+
+- What would a large residual mean substantively?
+
+
+
+---
+
+# 2. Simple linear regression: estimation
+
+Suppose we estimate
+
+$$
+\widehat{testscore}_i = 520 - 2.3 \times classsize_i.
+$$
+
+where `testscore` is an average test score and `classsize` is the number of students per class.
+
+## 2.1 Interpreting coefficients
+
+### Questions
+
+- Interpret the slope coefficient, $-2.3$.
+
+- Interpret the intercept, $520$. Is that interpretation substantively meaningful?
+
+- What is the predicted difference in test scores between a class with 20 students and a class with 24 students?
+
+
+---
+
+## 2.2 Goodness of fit
+
+Suppose the regression has $R^2 = 0.18$.
+
+### Questions
+
+- Interpret the $R^2$.
+
+- Does a low $R^2$ imply that the estimated slope is unimportant or invalid?
+
+- Can a regression have a high $R^2$ and still give a misleading estimate of a causal effect? Explain briefly.
+
+---
+
+## 2.3 Omitted-variable bias
+
+Suppose smaller classes are more common in districts with higher income, and district income also improves test scores.
+
+### Questions
+
+- What omitted variable creates a concern here?
+
+- What two conditions must hold for omitted-variable bias to occur?
+
+- If district income is positively related to test scores and negatively related to class size, what direction of bias would you expect in the simple regression slope on class size?
+
+
+
+---
+
+# 3. Simple linear regression: hypothesis testing
+
+Suppose we estimate
+
+$$
+\widehat{testscore}_i = 520 - 2.3 \times classsize_i
+$$
+
+and the standard error of $\widehat{\beta}_1$ is 0.9.
+
+## 3.1 Testing a single coefficient
+
+We want to test
+
+$$
+H_0: \beta_1 = 0
+$$
+
+against
+
+$$
+H_1: \beta_1 \neq 0.
+$$
+
+### Questions
+
+- Write the formula for the t-statistic.
+
+- Calculate the t-statistic.
+
+- In words, what does the t-statistic measure?
+
+- If the p-value is 0.012, what conclusion would you reach at the 5% significance level?
+
+- Would you reject at the 1% level?
+
+- What does rejecting $H_0: \beta_1 = 0$ allow you to say? What does it not allow you to say?
+
+---
+
+## 3.2 Confidence intervals
+
+### Questions
+
+- Construct an approximate 95% confidence interval using
+
+$$
+\widehat{\beta}_1 \pm 1.96 \times SE(\widehat{\beta}_1).
+$$
+
+- Explain the meaning of a 95% confidence interval.
+
+
+---
+
+## 3.3 Statistical versus practical significance
+
+Suppose another study estimates that an intervention raises wages by \$0.06 per hour, with a p-value of 0.001.
+
+### Questions
+
+- Is the effect statistically significant?
+
+- Is it necessarily economically important? Why not?
+
+
+---
+
+# 4. Multiple regression: estimation
+
+Consider the model
+
+$$
+wage_i = \beta_0 + \beta_1 educ_i + \beta_2 exper_i + \beta_3 female_i + u_i.
+$$
+
+Suppose the estimated equation is
+
+$$
+\widehat{wage}_i
+=
+4.50
++
+1.20\,educ_i
++
+0.25\,exper_i
+-
+2.10\,female_i.
+$$
+
+Here, `female = 1` for women and 0 otherwise.
+
+## 4.1 Ceteris paribus interpretation
+
+### Questions
+
+- Interpret the coefficient on education.
+
+- Why is the phrase "holding the other regressors constant" essential in multiple regression?
+
+- Interpret the coefficient on `female`.
+
+- What comparison is implicitly being made when interpreting the coefficient on a binary variable?
+
+---
+
+## 4.2 Why add controls?
+
+### Questions
+
+- Why might the coefficient on education change after experience is added to the regression?
+
+- Is the coefficient in a multiple regression necessarily "more causal" simply because more control variables were added? Explain.
+
+- What problem can occur if you control for a variable that is itself caused by the explanatory variable of interest?
+
+
+---
+
+# 5. Multiple regression: single-coefficient hypothesis tests
+
+Suppose the estimated education coefficient is
+
+$$
+\widehat{\beta}_1 = 1.20
+$$
+
+with
+
+$$
+SE(\widehat{\beta}_1)=0.30.
+$$
+
+### Questions
+
+43. Test
+
+$$
+H_0:\beta_1=1.
+$$
+
+against
+
+$$
+H_1:\beta_1\neq 0.
+$$
+
+Calculate the t-statistic.
+
+- What would a very small p-value imply?
+
+
+- Why might a hypothesis test about a nonzero value be economically interesting?
+
+---
+
+# 6. Multiple regression: joint hypothesis tests
+
+Consider
+
+$$
+wage_i
+=
+\beta_0
++
+\beta_1 educ_i
++
+\beta_2 exper_i
++
+\beta_3 tenure_i
++
+\beta_4 female_i
++
+u_i.
+$$
+
+Suppose we want to test whether experience and tenure jointly matter for wages:
+
+$$
+H_0:\beta_2=0
+\quad\text{and}\quad
+\beta_3=0.
+$$
+
+## 6.1 Logic of the F-test
+
+### Questions
+
+- Why is conducting two separate t-tests not the same as conducting one joint F-test?
+
+- In a joint test, what does the null hypothesis say about the model?
+
+- What is the restricted model in this example?
+
+- What is the unrestricted model?
+
+- Why does the F-test compare the fit of a restricted model with the fit of an unrestricted model?
+
+- If the p-value for the F-test is 0.003, what is your conclusion at the 5% level?
+
+- Does rejecting the joint null imply that both coefficients are individually statistically significant?
+
+---
+
+# 9. Nonlinear specifications
+
+Multiple regression doesn't require the relationship between $X$ and $Y$ to be a straight line. "Linear regression" means linear in the coefficients, not necessarily linear in the explanatory variables.
+
+---
+
+## 9.1 Quadratic terms
+
+Consider
+
+$$
+wage_i
+=
+\beta_0
++
+\beta_1 exper_i
++
+\beta_2 exper_i^2
++
+u_i.
+$$
+
+Suppose
+
+$$
+\widehat{wage}
+=
+8
++
+1.1\,exper
+-
+0.02\,exper^2.
+$$
+
+### Questions
+
+- Why can't you interpret 1.1 as "one more year of experience always raises wages by \$1.10"?
+
+- What does the negative coefficient on $exper^2$ suggest about the shape of the relationship?
+
+- Approximately what is the marginal effect of another year of experience when `exper = 10`?
+
+Use
+
+$$
+\frac{\Delta wage}{\Delta exper}
+\approx
+\widehat{\beta}_1
++
+2\widehat{\beta}_2 exper.
+$$
+
+- What is the marginal effect when `exper = 20`?
+
+- Why does the marginal effect change with experience?
+
+---
+
+## 9.2 Logarithmic specifications
+
+### Level-log model
+
+$$
+Y
+=
+\beta_0
++
+\beta_1 \ln(X)
++
+u.
+$$
+
+### Question
+
+- If $\beta_1=4$, approximately how much does $Y$ change when $X$ rises by 1%?
+
+---
+
+### Log-level model
+
+$$
+\ln(Y)
+=
+\beta_0
++
+\beta_1 X
++
+u.
+$$
+
+### Question
+
+- If $\beta_1=0.03$, approximately what percentage change in $Y$ is associated with a one-unit increase in $X$?
+
+---
+
+### Log-log model
+
+$$
+\ln(Y)
+=
+\beta_0
++
+\beta_1 \ln(X)
++
+u.
+$$
+
+### Questions
+
+- How do we interpret $\beta_1$ in a log-log model?
+
+- If $\beta_1=0.7$, what does that mean?
+
+---
+
+# 10. Interaction terms
+
+Consider
+
+$$
+wage_i
+=
+\beta_0
++
+\beta_1 educ_i
++
+\beta_2 female_i
++
+\beta_3(educ_i \times female_i)
++
+u_i.
+$$
+
+### Questions
+
+- What is the effect of one additional year of education for the reference group (`female = 0`)?
+
+- What is the effect of one additional year of education for `female = 1`?
+
+- What does $\beta_3$ measure?
+
+- Why is it usually a mistake to interpret the interaction coefficient by itself without combining it with the relevant lower-order coefficient?
+
+---
+
+# 11. Interactions with continuous variables
+
+Consider
+
+$$
+wage
+=
+\beta_0
++
+\beta_1 educ
++
+\beta_2 exper
++
+\beta_3(educ\times exper)
++
+u.
+$$
+
+### Questions
+
+- What is the marginal effect of education?
+
+- Why does the effect of education depend on experience?
+
+- What is the marginal effect of experience?
+
+
+---
+
+# 13. Assumptions and inference
+
+You should understand the logic of the major assumptions behind OLS and inference.
+
+## 13.1 Zero conditional mean
+
+A central assumption is
+
+$$
+E(u_i \mid X_i)=0
+$$
+
+in simple regression, or
+
+$$
+E(u_i \mid X_{1i},X_{2i},\ldots,X_{ki})=0
+$$
+
+in multiple regression.
+
+### Questions
+
+- What does zero conditional mean mean in words?
+
+- Why is this assumption closely related to omitted-variable bias?
+
+- What happens if an omitted determinant of $Y$ is correlated with one of the regressors?
+
+---
+
+# 16. Quick interpretation checklist
+
+Before the exam, make sure you can answer each of the following without looking at notes.
+
+- What population parameter is being estimated?
+- What is the reference group?
+- Is the regressor continuous, binary, logged, squared, or interacted?
+- What variables are being held constant?
+- Is the coefficient a level change, percentage change, or elasticity?
+- Is the test single or joint?
+- What exactly is the null hypothesis?
+- What does the p-value tell you?
+- Is the effect statistically significant?
+- Is it economically meaningful?
+- Does the specification support a causal interpretation?
+- What omitted variables could threaten the interpretation?
+- If there is a quadratic or interaction, does the marginal effect depend on other variables?
+
+---
+
+
+# 18. Final practice prompts
+
+Try answering these aloud without calculations.
+
+1. What is the difference between association and causation in a regression model?
+2. What does "holding other variables constant" mean?
+3. Why can omitted variables bias a coefficient?
+4. Why might a coefficient become smaller after controls are added?
+5. How is a confidence interval related to a two-sided t-test?
+6. What is the difference between a t-test and an F-test?
+7. What does an interaction term change about interpretation?
+8. What does a quadratic term change about interpretation?
+9. Why are robust standard errors useful?
+10. Why should you never interpret statistical significance without also looking at the estimated effect size?
