@@ -336,13 +336,13 @@ $$
 
 ---
 
-# 9. Nonlinear specifications
+# 7. Nonlinear specifications
 
 Multiple regression doesn't require the relationship between $X$ and $Y$ to be a straight line. "Linear regression" means linear in the coefficients, not necessarily linear in the explanatory variables.
 
 ---
 
-## 9.1 Quadratic terms
+## 7.1 Quadratic terms
 
 Consider
 
@@ -394,7 +394,7 @@ $$
 
 ---
 
-## 9.2 Logarithmic specifications
+## 7.2 Logarithmic specifications
 
 ### Level-log model
 
@@ -452,7 +452,7 @@ $$
 
 ---
 
-# 10. Interaction terms
+# 8. Interaction terms
 
 Consider
 
@@ -482,7 +482,7 @@ $$
 
 ---
 
-# 11. Interactions with continuous variables
+# 9. Interactions with continuous variables
 
 Consider
 
@@ -511,11 +511,11 @@ $$
 
 ---
 
-# 13. Assumptions and inference
+# 10. Assumptions and inference
 
 You should understand the logic of the major assumptions behind OLS and inference.
 
-## 13.1 Zero conditional mean
+## 10.1 Zero conditional mean
 
 A central assumption is
 
@@ -541,7 +541,7 @@ in multiple regression.
 
 ---
 
-# 16. Quick interpretation checklist
+# 11. Quick interpretation checklist
 
 Before the exam, make sure you can answer each of the following without looking at notes.
 
@@ -562,7 +562,7 @@ Before the exam, make sure you can answer each of the following without looking 
 ---
 
 
-# 18. Final practice prompts
+# 12. Final practice prompts
 
 Try answering these aloud without calculations.
 
