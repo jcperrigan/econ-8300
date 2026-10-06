@@ -1,0 +1,556 @@
+---
+title: "In-Class Activity Notebook — Nonlinear Regression Functions"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+#library(here)
+#here::i_am("in-class-notebooks/inclass_nonlinear.Rmd")
+```
+
+```{r}
+need <- c("tidyverse", "wooldridge", "sandwich", "lmtest", "car", "modelsummary", "kableExtra")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have])
+invisible(lapply(need, library, character.only = TRUE))
+#source(here("scripts", "reporting.R"))
+source("reporting.R")
+```
+
+
+# Goals for today
+
+1. Diagnose when a linear regression function is not the best choice and propose a better functional form.
+2. Fit and interpret polynomial models (especially quadratics) and compute a turning point.
+3. Fit and interpret log models (linear–log, log–linear, log–log).
+4. Fit and interpret interaction models, (including interactions with nonlinear terms if we have time)
+5. Compare models with adjusted $R^2$ and interpretability.
+
+
+---
+
+# 1. Load and understand the data
+
+We will use `benefits` from the `wooldridge` package (school-level data).
+
+To use the built-in R summaries as opposed to the summary from `reporting.R` (also `glimpse`, which is from `tidyvserse`), remove the hash marks from in front of those lines of code. 
+
+```{r, results = "asis"}
+data("benefits", package = "wooldridge")
+df <- benefits
+#summary(df)
+#glimpse(df)
+
+mk_dataset_summary(df)
+```
+
+## 1.1 Variables
+
+Let's take a look at the dataset:
+
+```{r}
+?benefits
+```
+
+
+For today, we’ll treat:
+
+- Outcome variable: `avgben` (average teacher non-salary benefits, $)
+- Candidate predictors: `avgsal`, `lunch`, `enroll`, `staff`, `exppp`
+- Some useful transformations already there: `lavgsal`, `lenroll`, `lstaff`, and `bs = avgben/avgsal`
+
+**Question:** In 2–3 sentences, describe what `lunch` measures and what kind of confounding you worry about in a benefits–salary relationship.
+
+**Answer:**
+
+- Lunch is percent eligible for free lunch, a proxy for socioeconomic disadvantage at the school.
+- confounding: a factor that affects both the independent variable and the dependent variable (both avgsal and avgben)
+- confounders: district wealth/ cost-of-living, union strength (lunch and exppp probably don't totally capture district wealth)
+
+We should probably think "associational model"
+
+Benefits aren't set independently, they're part of total compensation so richer districts might offer higher salary AND benefits. BUT benefits might rise more slowly than salary or more quickly than salary. Or they might get flat at high salary.
+
+So the relationship might be:
+- linear
+- diminishing 
+- threshold
+
+
+---
+
+# 2. Is linearity plausible?
+
+## 2.1 Scatterplot: benefits vs salary
+
+Use ggplot to create a scatterplot of average salary (`avgsal`) vs. average non-salary benefits (`avgben`). Put `avgsal` on the x-axis and `avgben` on the y-axis.
+
+```{r, fig.alt = "Scatter plot of average salary vs. average non-salary benefits."}
+# create your scatterplot here
+ggplot(df, aes(x = avgsal, y = avgben)) +
+  geom_point(alpha = .4) +
+  geom_smooth(method = "lm", se = FALSE) + 
+  geom_smooth(method = "loess", se = FALSE, color = "red") + 
+  theme_minimal()
+```
+
+**Question:** Does a straight line look reasonable? If not, what kinds of nonlinearity do you see (curvature, diminishing returns, etc.)?
+
+
+**Answer:**
+A straight line looks reasonable except maybe at higher values of salary, more dispersion in benefits as salary grows.
+
+---
+
+## 2.2 Baseline linear model
+
+Create a linear model:
+
+$avgben = \beta_0 + \beta_1 avgsal + \beta_2 lunch + \beta_3 enroll + \beta_4 staff + \beta_5 exppp + u$. 
+
+Look at the model results.
+
+```{r, results = "asis"}
+# create your linear model
+m_lin <- lm(avgben ~ avgsal + lunch + enroll + staff + exppp, data = df)
+
+# look at the model results
+#summary(m_lin)
+mk_coeftab_robust(m_lin,
+                  mode = "simple",
+                  caption = "avgben on other stuff",
+                  robust_type = "HC1")
+
+```
+
+**Question:** Interpret the coefficient on `avgsal` as a *ceteris paribus* effect. How does this interpretation square with what you saw in your scatterplot? 
+
+**Answer:**
+A \$1 increase in avgsal is associated with an approximately \$0.31 change in avgben, holding the other variables fixed.
+
+Why might this linear specification be misleading if we have a curved relationship between X and Y?
+
+By using a linear specification, we're holding the partial effect constant even if the relationship is flattening/ steepening at different salary levels. 
+
+
+---
+
+# 3. Log models: three common cases
+
+We will work with these families:
+
+- **Linear–log:** $Y = \beta_0 + \beta_1 \ln(X) + u$
+- **Log–linear:** $\ln(Y) = \beta_0 + \beta_1 X + u$
+- **Log–log:** $\ln(Y) = \beta_0 + \beta_1 \ln(X) + u$
+
+## 3.1 Check positivity before logging
+
+**Question**: Why is it important to check positivity before logging?
+
+
+**Answer**:
+
+```{r}
+log(-10)
+```
+
+A log is the opposite of an exponent, "what power do I need to raise a base in order to get to this number?"
+
+$log_{10}(100) = 2$ because $10^2 = 100$
+$log_2(8) = 3$ because $2^3 = 8$
+
+```{r}
+ggplot(data.frame(x = c(-3, 3)), aes(x = x)) +
+  stat_function(
+    fun = exp,
+    linewidth = 1,
+    color = "steelblue"
+  )
+  
+```
+
+The natural log $ln(x)$ is a log with base $e$ and undoes $e^x$.
+
+$ln(e^x) = x$
+$e^{ln(x)} = x$
+$ln(1) = 0$
+$ln(e) = 1$
+ln(x)$ is undefined for $x \leq 0$
+
+```{r, results = "asis"}
+mk_numeric_summary(df,
+                   vars = c("avgben", "avgsal"))
+```
+
+---
+
+
+
+## 3.2 Linear–log: benefits on log(salary)
+
+Create a linear-log model:
+
+$avgben = \beta_0 + \beta_1 ln(avgsal) + \beta_2 lunch + \beta_3 ln(enroll) + \beta_4 ln(staff) + \beta_5 exppp + u$. 
+
+Look at the model results.
+
+```{r, results = "asis"}
+# create your linear-log model
+m_lin_log <- lm(avgben ~ lavgsal + lunch + lenroll + lstaff + exppp, data = df)
+
+# look at your model results
+mk_coeftab_robust(m_lin_log, 
+                  mode = "simple",
+                  caption = "linear log model",
+                  robust_type = "HC1")
+
+```
+
+
+**Question:** Interpret $\hat\beta_1$ on `ln(avgsal)` in a linear–log model. How is this different from the level model? Is this easier to interpret? Harder? Why?
+
+
+**Answer:**
+
+A 1% change in avgsal is associated with an approximately $\hat{\beta} \times 0.01$ change in avgben.
+
+A 1% change in X increases $ln(X)$ by approximately 0.01.
+
+This approximation works for small changes in X.
+
+For bigger changes C, we multiply $\hat{\beta}$ by $ln(1.C)$
+
+```{r}
+b1 <- coef(m_lin_log)['lavgsal']
+b1 * log(1.15)
+#compare to approximation
+b1 * 0.01 * 15
+```
+
+```{r}
+# exact 1% change
+b1 * log(1.01)
+#approximat 1% change
+b1 * .01 * 1
+```
+We can see that the approximation is good for small change in X but it gets worse as the change in X grows (multiplicative changes add up).
+
+$Y = \beta_0 + \beta_1 log(X)$ so a 1% increase in X increase log(X) by 0.01. So Y changes by 0.01 $\beta_1$ units.
+
+
+
+---
+
+## 3.3 Log–log: log(benefits) on log(salary)
+
+Create a log-log model:
+
+$ln(avgben) = \beta_0 + \beta_1 ln(avgsal) + \beta_2 lunch + \beta_3 ln(enroll) + \beta_4 ln(staff) + \beta_5 exppp + u$. 
+
+Look at the model results.
+
+```{r, results = "asis"}
+# create your log-log model
+m_log_log <- lm(log(avgben) ~ lavgsal + lunch + lenroll + lstaff + exppp, data = df)
+
+# look at your model results
+mk_coeftab_robust(m_log_log,
+                  mode = "simple",
+                  caption = "log log model",
+                  robust_type = "HC1")
+
+```
+
+**Question:** Interpret $\hat\beta_1$ on `lavgsal` as an elasticity. What is an elasticity? Which (out of the three models) do you prefer from an interpretation standpoint?
+
+**Answer:**
+A 1% increase in salary is associated with a $\beta1$ % change in benefits. An elasticity is a ratio of percent changes.
+
+But for larger changes, we do have do have to do a bit more. For a C % change in X, we take 1.C to the power of the coefficient then turn it into a percent. For a 15% change in avgsal:
+
+```{r}
+b1 <- coef(m_log_log)['lavgsal']
+((1.15^b1) - 1) * 100
+```
+
+Compared to the approximation:
+
+```{r}
+b1 * 15
+```
+
+
+
+---
+
+# 4. Polynomial models 
+
+A quadratic regression function is:
+
+
+$E[Y|X] = \beta_0 + \beta_1 X + \beta_2 X^2$
+
+
+## 4.1 Quadratic in salary
+
+Create a model that is quadratic in salary: 
+
+
+$avgben = \beta_0 + \beta_1 avgsal + \beta_2 avgsal^2 + \beta_3 lunch + \beta_4 enroll + \beta_5 staff + \beta_6 exppp + u$. 
+
+Look at the model results.
+
+
+```{r, results = "asis"}
+# create your quadratic model
+m_quad <- lm(avgben ~ avgsal + I(avgsal^2) + lunch + enroll + staff + exppp, data = df)
+
+# look at your model results
+mk_coeftab_robust(m_quad,
+                  mode = "simple",
+                  caption = "quadratic model",
+                  digits = 7,
+                  robust_type = "HC1")
+
+```
+
+**Question:** Why is it incorrect to include $X^2$ without $X$?
+
+**Answer:**
+If you omit X, the model is misspecified because the curvature is now being forced into the wrong place, it's made to go through X = 0 in a way that probably doesn't have any economic meaning.
+
+Also the partial derivative requires both coefficients to get the proper effect of the variable:
+
+$Y = \beta_0 + \beta_1 x + \beta_2 x^2$
+
+$\frac{\partial}{\partial x} = \beta_1 + 2 \beta_2 x$
+
+
+---
+
+
+
+## 4.2 Turning point + inside/outside the data range
+
+Compute the turning point $-\beta_1/(2\beta_2)$. Then compare it to the observed salary range.
+
+```{r}
+# compute the turning point
+b1 <- coef(m_quad)['avgsal']
+b2 <- coef(m_quad)['I(avgsal^2)']
+-b1/(2 * b2)
+```
+
+```{r}
+mk_numeric_summary(df,
+                   vars = "avgsal")
+```
+
+
+**Question:** Is the turning point inside the observed range of `avgsal`? Does that matter for interpretation? Why or why not? 
+
+
+**Answer:**
+
+if $\beta_2 > 0$: the curve opens upward and there is a minimum. 
+if $\beta_2 < 0$: the curve opens downward and there is a maximum
+
+Since the turning point is way outside the observed, then we need to be cautious in narrative but it can still be useful for predictive and fitting purposes because it's significant. 
+---
+
+
+
+## 4.3 RESET test
+
+RESET tests whether functions of the fitted values add explanatory power. 
+
+So after fitting a polynomial model, RESET checks whether higher-order nonlinear combinations of the prediction still matter.
+
+If yes, your polynomial may be misspecified (like the degree too low).
+
+Use `?resettest` to look at the documentation for the RESET Test.
+
+```{r}
+?resettest
+```
+
+
+First, fit a simplified quadratic model:
+
+$avgben = avgsal + avgsal^2 + u$
+
+And fit a RESET test up to the cubed value of $avgsal$:
+
+```{r}
+# fit your RESET test here
+m_quad2 <- lm(avgben ~ avgsal + I(avgsal^2), data = df)
+
+resettest(m_quad2, power = 2:3)
+
+```
+
+**Question:** What does the `power` argument mean in the RESET test? What is it testing? What test statistic is it using?
+
+
+**Answer:**
+The null is that the model is correctly specified. We do not have enough evidence to reject the null. It's using an F statistic.
+
+
+
+---
+
+
+
+# 5. Interactions 
+
+An interaction lets the effect of one variable depend on another.
+
+We’ll start with an interaction between salary and poverty exposure (`lunch`).
+
+$avgben = \beta_0 + \beta_1 (avgsal \cdot lunch) + \beta_2 enroll + \beta_3 staff + \beta_4 exppp + \beta_5 avgsal + \beta_6 lunch + u$. 
+
+Create your model and look at your results.
+
+## 5.1 Interaction: salary × lunch
+
+```{r, results = "asis"}
+# create your interaction model
+m_int <- lm(avgben ~ avgsal * lunch + enroll + staff + exppp, data = df)
+
+# look at your model results
+mk_coeftab_robust(m_int,
+                  mode = "simple",
+                  caption = "interaction model",
+                  robust_type = "HC1")
+
+```
+
+**Question:** Write down the fitted regression function $\widehat{E[avgben|avgsal,lunch,\dots]}$ and the partial effect
+$\partial \widehat{E[avgben|\cdot]}/\partial avgsal$. How does it depend on `lunch`?
+
+
+**Answer:**
+
+Fitted model: $\widehat{avgsal} = \hat{\beta}_0 + \hat{\beta}_1 avgsal + \hat{\beta}_2 lunch + \hat{\beta}_3 (avgsal \cdot lunch) + \dots$
+
+Then the partial effect of salary is:
+
+$\frac{\partial E[\widehat{avgben}| \cdot]}{\partial avgsal} = \hat{\beta}_1 + \hat{\beta}_3 lunch$
+
+So the slope in avgsal changes with lunch.
+
+An interaction lets the value of one variable depend on another.
+
+When you include an interaction term, you should almost always include the corresponding "level" (main effect) terms because the interaction is defined relative to them.
+
+---
+
+## 5.2 Interaction + curvature (quadratic × lunch)
+
+Now allow salary to be nonlinear **and** allow the relationship to differ with lunch.
+
+
+$avgben = \beta_0 + \beta_1 [(avgsal_c \cdot avgsal_c^2) \cdot lunch] + \beta_2 enroll + \beta_3 staff + \beta_4 exppp + u$. 
+
+Create your model and look at your results.
+
+```{r, results = "asis"}
+# create your nonlinear interaction model here
+
+# look at your model summary
+
+
+```
+
+**Question:** Is there evidence that the salary–benefits relationship differs by `lunch` *and* varies nonlinearly? Point to the specific coefficients you used as evidence.
+
+**Answer:**
+
+
+
+---
+
+# 6. Compare models: fit *and* interpretability
+
+Compare:
+1. Linear (no interaction)
+2. Linear with interaction
+3. Quadratic (no interaction)
+4. Quadratic with interaction
+
+```{r}
+# display your linear model results
+
+# display your linear model with interaction results
+
+# display your quadratic model without interaction results
+
+# display your quadratic model with interaction results
+
+
+
+```
+
+
+
+**Question:** Which model would you recommend to a policymaker, and why? Your answer should emphasize interpretation and plausibility, not just fit.
+
+
+**Answer:**
+
+
+
+
+
+---
+
+# 7. Prediction + interpretation check
+
+Create a hypothetical school and produce predicted benefits under two models.
+
+Assign plausible values to your new school.
+
+```{r}
+#new_school <- tibble(
+#  avgsal = # assign a value for average salary here,
+#  lunch  = # assign a value for lunch here,
+#  enroll = # assign a value for enrollment here,
+#  staff  = # assign a value for staff here,
+#  exppp  = # assign a value for expenditures here
+#) %>%
+#  mutate(avgsal_c = avgsal - mean(df$avgsal, na.rm = TRUE))
+
+#new_school
+```
+
+
+Make your predictions using your two favorite models from task 6 and your new_school predictions dataframe:
+
+```{r}
+# make your benefits predictions here
+```
+
+**Question:** In 2–3 sentences: are these predictions sensible? What’s one limitation of predicting from a model that includes polynomials/interactions?
+
+
+**Answer:**
+
+---
+
+# Wrap-up 
+
+Before you leave, write a 3–5 sentence reflection:
+
+1. What regression function did you prefer?
+2. What did you learn about why we use logs/polynomials/interactions?
+3. What would you check next if this were a real policy brief?
+
+
