@@ -6,14 +6,13 @@ output:
     toc_depth: 2
     df_print: kable
     highlight: tango
-#    includes:
-#      in_header: wcag-overrides.html
+    includes:
+      in_header: wcag-overrides.html
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-#library(here)
-#here::i_am("in-class-notebooks/inclass_nonlinear.Rmd")
+
 ```
 
 ```{r}
@@ -21,7 +20,6 @@ need <- c("tidyverse", "wooldridge", "sandwich", "lmtest", "car", "modelsummary"
 have <- need %in% rownames(installed.packages())
 if (any(!have)) install.packages(need[!have])
 invisible(lapply(need, library, character.only = TRUE))
-#source(here("scripts", "reporting.R"))
 source("reporting.R")
 ```
 
