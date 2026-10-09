@@ -18,12 +18,35 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 
 ```{r}
-need <- c("tidyverse", "wooldridge", "sandwich", "lmtest", "kableExtra", "mlbench", "margins", "AER")
-have <- need %in% rownames(installed.packages())
-if (any(!have)) install.packages(need[!have])
+need <- c(
+  "tidyverse",
+  "wooldridge",
+  "sandwich",
+  "lmtest",
+  "kableExtra",
+  "margins",
+  "AER",
+  "mlbench"
+)
+
+installed <- rownames(installed.packages())
+missing <- setdiff(need, installed)
+
+if (length(missing) > 0) {
+  message("Installing missing packages: ", paste(missing, collapse = ", "))
+  
+  install.packages(
+    missing,
+    repos = "https://cloud.r-project.org",
+    dependencies = TRUE
+  )
+}
+
 invisible(lapply(need, library, character.only = TRUE))
-#source(here("scripts", "reporting.R"))
+
+
 source("reporting.R")
+
 ```
 
 
@@ -31,14 +54,14 @@ source("reporting.R")
 
 ## Loading the Data
 
-We will be using the `PimaIndiansDiabetes` data from the `mlbench` package. 
+We will be using the `SynthDiabetes` data from the `mlbench` package. 
 
 ```{r}
-data(PimaIndiansDiabetes, package = "mlbench")
+data("SynthDiabetes", package = "mlbench")
 ```
 
 
-The data set is comprised of 768 observations and 9 variables. It is available in the package `mlbench`. We will be using diabetes as our response/target variable.
+The data set is comprised of synthetic 768 observations and 9 variables. It is available in the package `mlbench`. We will be using diabetes as our response/target variable.
 
 Data Description for the 9 variables are as follows.
 
@@ -59,7 +82,7 @@ Let's take a quick look at our summary statistics to get an overall picture of t
 
 
 ```{r, results = "asis"}
-df <- PimaIndiansDiabetes
+df <- SynthDiabetes
 
 mk_dataset_summary(df)
 ```
