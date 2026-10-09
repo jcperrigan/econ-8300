@@ -1,0 +1,292 @@
+---
+title: "In-Class Activity: Limited Dependent Variable Models with the `charity`/`gift` Data"
+author: "ECON 8300"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Packages + data
+
+Today we will use the **`charity`** data from the **`wooldridge`** package. The outcome of interest is **`gift`**, the amount donated. 
+
+We will also use **`respond`**, which is already a binary indicator for whether a gift was made.
+
+```{r}
+need <- c("tidyverse", "wooldridge", "sandwich", "lmtest", "margins", "AER", "kableExtra")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have])
+
+invisible(lapply(need, library, character.only = TRUE))
+
+df <- charity %>%
+  as_tibble() %>%
+  mutate(
+    respond = as.integer(respond),
+    gift = if_else(is.na(gift), 0, gift)
+  )
+```
+
+# The data
+
+## Activity 1: Explore the distribution of `gift`
+
+First take a look at the dataset:
+
+```{r}
+?charity
+```
+
+
+Create a quick overview of the data.
+
+### Your tasks
+
+1. Display the dimensions of the data.
+2. Produce summary statistics for:
+   - `gift`
+   - `respond`
+   - `mailsyear`
+   - `giftlast`
+   - `avggift`
+   - `propresp`
+3. Compute the share of observations with `gift == 0`.
+4. Create a histogram of `gift`.
+
+### Answer
+
+```{r}
+# Activity 1
+```
+
+### Write-up
+
+In 2–3 sentences: what makes `gift` a good example of a limited dependent variable?
+
+**Answer:**
+
+
+
+## Activity 2: Compare donors and non-donors
+
+Create grouped summary statistics by `respond`.
+
+### Your tasks
+
+1. Group by `respond`.
+2. Report means for:
+   - `gift`
+   - `mailsyear`
+   - `giftlast`
+   - `avggift`
+   - `propresp`
+   - `weekslast`
+3. Write 2 sentences comparing the groups.
+
+### Answer
+
+```{r}
+# Activity 2
+```
+
+### Write-up
+
+**Answer:**
+
+
+
+
+# Linear Probability Model
+
+## Activity 3: Estimate an LPM for response
+
+We now model whether someone gives at all.
+
+Estimate the model
+
+
+$respond_i = \beta_0 + \beta_1 mailsyear_i + \beta_2 giftlast_i + \beta_3 avggift_i + \beta_4 propresp_i + \beta_5 weekslast_i + \beta_6 resplast_i + u_i$
+
+### Your tasks
+
+1. Estimate the model by OLS.
+2. Report coefficients with **HC1 robust SEs**.
+3. Store fitted values.
+4. Check whether any fitted values are below 0 or above 1.
+
+### Answer
+
+```{r}
+# Activity 3
+```
+
+### Write-up
+
+Why can fitted values outside $[0,1]$ be a problem in an LPM?
+
+**Answer:**
+
+
+
+
+
+# Binary response models
+
+## Activity 4: Estimate logit and probit
+
+Estimate logit and probit versions of the same response model.
+
+### Your tasks
+
+1. Estimate a **logit** model.
+2. Estimate a **probit** model.
+3. Report coefficients with **HC1 robust SEs**.
+4. Compare the signs of the coefficients across LPM, logit, and probit.
+
+### Answer
+
+```{r}
+# Activity 4
+```
+
+### Write-up
+
+Do the signs line up across the three models (including LPM)? Which variables appear most important?
+
+**Answer:**
+
+
+
+## Activity 5: Compute average marginal effects
+
+For both logit and probit, compute **average marginal effects** for:
+
+- `avggift`
+- `mailsyear`
+
+### Your tasks
+
+1. Use `margins()` or compute the AMEs manually.
+2. Report the AMEs.
+3. Interpret one AME in a sentence.
+
+### Answer
+
+```{r}
+# Activity 5
+```
+
+### Write-up
+
+Interpret the AME for `mailsyear` in probability terms.
+
+**Answer:**
+
+
+
+
+## Activity 6: Compare predicted probability curves
+
+Create one figure with **three curves** showing predicted probability of response as a function of `avggift`:
+
+- LPM
+- logit
+- probit
+
+Hold the other regressors at their sample means.
+
+### Your tasks
+
+1. Reuse or rebuild a prediction grid.
+2. Add predictions from all three models.
+3. Plot all three curves on one graph with a legend.
+
+### Answer
+
+```{r}
+# Activity 6
+```
+
+### Write-up
+
+What is the biggest practical difference between the LPM curve and the logit/probit curves?
+
+**Answer:**
+
+
+
+# Tobit
+
+## Activity 7: Model the amount donated with Tobit
+
+Now switch from the binary outcome to the donation amount itself.
+
+Estimate a Tobit model for
+
+
+$gift_i = \max(0, gift_i^*)$
+
+with latent equation
+
+
+$gift_i^* = \beta_0 + \beta_1 mailsyear_i + \beta_2 giftlast_i + \beta_3 avggift_i + \beta_4 propresp_i + \beta_5 weekslast_i + \beta_6 resplast_i + u_i$
+
+### Your tasks
+
+1. Estimate a Tobit model with left-censoring at 0.
+2. Estimate OLS for `gift` using the same regressors.
+3. Compare the Tobit and OLS coefficients.
+4. Write 3–4 sentences explaining:
+   - why `gift` is a corner-solution outcome,
+   - why Tobit may be more appropriate than OLS here,
+   - why a Tobit coefficient is **not** automatically the marginal effect on observed `gift`.
+
+### Answer
+
+```{r}
+# Activity 7
+```
+
+### Write-up
+
+**Answer:**
+
+
+
+# Wrap-up
+
+## Exit question
+
+Write one short paragraph comparing these four models:
+
+- LPM
+- logit
+- probit
+- Tobit
+
+Your paragraph should address:
+
+1. what each model is trying to explain,
+2. one advantage of LPM,
+3. one reason logit/probit are often preferred for binary outcomes,
+4. one reason Tobit is useful for `gift`.
+
+**Answer:**
+
+
+
+# Optional extension
+
+If you finish early, try one of these:
+
+1. Replace `avggift` with `giftlast` on the prediction graph and compare.
+2. Compute the proportion of observations predicted outside $[0,1]$ by the LPM.
+3. For the Tobit model, compare predicted values for two hypothetical people:
+   - low prior giving / low response history
+   - high prior giving / high response history

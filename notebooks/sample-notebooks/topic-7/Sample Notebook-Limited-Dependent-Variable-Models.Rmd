@@ -1,0 +1,1188 @@
+---
+title: "Sample Notebook-Limited Dependent Variable Models"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+#    includes:
+#      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+#library(here)
+#here::i_am("Sample-notebooks/Sample Notebook-Limited-Dependent-Variable-Models.Rmd")
+```
+
+
+```{r}
+need <- c("tidyverse", "wooldridge", "sandwich", "lmtest", "kableExtra", "mlbench", "margins", "AER")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have])
+invisible(lapply(need, library, character.only = TRUE))
+#source(here("scripts", "reporting.R"))
+source("reporting.R")
+```
+
+
+# The Data
+
+## Loading the Data
+
+We will be using the `PimaIndiansDiabetes` data from the `mlbench` package. 
+
+```{r}
+data(PimaIndiansDiabetes, package = "mlbench")
+```
+
+
+The data set is comprised of 768 observations and 9 variables. It is available in the package `mlbench`. We will be using diabetes as our response/target variable.
+
+Data Description for the 9 variables are as follows.
+
+* pregnant - Number of times pregnant
+* glucose - Plasma glucose concentration (glucose tolerance test)
+* pressure - Diastolic blood pressure (mm Hg)
+* triceps - Triceps skin fold thickness (mm)
+* insulin - 2-Hour serum insulin (mu U/ml)
+* mass - Body mass index (weight in kg/(height in m)^2)
+* pedigree - Diabetes pedigree function
+* age - Age (years)
+* diabetes - Class variable (test for diabetes)
+
+
+## Summary statistics
+
+Let's take a quick look at our summary statistics to get an overall picture of the data. But first I'm going to assign `PimaIndiansDiabetes` to `df` so I don't have to keep typing the longer name out so much.
+
+
+```{r, results = "asis"}
+df <- PimaIndiansDiabetes
+
+mk_dataset_summary(df)
+```
+
+
+## Prepping the data
+
+There are definitely some wonky things going on in our data. While people certainly may have been pregnant zero times, it is unlikely that they have a blood glucose reading of zero, or blood pressure of zero, or an insulin reading of zero, or a BMI of zero.
+
+Let's replace those zeros with NULL values, since that's really what they are. We just don't have data on them. While I'm at it, I'm going to create a new variable for `diabetes` that's coded as 0/1, where 1 represents a positive diagnosis; I'll call it `diabetes_b` for the binary variable.
+
+```{r}
+df <- df %>%
+  mutate(
+    glucose = na_if(glucose, 0),
+    pressure = na_if(pressure, 0),
+    triceps = na_if(triceps, 0),
+    insulin = na_if(insulin, 0),
+    mass = na_if(mass, 0),
+    diabetes_b = if_else(diabetes == "pos", 1, 0)
+  )
+```
+
+
+Now let's take a look at our summary statistics again.
+
+
+```{r, results = "asis"}
+mk_dataset_summary(df)
+```
+
+Excellent! Because someone with a blood pressure of zero isn't, well...are you still alive with a blood pressure of zero and an insulin reading of zero? If not, we probably don't want to include you in the dataset anyway, since we're trying to look at risk factors for diabetes.
+
+
+
+## Summary statistics by group
+
+Let's split up our data by `diabetes = pos` and `diabetes = neg`:
+
+```{r}
+df_pos <- df %>% filter(diabetes == "pos")
+df_neg <- df %>% filter(diabetes == "neg")
+```
+
+```{r, results = "asis"}
+mk_numeric_summary(df_pos, caption = "Summary stats for positive diagnosis")
+```
+
+```{r, results = "asis"}
+mk_numeric_summary(df_neg, caption = "Summary stats for negative diagnosis")
+```
+
+Let's check out some box plots to compare values by positive/ negative diagnoses:
+
+```{r, fig.alt = "box plots comparing blood pressure and BMI to positive/ negative diagnoses"}
+df %>%
+  pivot_longer(
+    cols = c(pressure, mass),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  ggplot(aes(x = diabetes, y = value)) +
+  geom_boxplot(color = "steelblue4", fill = "lightsteelblue") +
+  facet_wrap(~ variable, scales = "free")
+```
+
+```{r, fig.alt = "box plots comparing glucose and insulin to positive/ negative diagnoses"}
+df %>%
+  pivot_longer(
+    cols = c(glucose, insulin),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  ggplot(aes(x = diabetes, y = value)) +
+  geom_boxplot(color = "plum4", fill = "thistle") +
+  facet_wrap(~ variable, scales = "free")
+```
+
+
+```{r, fig.alt = "box plots comparing age and triceps to positive/ negative diagnoses"}
+df %>%
+  pivot_longer(
+    cols = c(age, triceps),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  ggplot(aes(x = diabetes, y = value)) +
+  geom_boxplot(color = "springgreen4", fill = "darkseagreen1") +
+  facet_wrap(~ variable, scales = "free")
+```
+
+# Linear Probability Model
+
+## Simple Linear Probability Model
+
+Linear probability models are regression models in which the response, rather than a regressor is a binary indicator variable. However, since the regressors can be either continuous or factor variables, the fitted values will be continuous.
+
+The equation below, where $y \in {0, 1}$ shows a general linear probability model:
+
+$P(Y=1 | X) = \beta_0 + \beta_1 x_1 + \dots + \beta_k x_k + u$
+
+That probability is predicted as a linear function (meaning the effects of each coefficient are just added together to get the outcome probability).
+
+* $\beta_0$ : the intercept (or probability of all coefficients are 0).
+
+* $\beta_j$: the probability associated with any covariate
+
+* $u$: the error (aka the difference between the predicted probability and the actual outcome $[0/1]$)
+
+So how can a continous fitted variable be interpreted when the actual response is binary? As it turns out, the fitted value represents the probability that the response takes the value $\hat{y} = P(y = 1)$
+
+First, let's take a look at a model with just an intercept:
+
+```{r, results = "asis"}
+mod1 <- lm(diabetes_b ~ 1, data = df)
+
+mk_coeftab(mod1, 
+           mode = "simple", 
+           caption = "Diabetes on intercept only")
+```
+
+Check out that coefficient on the intercept--we see that it's the mean of the response variable `diabetes`, which you can see if you look at the mean for `diabetes_b` in the summary stats above. . Because of the 0-1 values of `diabetes_b`, the mean is the fraction of rows where `diabetes_b = 1`.
+
+The population coefficient $\beta_1$ on a regressor $X$ is the change in the probability that $Y = 1$ associated with a unit change in $X$.
+
+Similarly, the OLS predicted value $\hat{Y}_i$, computed using the estimated regression function, is the predicted probability that the dependent variable equals 1, and the OLS estimator $\hat{\beta}_1$ estimates the change in the probability that $Y = 1$ associated with a unit change in $X$.
+
+Let’s create our linear probability model with $diabetes\_b$ as the dependent variable and $triceps$ as the single independent variable:
+
+```{r, results = "asis"}
+lp_mod = lm(diabetes_b ~ triceps, data = df)
+
+mk_coeftab(lp_mod,
+           mode = "simple",
+           caption = "Model: diabetes on triceps measure")
+```
+
+As this is a linear probability model, we can interpret the coefficient on $triceps$ as the change in probability that $Y = 1$ associated with a unit change in $X$.
+
+So a one unit increase in $triceps$ (in this case, a one mm increase in the triceps skin fold thickness measurement) is associated with a $0.012 \cdot 100 = 1.2\%$ increase in the probability of a positive diagnosis.
+
+### Issues with the LPM 
+
+#### 1. Violation of the linearity assumption
+
+LPM knowingly violates the assumption that there is a linear relationship between the outcome and the covariates. If you run a loess line, it often looks s-shaped.
+
+#### 2. The fitted variable being continuous, it can take values outside the interval $[0,1]$. 
+Given how probability works, this is an issue.
+
+#### 3. Violation of the homoskedasticity assumption
+
+Errors in a linear probability model will by nature have systematic heteroskedasticity, with the variance being larger in the middle range of the fitted values. You can account for this by automatically using robust standard errors (though this doesn't totally solve the issue, since the model just isn't the best suited for this use case).
+
+
+Linear probability models are inherently heteroskedastic because the dependent variable is binary, so the error variance cannot be constant. If $Y \in {0,1}$, then conditional on $X$, the variance of $Y$ is
+
+$Var(Y|X) = p(X)(1 - p(X))$
+
+where $p(X) = \mathbb{E}[Y \mid X]$ is the probability that $Y = 1$ given $X$. In a linear probability model, the fitted value $\hat{Y}$ is an estimate of this probability, so the conditional variance of the error term becomes
+
+$Var(u|X) = \hat{Y}(1-\hat{Y})$
+
+which depends on $X$. Because the variance is a function of the predicted probability, it can't be constant across observations, and the homoskedasticity assumption is automatically violated. The variance is largest in the middle of the fitted range because the function $p(1-p)$ is maximized at $p = 0.5$, where outcome uncertainty is greatest. When predicted probabilities are near 0 or 1, outcomes are more certain and $p(1-p)$ approaches 0, so the variance shrinks.
+
+Let's take a look at a residuals plot:
+
+
+```{r}
+df_res <- tibble(
+  fitted_lpm = fitted(lp_mod),
+  resid_lpm = resid(lp_mod),
+  resid_lpm_sq = resid(lp_mod)^2
+  )
+```
+
+
+
+```{r, fig.alt = "Residuals vs. fitted values, Linear Probability Model"}
+ggplot(df_res, aes(x = fitted_lpm, y = resid_lpm)) +
+  geom_point(alpha = 0.4, color = "steelblue") +
+  labs(
+    x = "Fitted values (Predicted probability)",
+    y = "Residuals"
+  ) +
+  theme_minimal()
+```
+
+```{r, fig.alt = "Squared residuals vs. fitted values, Linear Probability Model"}
+ggplot(df_res, aes(x = fitted_lpm, y = resid_lpm_sq)) +
+  geom_point(alpha = 0.4, color = "steelblue") +
+  labs(
+    x = "Fitted values",
+    y = "Squared residuals"
+  ) + 
+  theme_minimal()
+```
+We can also take a look at a Quantile-Quantile plot of the residuals.
+
+When we look at a Q-Q plot, the observed data's quantiles are plotted against the theoretical quantiles. If both sets of quantiles came from the same distribution (the standard is the Gaussian), we should see the points forming a line that’s roughly straight. 
+
+Quantiles are referred to as “percentiles.” These are points in your data below which a certain proportion of your data fall. Think of the standard normal distribution with a mean of 0. The 0.5 quantile (50th percentile) is 0. Half the data lie below 0. The 0.95 quantile is about 1.64; 95% of the data are below 1.64. 
+
+Q-Q plots take the sample data, sort it in ascending order, and then plot them versus quantiles calculated from a theoretical distribution. In our case, we're using residuals as our sample data.
+
+Points that fall above or below the line suggest skewness or outliers, and patterns such as curves or s-shaped deviations indicate systematic differences, like heavier or lighter tails.
+
+There are three major things that we look for. 
+
+* Straight Line: Data aligns well with the theoretical distribution.
+
+* Curved Patterns: Indicate skewed data or non-normal distributions.
+
+* Heavy or Light Tails: If points deviate at the ends, the data might have heavier or lighter tails than expected.
+
+```{r, fig.alt = "Quantile-Quantile plot, Linear Probability Model residuals"}
+ggplot(df_res, aes(sample = resid_lpm)) +
+  geom_qq(color = "steelblue") +
+  stat_qq_line() +
+  labs(title = "Normal Q-Q Plot of Residuals",
+       x = "Theoretical Quantiles",
+       y = "Sample Quantiles") +
+  theme_minimal()
+```
+
+We can get a better idea about why the Q-Q plot looks this way if we plot out a histogram of our residuals:
+
+```{r, fig.alt = "Residuals histogram, Linear Probability Model"}
+ggplot(df_res, aes(x=resid_lpm)) + 
+  geom_histogram(color = "steelblue",fill = "lightsteelblue") +
+  theme_minimal()
+```
+The residuals histogram looks this way because the dependent variable is binary (0 or 1), which forces the residuals to cluster into two separate lines based on whether the true outcome was 0 or 1. 
+
+The model predicts a continuous probability ($\hat{y_i}$) but the actual data only takes on values of 0 or 1.
+
+* If $y_i = 1$, then $\hat{u_i} = 1 - \hat{y_i}$ (top cluster)
+
+* If $y_i = 0$, then $\hat{u_i} = 0 - \hat{y_i}$ (bottom cluster)
+
+
+### Pros and cons of the LPM
+
+**Pros:**
+
+* The LPM is simple to run if you already know how to run a linear regression.
+
+* It is easy to interpret as a change in the probability of the outcome ocurring.
+
+**Cons:**
+
+* It violates two of the main assumptions of normal linear regression (linearity and homoskedasticity)
+
+* You’ll get predicted probabilities that can’t exist (above 1 or below 0).
+
+## Multiple Linear Probability Model
+
+Let's add in the rest of our other variables for a second linear probability model, this time with more variables. 
+
+```{r, results = "asis"}
+lp_mod2 = lm(diabetes_b ~ triceps + insulin + mass, data = df)
+
+mk_coeftab(lp_mod2,
+           mode = "simple",
+           caption = "Model: diabetes on triceps measure")
+```
+
+From the second model, the estimated coefficient on `triceps` is about half the size as it was in the first model.
+
+Evidently `triceps` in model 1 suffers from omitted variable bias. That is, `triceps` may be correlated with `glucose` or `mass`, and also the coefficients on the excluded variables were non-zero
+
+
+### LPM Interpretation
+
+As this is a linear probability model, we can interpret the coefficient on `mass` as the change in probability that $Y = 1$ associated with a unit change in $X$. So as `mass` (BMI) increases by one unit, the predicted probability in being diagnosed with diabetes increases by $\beta_{mass}$. To turn this into percentage points, multiply it by 100: $\beta_{mass} \cdot 100 \%$ change.
+
+The same interpretation applies to the other variables. This is one of the major upsides of the LPM, the ease of interpretation, especially compared to the other models in this notebook.
+
+
+# Binary Response Models
+
+Logistic regression models fix the problems of Linear Probability Models, namely the rigidity of the straight line and the fact that it can predict values of less than 0 or greater than 1.
+
+
+They do so by using a two-stage process:
+
+1. Construct a model in the standard linear way. It models $y = \beta_0 + \beta_1 x_i + \dots + \beta_k x_k + u$ in the normal way, and you get an output for $y$. But here the output for $y$ isn't the final value, but rather a *link value*, an intermediary of the fitting process.
+
+2. Instead of taking the value for $y$ that we found in step one as the final model value, it is instead transformed into a new quantity $P$ that is bounded by 0 and 1. The choice of the best coefficients (the model fit) is based not directly on how well the link values from step one match the data, but on how the probability values $P$ match the data.
+
+There are a number of different transformations that can do the job of linking the output from a standard linear model to probabilities, but we will first be focusing on two: probit and logit. 
+
+## The binomial distribution
+
+Bernoulli and Binomial distributions both model success/failure scenarios, but differ in scope: Bernoulli models a single trial ($n = 1$), while binomial models the total number of successes across multiple ($n > 1$) independent and identical Bernoulli trials. A binomial distribution is the sum of independent Bernoulli trials.
+
+We can state the probability mass function of the Bernoulli random variable $X$ in terms of the probability that the event occurs:
+
+* $p(0) = P(X = 0) = 1 - p$
+* $p(1) = P(X = 1) = p$
+
+(We use a PMF here because PMFs are used for discrete random variables to give the exact probability of a specific, countable outcome. PDFs are used for continuous variables to represent probability density over a range.)
+
+The cumulative distribution function of $X$ is given by:
+
+\[
+f(x) =
+\begin{cases}
+0 & x < 0 \\
+1 - p & 0 \leq x \leq 1 \\
+1 & x \geq 1
+\end{cases}
+\]
+
+The binomial distribution is used when there are exactly two mutually exclusive outcomes of a trial, like we see here: `diabetes` can take on the value of either `pos` or `neg`. You usually see the outcomes in a binomial distribution labeled "success" and "failure". 
+
+Two parameters define a binomial distribution:
+
+* n: The set number of independent trials
+* p: The probability of success in each trial
+
+For a binomial distribution, the mean and variance are calculated as:
+
+* Mean = $np$
+* Variance = $np(1-p)$
+
+
+The binomial distribution is used to get the probability of observing $x$ successes in $n$ trials, with the probability of success on a single trial denoted by $p$. The binomial distribution assumes that $p$ is fixed for all trials.
+
+If the random variable $X$ has a binomial distribution with parameters $n$ and $p$, the probability mass function that $X$ is equal to some value $k$ is given by:
+
+$p(x) = P(X = k) = \binom{n}{k}p^k (1-p)^{n-k}, \text{for k = 0, 1, ..., n}$
+
+For example, if we're flipping a fair coin ($p = 0.5$) 20 times ($n = 20$), the probability of getting exactly 14 heads is:
+
+$P(X = 14) = \binom{20}{14}(0.5)^14 (1-0.5)^{20-14}$
+
+```{r}
+n <- 20
+k <- 14
+p <- 0.5
+
+(factorial(n) / (factorial(k) * factorial(n - k))) * p^k * (1-p)^(n-k)
+```
+
+
+And because the binomial is discrete, we can't integrate it like we do for the PDF but have to sum it instead. So if $X \sim Binomial(n, p)$, its CDF is:
+
+$P(X \leq k) = \Sigma^m_{k = 0}\binom{n}{i}p^k(1-p){n-i}$
+
+This gives us the probability at most $k$ successes out of $n$ trials.
+
+So if we flip our fair coin 20 times again, the probability of getting 14 or fewer heads is:
+
+```{r}
+n <- 20
+k <- 14
+p <- 0.5
+
+pbinom(q = k, size = n, prob = p)
+```
+
+Let's now plot the PMF and the CDF of our coin tosses:
+
+```{r, fig.alt = "Binomial PMF, coin tosses"}
+ggplot(data.frame(x = 0:n), aes(x = x, y = dbinom(x, size = n, prob = p))) +
+  geom_col(color = "steelblue", fill = "lightsteelblue") +
+  labs(
+    x = "Number of successes",
+    y = "Probability",
+    title = "Binomial Distribution (Coin Tosses)"
+  ) + 
+  theme_minimal()
+```
+
+```{r, fig.alt = "Binomial CDF, coin tosses"}
+ggplot(data.frame(x = 0:n), aes(x = x, y = pbinom(x, size = n, prob = p))) +
+  geom_step(color = "steelblue") +
+  labs(
+    x = "Number of successes",
+    y = "Cumulative Probability",
+    title = "Binomial CDF (Coin Tosses)"
+  ) +
+  theme_minimal()
+```
+
+You'll notice it looks like a series of steps, because it's summing the probabilities. Change the number of trials and see what happens to the PMF and the CDF!
+
+You may also notice that, when you increase the number of trials, the CDF may look very "steep". Consider why this may be the case as $n$ becomes larger!
+
+## Logit
+
+
+In logistic regression you are predicting the log-odds of your outcome as a function of your independent variables. 
+
+Binary outcomes follow the binomial distribution, while our outcomes in normal linear regression follow the normal distribution. In this scenario we are assuming that the probabilities following this binomial distribution fall on a logistic curve. It looks somewhat like an “S,” in contrast to the straight line we are used to seeing in linear regression.
+
+
+```{r, fig.alt = "Visualization of the logistic curve"}
+ggplot(data.frame(x = c(-6, 6)), aes(x)) +
+  stat_function(
+    fun = function(x) 1 / (1 + exp(-x)), color = "steelblue"
+  ) +
+  labs(
+    x = "x",
+    y = "Cumulative Probability",
+    title = "Logistic Curve"
+  ) +
+  theme_minimal()
+
+```
+
+### The Logit link function
+
+This distribution says that the probability of an event occurring $P(Y=1)$ follows the logistic equation, where $X$ is your independent variable:
+
+$P(Y=1) = \frac{e^{\beta_0 + \beta_1 x_1 + \dots + \beta_k x_k}}{1 + e^{\beta_0 + \beta_1 x_1 + \dots \beta_k x_k}}$
+
+So how do we use this equation in a regression?
+
+Our linear equation is in there, and we want to be able to predict our outcome by adding the effects of all our covariates using that linear equation. 
+
+Let $p$ be $P(Y = 1 | X)$, and taking the log of both sides:
+
+$logit(p) = ln\left(\frac{p}{1-p}\right) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + ... + \beta_k X_k$
+
+On the right side of the equals sign we have the familiar linear equation. The connection to the linear equation is why both logistic regression and normal linear regression are part of the same family: generalized linear models. On the left side of the equals sign there are the log odds, which literally means “the log of the odds.” And as a reminder odds equals the probability of success $(P)$ divided by the probability of failure $(1 - P)$. 
+
+Running a logistic regression in R is going to be very similar to running a linear regression. 
+
+### Logit interpretation 
+
+The big difference is we are interpreting everything in log odds. Your coefficients are all in log odds units. Except you are pretty much never going to describe something in terms of log odds. You will want to transform it into an odds ratio.
+
+An odds ratio is the odds of A over the odds of B. Let’s see how that works with a concrete example.
+
+Example: The odds ratio for women vs men graduating from high school is 1.2.
+
+Interpretation: Women are 1.2x more likely to graduate from high school than men.
+
+Odds ratio makes interpreting coefficients in logistic regression very intuitive. Here’s a continuous variable example.
+
+Example: The odds ratio for the effect of mother’s education on whether their child graduates high school is 1.05.
+
+Interpretation: For every additional year of a mother’s education, a child is 1.05 times more likely to graduate from high school.
+
+Let's now take a look at our model:
+
+
+```{r, results = "asis"}
+logit_mod = glm(diabetes_b ~ triceps + insulin + mass,
+                 family = binomial(link = 'logit'),
+                 data = df)
+
+
+mk_coeftab(logit_mod,
+           mode = "simple",
+           caption = "Logit model: diabetes on triceps + insulin + mass measure")
+```
+
+
+These coefficients are in log odds, so in order to go from log odds to an odds ratio we need to "undo" the log part. We do this by exponentiating our coefficients. Let's take a look at `mass`:
+
+```{r}
+exp(coef(logit_mod)['mass'])
+```
+
+So we see that for every additional increase in the measure of BMI, a person is approximately 1.046 times more likely to be diagnosed with diabetes. 
+
+We can use our t-statistics and confidence intervals in the usual way, so we can say that the coefficient on `mass` is significant at 5%.
+
+### Logit assumptions 
+
+#### 1. The outcome is binary
+A binary variable has only two possible response categories. It is often referred to as present/not present or fail/success. Examples include: male/female, yes/no, pass/fail, drafted/not drafted, and many more!
+
+#### 2. The log-odds of the outcome and independent variable have a linear relationship
+Although a smoothing line of your raw data will often reveal an s-shaped relationship between the outcome and explanatory variable, the log-odds of the outcome vs the explanatory variable should have a linear relationship. 
+
+#### 3. Errors are independent
+Like linear regression we don’t want to have obvious clusters in our data. Examples of clusters would be multiple observations from the same person at different times, multiple observations withing schools, people within cities, and so on.
+
+If you have a variable identifying the cluster (e.g., year, school, city, person), you can run a logistic regression adjusted for clustering using cluster-robust standard errors (rule of thumb is to have 50 clusters for this method). However, you may also want to consider learning about and applying a hierarchical linear model.
+
+#### 4. No severe multicolinearity
+This is another carryover from linear regression. Multicollineary can throw a wrench in your model when one or more independent variables are correlated to one another.
+
+Run a VIF (variance inflation factor) to detect correlation between your independent variables. Consider dropping variables or combining them into one factor variable.
+
+#### Differences to linear regression assumptions
+Logistic regression and linear regression belong to the same family of models, but logistic regression DOES NOT require an assumption of homoskedasticity or that the errors be normally distributed.
+
+### Logit Pros and Cons
+
+**Pros:**
+
+* You can interpret an odds ratio as how many more times someone is likely to experience the outcome, so the interpretation is easy.
+
+**Cons:**
+
+* Odds ratios and log-odds are not as straightforward to interpret as the outcomes of a linear probability model.
+
+** It assumes linearity between log-odds outcome and explanatory variables.
+
+
+### Logit predictions
+
+Now we'll make predictions using the logit model and some prediction data. Sometimes looking at a "before and after" comparison can be the simplest way to consider the changing probabilities in logit models. 
+
+1. Compute the predicted value at the original value of $X$ using the estimated regression function
+2. Compute the predicted value at the changed value of $X$, $X + \Delta X$
+3. Compute the difference between the two predicted values
+
+We'll consider what happens if BMI changes from its mean value to its mean value plus one, with the other variables held at their mean values:
+
+```{r}
+pred_data <- data.frame(
+  triceps = c(mean(df$triceps, na.rm = TRUE), mean(df$triceps, na.rm = TRUE)),
+  insulin = c(mean(df$insulin, na.rm = TRUE), mean(df$insulin, na.rm = TRUE)),
+  mass = c(mean(df$mass, na.rm = TRUE), mean(df$mass, na.rm = TRUE) + 1)
+  
+)
+
+pred_logit = predict(logit_mod, newdata = pred_data, type = 'response')
+
+pred_logit
+
+pred_logit[2] - pred_logit[1]
+
+```
+
+By using `type = "response"` it's converting the log odds into probabilities, which is very nice!
+
+
+## Probit
+
+A probit regression is a version of the generalized linear model used to model binary outcome variables.
+
+Binary outcomes follow what is called the binomial distribution, whereas our outcomes in normal linear regression follow the normal distribution. In this logistic regression, we assumed that the probabilities following this binomial distribution fell on a logistic curve. 
+
+In probit regression, we instead assume that the probabilities fall on a very similar curve, the cumulative normal curve. Let’s review the normal curve, the cumulative normal curve, and the difference between the logistic curve and the cumulative normal curve.
+
+### The standard normal and CDF
+
+```{r, fig.alt = "Standard normal PDF"}
+ggplot(data.frame(x = c(-4, 4)), aes(x)) +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1), color = "darkblue") +
+  labs(
+    x = "x",
+    y = "Density",
+    title = "Standard Normal Distribution"
+  ) +
+  theme_minimal()
+```
+
+It's the standard normal distribution that we know and love. This is the PDF of the normal distribution; the PDF is the probability that a random variable, like $X$, will take a value exactly equal to $x$. Use a probability density function to find the chances that the value of a random variable will occur within a range of values that you specify. More specifically, a PDF is a function where its integral for an interval provides the probability of a value occurring in that interval. 
+
+On a probability density plot, the total area under the curve equals one, representing the total probability of 1 for the full range of possible values in the distribution. In other words, the likelihood of a value falling anywhere in the complete distribution curve is 1. Finding the chances for a smaller range of interest involves finding the portion of the area under the curve corresponding to that range. 
+
+When we're doing hypothesis testing, this involves finding the probability that a $t$-statistic is greater than a specific value ($P(T \geq t)$) to determine $p$-values for right-tailed tests. The $t$ distribution approaches the normal as the degrees of freedom increase. 
+
+Hypothesis testing with a standard normal distribution ($z$-distribution, $\mu = 0$, $\sigma = 1$) usually involves  finding the probability that a $z$-score is greater than a specific value ($P(Z \geq z)$) to determine $p$-values for right-tailed tests. 
+
+The standard normal distribution also has a Cumulative Distribution Function, or CDF. The cumulative distribution function (CDF) is the probability that a random variable, like $X$, will take a value equal to or less than $x$. It's a cumulative function because it sums the total likelihood up to that point. Its output always ranges between 0 and 1.
+
+CDFs have the following definition:
+
+$CDF(x) = P(X \leq x)$
+
+```{r, fig.alt = "Standard normal CDF"}
+ggplot(data.frame(x = c(-4, 4)), aes(x)) +
+  stat_function(fun = pnorm, args = list(mean = 0, sd = 1), color = "darkblue") +
+  labs(
+    x = "x",
+    y = "Cumulative Probability",
+    title = "Standard Normal CDF"
+  ) +
+  theme_minimal()
+```
+
+
+
+### The Probit link function
+
+The probit link function transforms probabilities (which range from 0 to 1) into z-scores (which range from negative infinity to positive infinity). This transformation lets you use linear regression techniques to model binary outcomes by connecting predictor variables to the underlying continuous variable that determines the binary response.
+
+In probit the link function that transforms the linear part of the model into a probability is the CDF of the standard normal distribution. The CDF of the normal distribution ($\Phi(\cdot)$) is used to model the regression function:
+
+$E[Y|X] = P(Y = 1 | X) = \Phi(\beta_0 + \beta_1 x_1 + \dots \beta_k x_k)$,
+
+where $\beta_0 + \beta_1 x_1 + \dots \beta_k x_k$ plays the role of a quantile $z$.
+
+Remember for the standard normal CDF:
+
+$\Phi(z) = P(Z \leq z)$, $Z \sim \mathcal{N}(0,1)$.
+
+It uses the inverse standard normal distribution as a linear combination of the predictors. The binary outcome variable $Y$ is assumed to have a binomial distribution with parameter $p$ (where the success probability is $p \in (0, 1)$).
+
+In probit regression you are predicting the z-score change of your outcome as a function of your independent variables. To understand why our dependent variable becomes the z-score of our outcome, let’s graph the binomial distribution of our diabetes data:
+
+```{r}
+n <- nrow(df)
+p <- mean(df$diabetes_b)
+x_vals <- 0:n
+```
+
+```{r, fig.alt = "Binomial CDF, diabetes data"}
+ggplot(data.frame(x = x_vals), aes(x = x)) +
+  stat_function(
+    fun = function(x) pnorm((x - n*p) / sqrt(n*p*(1-p))), color = "lightsteelblue"
+  ) +
+  geom_step(aes(y = pbinom(x, size = n, prob = p)), color = "steelblue") +
+  labs(
+    x = "Number of successes",
+    y = "Cumulative Probability",
+    title = "Binomial CDF with Normal Approximation (given empirical n and p)"
+  ) +
+  theme_minimal()
+```
+
+
+### Probit interpretation
+
+So the probit equation says that the probability of our outcome being equal to one can be calculated by putting our familiar linear equation inside the equation for the cumulative normal distribution. $\Phi$ refers to the cumulative normal distribution function:
+
+$P(Y = 1 | X) = \Phi(\beta_0 + \beta_1 x_1 + \dots \beta_k x_k)$,
+
+But how are we supposed use this equation in a regression? We want our linear equation ($\beta_0 + \beta_1 x_1 + \dots \beta_k x_k$) to exist on its own on the right hand side because again, we want to be able to predict our outcome by adding together the effects of all our covariates using that linear equation. 
+
+We solve for that linear equation by taking the inverse of the normal distribution curve.
+
+$\Phi^{-1}(P(Y = 1 | X)) = \beta_0 + \beta_1 x_1 + \dots \beta_k x_k$,
+
+So now the right side of the equals sign we have the familiar linear equation. On the left side of the equals sign we have our outcome put through the inverse normal distribution function. All that really means its our outcome is a now a $z$-score. You may remember this from basic stats. You use a $z$-score table to find a probability, or you can reverse that to get from a probability to a $z$-score.
+
+If you’re interested in the math behind how R goes from z-score units to probability, brush up on your z-score table knowledge and the normal distribution functions. It’s pretty mathematically complicated to calculate probability from a normal distribution, and we have to approximate it (that’s what z-tables are for), so you’ll never need to do it by hand in probit regression. 
+
+Let's take a look at our probit model:
+
+```{r, results = "asis"}
+probit_mod = glm(diabetes_b ~ triceps + insulin + mass,
+                 family = binomial(link = 'probit'),
+                 data = df)
+
+
+mk_coeftab(probit_mod,
+           mode = "simple",
+           caption = "Probit model: diabetes on triceps + insulin + mass measure")
+```
+
+So the coefficients represent the change in the z-score given a one-unit change in the regressor. It's hard to interpret on its own; easiest to use a "before and after" comparison or marginal effects (will see later in this notebook).
+
+### Probit assumptions
+
+#### 1. The outcome is binary
+A binary variable has only two possible response categories. It is often referred to as present/not present or fail/success. Examples include: male/female, yes/no, pass/fail, drafted/not drafted, etc.
+
+#### 2. The probit (aka z-score) of the outcome and independent variable have a linear relationship
+
+The probit of the outcome vs the explanatory variable should have a linear relationship.
+
+#### 3. Normally distributed errors
+
+In logistic regression, we don't expect errors to be normally distributed. But because we are modeling probit regression based on a cumulative normal distribution, here we do expect errors to be normally distributed. If the sample size is large enough (>30 cases) we don't need to worry too much about violating this assumption. 
+
+#### 4. Errors are independent
+
+We don't want to have obvious clusters in our data. Examples of clusters would be multiple observations from the same person at different times, etc. If you have a variable identifying the cluster (like year, school, city, person), you can run a probit regression adjusted for clustering using cluster-robust standard errors (rule of thumb is to have 50 clusters for this method). 
+
+#### 5. No severe multicolinearity
+
+This is a carryover from linear regression. Run a VIF to detect correlation between your independent variables and consider dropping variables or combining them into one factor variable if you do detect severe multicollinearity.
+
+### Probit Pros and Cons
+
+**Pros:**
+
+* It can be nice to assume the normal distribution over the logistic distribution.
+
+**Cons:**
+
+* Z-scores are not as straightforward to interpret as the outcomes of a linear probability model.
+
+* We can’t use odds ratios to describe findings.
+
+* It’s more mathematically complicated than logistic regression.
+
+
+### Probit Predictions
+
+Let's use `predict()` again, this time using our probit model. We'll use the same prediction data as before, to consider the change in probability considering a one-unit change in `mass` from its mean and holding all other values constant at their means:
+
+
+```{r}
+pred_data <- data.frame(
+  triceps = c(mean(df$triceps, na.rm = TRUE), mean(df$triceps, na.rm = TRUE)),
+  insulin = c(mean(df$insulin, na.rm = TRUE), mean(df$insulin, na.rm = TRUE)),
+  mass = c(mean(df$mass, na.rm = TRUE), mean(df$mass, na.rm = TRUE) + 1)
+  
+)
+
+pred_probit = predict(probit_mod, newdata = pred_data, type = 'response')
+
+pred_probit
+
+pred_probit[2] - pred_probit[1]
+
+```
+We see that the predicted change in probability is quite close to what we saw from the logit model.
+
+
+## Marginal effects
+
+We sometimes want to calculate how the probability changes when we increase one unit of an explanatory variable, but not using the "before and after" method. And because probabilities aren’t linear, the effect of a one-unit change will be different as we move across the range of $X$ values. That's where marginal effects come in.
+
+The “marginal effects” command takes the average marginal effect. It changes the value of a predictor by a “little bit” and then computes the average change across observations.
+
+In other words, the numerical derivative. Think of marginal effects as getting an average derivative of a variable $X_j$ for each observation using the other covariates $X_k$ as they were observed.
+
+So the marginal effects gets the average derivative $\frac{\delta p}{\delta X_j}$ that starts by computing a small change for each observation.
+
+I will be using the `margins` package for this. 
+
+Here you specify the saved model, the new data frame you created, and which variable you want to find the marginal effect for. The new dataframe allows this command to plug in means for all the variables.
+
+Let's create a new dataframe that holds all variables from the model at their means, and drops any null values:
+
+```{r}
+df_new <- df %>%
+  drop_na(triceps, insulin, mass) %>%
+  mutate(
+    triceps = mean(triceps),
+    insulin = mean(insulin),
+    mass = mean(mass)
+  )
+
+```
+
+### Probit marginal effects
+
+Let's take the probit model again:
+
+```{r}
+probit_mod = glm(diabetes_b ~ triceps + insulin + mass,
+                 family = binomial(link = 'probit'),
+                 data = df)
+```
+
+And take a look at the marginal effects, where we hold the data at their means:
+
+```{r message = FALSE}
+probit_mfx <- margins(probit_mod, data = df_new)
+
+mfx_sum <- summary(probit_mfx) %>%
+  as.data.frame() %>%
+  rename(
+    Variable = factor,
+    AME = AME,
+    SE  = SE,
+    z   = z,
+    p   = p,
+    CI_low  = lower,
+    CI_high = upper
+  )
+
+knitr::kable(mfx_sum, format = "html", digits = 3,
+             caption = "Average marginal effects (probit)")
+```
+
+
+Let's consider only the marginal effect of `mass` again. 
+
+```{r}
+mass_mfx <- summary(probit_mfx) %>% 
+  dplyr::filter(factor == "mass") %>%
+  dplyr::pull(AME)
+
+
+cat("Interpretation: holding all variables at their means, a one unit increase in mass is associated with a", round(mass_mfx, 4), "increase in the probability of a diabetes diagnosis (probit model).")
+```
+
+
+### Logit marginal effects
+
+Now let's do the same, but with logit:
+
+```{r}
+logit_mod = glm(diabetes_b ~ triceps + insulin + mass,
+                 family = binomial(link = 'logit'),
+                 data = df)
+```
+
+And take a look at the logit marginal effects, where we hold the data at their means:
+
+```{r message = FALSE}
+logit_mfx <- margins(logit_mod, data = df_new)
+
+mfx_sum <- summary(logit_mfx) %>%
+  as.data.frame() %>%
+  rename(
+    Variable = factor,
+    AME = AME,
+    SE  = SE,
+    z   = z,
+    p   = p,
+    CI_low  = lower,
+    CI_high = upper
+  )
+
+knitr::kable(mfx_sum, format = "html", digits = 3,
+             caption = "Average marginal effects (logit)")
+```
+
+Let's consider only the marginal effect of `mass` again, this time from the logit model:
+
+```{r}
+mass_mfx <- summary(logit_mfx) %>% 
+  dplyr::filter(factor == "mass") %>%
+  dplyr::pull(AME)
+
+
+cat("Interpretation: holding all variables at their means, a one unit increase in mass is associated with a", round(mass_mfx, 4), "increase in the probability of a diabetes diagnosis (logit model).")
+```
+
+Not too far off from each other. This is fairly typical, that the logit and probit models give results that are not very dissimilar once they're translated into probabilities. 
+
+# Tobit
+
+## Censored data
+
+Sometimes we have to work with censored data. An example is the `mroz` data in the `wooldridge` package, where about 40 percent of the women observed are not in the labor force, and so their market hours worked are zero and their wages reported are zero. Let's load in the data and take a look at a histogram of the variable `wage` and create a new dataframe where we replace the null values of `wage` with zero:
+
+```{r}
+data("mroz")
+
+df <- mroz %>%
+  mutate(
+    wage = replace_na(wage, 0)
+  )
+```
+
+
+First we'll take a look at the summary statistics of the dataset:
+
+```{r, results = "asis"}
+mk_dataset_summary(df, captions = list(
+                                 numeric = "Summary statistics for mroz numeric variables",
+                                 factor  = "Distribution of mroz categorical variables")
+)
+```
+
+
+Let's look at a histogram of `wage` without the zeros:
+
+```{r, fig.alt = "histogram of wages, zeros not included"}
+ggplot(mroz, aes(x=wage)) + 
+  geom_histogram(color = "plum4", fill = "thistle") +
+  theme_minimal()
+```
+
+
+And then with the zeros:
+
+
+```{r, fig.alt = "histogram of wages, zeros included"}
+ggplot(df, aes(x=wage)) + 
+  geom_histogram(color = "steelblue", fill = "lightsteelblue") +
+  theme_minimal()
+```
+
+In this dataset from 1987, many married women reported a wage of zero, not because their market wage was truly zero, but because they were not participating in the labor force. That meant that their potential wage is unobserved. 
+
+A Tobit model treats these zeros as censored outcomes rather than true values. The idea is that each woman has an underlying “latent” wage she could earn based on her education, experience, and other characteristics, but we only observe this wage if she chooses to work. Otherwise, it is effectively cut off at zero in the data. 
+
+It’s called “latent” because we never observe it directly, we only infer its presence from whether the latent wage $y_i^*$ ends up above or below the participation threshold. 
+
+If we were to try and model this using OLS, we'd have a bit cluster of zeros (or maximums) distorting the relationship.
+
+Instead of modeling participation and wages separately, tobit assumes the same factors influence both the decision to work and the wage that would be earned if working. This lets us to use the information from nonworking women without pretending their wage is actually zero. This helps recover how covariates relate to earning potential, even when a large share of wages are censored by nonparticipation.
+
+So the big idea here is to modify the likelihood function to represent the unequal sampling probability of observations, depending on whether the latent dependent variable is larger than zero (or smaller than some maximum). Tobit is also called a censored regression model, since it lets us have flexibility for either left or right censorship. 
+
+## Tobit setup 
+
+A censored model is based on the idea of a latent, or unobserved variable that is not censored. In this dataset, we assume that there is an underlying latent wage offer that depends on observable characteristics. It is explained via a probit model:
+
+$y_i^* = \beta_0 + \beta_1 x_i + u_i$, with $u_i \sim \mathcal{N}(0, \sigma^2)$
+
+$y_i^*$ is the wage that a woman *could* earn if she worked. 
+
+
+### Normal distribution PDF and CDF
+
+Remember that any normal distribution like this, no matter what its mean and variance are, can be rewritten as a function of the standard normal distribution. If $y \sim \mathcal{N}(\mu, \sigma^2)$ then we can always rewrite in standardized form:
+
+$z = \frac{y - \mu}{\sigma} \sim \mathcal{N}(0, 1)$,
+
+remembering that this variable has a standard normal distribution with density:
+
+$f(z) = \phi(z) = \frac{1}{\sqrt{2\pi}}exp\left(-\frac{z^2}{2}\right)$
+
+If we use the notation $\phi(z)$ for the density, we can rewrite it as a function of $y$:
+
+$f(y) = \frac{1}{\sqrt{2\pi\sigma^2}}exp\left(-\frac{(y-\mu)^2}{2\sigma^2}\right) = \frac{1}{\sigma} \phi \left(\frac{y-\mu}{\sigma}\right)$
+
+
+The other specific notation is $\Phi(z)$ for the CDF, and we can write it in terms of $y$:
+
+$P(Y \leq y) = \Phi\left(\frac{y - \mu}{\sigma}\right)$
+
+and
+
+$P(Y > y) = 1 - \Phi\left(\frac{y - \mu}{\sigma}\right)$
+
+
+### Tobit structure 
+
+Take a tobit model:
+
+$y_i^* = \beta_0 + \beta_1 x_i + u_i$, $u_i \sim \mathcal{N}(0, \sigma^2)$
+
+$y_i$ is a latent variable (wages) that we only observe when they're positive, but they're censored otherwise. So our data look like:
+
+
+\[
+y_i =
+\begin{cases}
+y_i^* & \text{if } y_i^* > 0 \\
+0 & \text{if } y_i^* \leq 0 
+\end{cases}
+\]
+
+
+For women who do work ($y_i > 0$), the density of the observed wage is the density of the latent variable:
+
+$f(y_i | X_i) = \frac{1}{\sigma}\phi\left(\frac{y_i - (\beta_0 + \beta_1 x_i)}{\sigma}\right)$
+
+Where $\phi(\cdot)$ is the standard normal PDF. Here we're observing an actual positive wage, so their likelihood contribution is a density: we evaluate the normal PDF at the actual realized wage.
+
+The probability that a woman works is:
+
+$P(y_i^* > 0 | X_i) = P[u_i > -(\beta_0 + \beta_1 x_i)] = \Phi\left(\frac{\beta_0 + \beta_1 x_i}{\sigma}\right)$
+
+Where $\Phi(\cdot)$ is the standard normal CDF.
+
+If we start from the latent model:
+
+$y_i^* = \beta_0 + \beta_1 x_i + u_i$,
+
+a woman works when her latent wage exceeds the censoring point 0 so
+
+$P(y_i > 0 | X_i) = P(y_i^* > 0 | X_i)$
+
+If we then substitute in the latent equation:
+
+$P(y_i^* > 0 | X_i) = P(\beta_0 + \beta_1 x_i + u_i > 0 | X_i)$
+
+and then rearrange to isolate the error:
+
+$P(y_i^* > 0 | X_i) = P(u_i > -(\beta_0 + \beta_1 x_i))$
+
+We then standardize using $u_i / \sigma \sim \mathcal{N}(0, 1)$:
+
+$P(y_i^* > 0 | X_i) = P\left(\frac{u_i}{\sigma} > -\frac{\beta_0 + \beta_1 x_i}{\sigma}\right)$
+
+Let $Z = \frac{u_i}{\sigma} \sim \mathcal{N}(0, 1)$ (remember, we're using probit as a base here, which is based on the standard normal). Then:
+
+$P(y_i^* > 0 | X_i) = P\left(Z > -\frac{\beta_0 + \beta_1 x_i}{\sigma}\right)$
+
+If we use the symmetry of the standard normal:
+
+$P(Z > -z) = \Phi(z)$, so
+
+$P(y_i > 0 | X_i) = 1 - \Phi\left(-\frac{\beta_0 + \beta_1 x_i}{\sigma}\right) = \Phi\left(\frac{\beta_0 + \beta_1 x_i}{\sigma}\right)$
+
+
+For women who do not work ($y_i = 0$), we don't observe the wage, we just observe that it lies below the cutoff. So the probability that a woman doesn't work is:
+
+$P(y = 0 | X_i) = P(y_i^* \leq 0 | X_i) = 1 - \Phi\left(\frac{\beta_0 + \beta_1 x_i}{\sigma}\right)$
+
+Because these women don't work, we don't observe their real wage, our only information is that their latent wage fell at or below the cutoff. So instead of a density at $y_i = 0$, their likelihood contribution is the probability mass term.
+
+If we put these terms together using an indicator like $d_i = 1$ for values of $y_i > 0$, we have:
+
+* a density term for the observed wages and
+* a probability term for the censored observations.
+
+So the likelihood function is:
+
+$\mathcal{L}(\beta, \sigma) = \prod_{i = 1}^N \left[\frac{1}{\sigma}\phi \left(\frac{y_i - (\beta_0 + \beta_1 x_i)}{\sigma}\right)\right]^{d_i}\left[1 - \Phi\left(\frac{\beta_0 + \beta_1 x_i}{\sigma}\right)\right]^{1 - d_i}$
+
+The overall likelihood function is made up of two parts. The first part is the classical regression for the uncensored observations, where we actually observe the wages. The second part gives us the probability that an observation is censored (that the wage is less than or equal to zero).
+
+The $\sigma$ is the "scale" parameter. This is "the estimated standard deviation of the residuals" and can be compared to the standard deviation of hte dependent variable. 
+
+Remember that tobit regression assumes that there is a latent dependent variable that *can* take any value, it's part of a normal linear regression equation with a normally distributed error tern. The standard deviation of that error term is the scale parameter. 
+
+But a tobit model assumes that this latent variable is only *observed* when it exceeds a specific lower bound, otherwise the observed variable gets the value of that lower bound, in our case zero. 
+
+So the scale parameter is analogous to the standard deviation of the residuals, but we can't get an estimate of those residuals by just subtracting the predicted values from the observed dependent variable like we normally do to calculate residuals. If we tried to get the residuals this way we'd underestimate the true variance because censored observations hide any negative values of the latent error.
+
+Instead, $\sigma$ is chosen to maximize the Tobit likelhood function, and is the estimate that we get from our model and accounts for the censored mass too.
+
+### Tobit intuition
+
+Intuitively, workers contribute "how likely is this exact positive wage under the latent normal?". Nonworkers contribute "how likely is it that the latent wage is below zero?", which is a probability about being censored instead of a density for a real observed wage.
+
+The participation probability comes from the normal distribution of the latent shock. The latent shock is the unobserved, random component of a woman’s earning potential, everything that affects her wage offer but isn’t captured by the observed variables like education or experience. In the tobit setup, the term $u_i$ is the latent shock. 
+
+It represents factors like motivation, job opportunities, local labor market conditions, preferences for work, family constraints, health, timing, pure randomness, anything that shifts a woman’s underlying wage offer up or down beyond what we can explain with $x_i$.
+
+In the participation probability, we’re basically asking, what is the chance that this unobserved shock is large enough to push the latent wage above zero and lead to working?
+
+### Tobit estimation
+
+We will use the `tobit` function in the `AER` package. 
+
+You can use `summary(tobit_mod)`, but I'll be doing some extra things to produce an accessible html table.
+
+```{r, results = "asis"}
+tobit_mod <- tobit(wage ~ educ + exper + age + kidslt6, 
+                    data=df)
+
+b  <- coef(tobit_mod)
+V  <- vcov(tobit_mod)
+
+Vb <- V[names(b), names(b), drop = FALSE]
+
+tab <- tibble(
+  term     = names(b),
+  estimate = unname(b),
+  std_error = sqrt(diag(Vb))
+) %>%
+  mutate(
+    z_value = estimate / std_error,
+    p_value = 2 * pnorm(-abs(z_value))
+  )
+
+tab %>%
+  kable(
+    format  = "html",
+    digits  = 3,
+    caption = "Tobit model (AER::tobit): wage ~ educ + exper + age + kidslt6"
+  ) %>%
+  kable_styling(full_width = FALSE)
+```
+
+
+In a tobit model, the reported coefficients are not marginal effects on observed wages, they're coefficients on the latent variable $y^*$ and they're $z$ scores just like in probit. 
+
+The $z$-score is the estimate divided by its standard error and is used for hypothesis testing. So each coefficient tells you how a covariate shifts the wage offer $y^*$ (the latent wage), not the observed wage directly. 
+
+Because the observed outcome is censored at zero, these coefficients operate through *both* participation probability and wages, so they don’t have a straightforward interpretation on their own. We need marginal effects to translate them into changes in expected observed wages or participation probabilities.
+
+### Tobit marginal effects
+
+It's usually easier to consider tobit when looking at marginal effects, much like probit.
+
+For tobit, the most intuitive marginal effects here are the marginal effect of a change in $X$ on the observed variable $y$:
+
+$\frac{\partial E(y|x_i)}{\partial x_i} = \beta_1 \Phi \left(\frac{\beta_0 + \beta_1 x_i}{\sigma}\right)$
+
+I believe you can use the function `margEff.censReg()` from the `censReg` package to calculate marginal effects of tobit models, but I'm going to do it directly here as I'm not very familiar with that package.
+
+Instead I'm going to calculate the marginal effect of education on wages for some given value of the other regressors:
+
+```{r}
+xEduc <- mean(df$educ)
+xExper <- mean(df$educ)
+xAge <- mean(df$educ)
+xKids <- 1
+
+bInt <- coef(tobit_mod)[[1]]
+bEduc <- coef(tobit_mod)[[2]]
+bExper <- coef(tobit_mod)[[3]]
+bAge <- coef(tobit_mod)[[4]]
+bKids <- coef(tobit_mod)[[5]]
+bSigma <- tobit_mod$scale
+
+Phactor <- pnorm((bInt + bEduc*xEduc + bExper*xExper+
+            bAge*xAge + bKids*xKids) / bSigma)
+
+DhoursDeduc <- bEduc*Phactor
+
+DhoursDeduc
+```
+
+If we want the “marginal effect of education on observed wages,” we can compute the Tobit marginal effect on the unconditional mean directly.
+
+Remember that we need to do this in a two step process. We need to solve for $\beta_0 + \beta_1 x_i$
+
+$\frac{\partial E(y|x_i)}{\partial x_i} = \beta_1 \Phi \left(\frac{\beta_0 + \beta_1 x_i}{\sigma}\right)$
+
+
+Note: the reason why `margins(tobit_mod)` on its own won't work is due to the fact that `AER::tobit` includes the log scale as one of its parameters, so we have to do some funky stuff to get around that.
+
+
+```{r}
+b     <- coef(tobit_mod)          
+sigma <- tobit_mod$scale
+
+X   <- model.matrix(tobit_mod)
+eta <- as.numeric(X %*% b) # solving the regression using matrix notation
+z   <- eta / sigma
+
+me_educ_i <- pnorm(z) * b["educ"]   # marginal effects at different values of education
+ame_educ  <- mean(me_educ_i, na.rm = TRUE)
+
+tibble(term = "educ", AME = ame_educ) %>%
+  kable(format = "html", digits = 4,
+        caption = "Average marginal effect of education on expected observed wage (Tobit, left-censored at 0)") %>%
+  kable_styling(full_width = FALSE)
+```
+
+
+This is the average marginal effect of education.An average marginal effect of 
+
+```{r}
+ame_educ
+```
+
+for education means that, holding other factors constant and accounting for both labor force participation and wage levels among those who work, an additional year of education is associated with a $\beta$ unit increase in expected observed wages on average. 
+
+So the estimate reflects the combined impact of education on both the likelihood of working *and* the wages earned conditional on working, so it captures how education shifts overall expected earnings in the population, not just wages among workers, but also through its effect the probability of participation. 
+
+We see that the AME is different than the value we got when we chose the values for the other variables, which makes sense since the AME is averaging the effect across the values of education.

@@ -1,0 +1,287 @@
+---
+title: "ECON-8300"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+need <- c(
+  "tidyverse",
+  "wooldridge",
+  "sandwich",
+  "lmtest",
+  "kableExtra",
+  "margins",
+  "AER"
+)
+
+installed <- rownames(installed.packages())
+missing <- setdiff(need, installed)
+
+if (length(missing) > 0) {
+  message("Installing missing packages: ", paste(missing, collapse = ", "))
+  
+  install.packages(
+    missing,
+    repos = "https://cloud.r-project.org",
+    dependencies = TRUE
+  )
+}
+
+invisible(lapply(need, library, character.only = TRUE))
+
+source("reporting.R")
+```
+
+# Homework07
+
+
+Grading Rubric (per question):  
+2 points if complete and correct  
+0 points otherwise 
+
+
+## Retrieving your work
+
+This and all future homework .Rmd files are written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing. 
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment. 
+
+## Submitting your work
+
+When you upload your files to Canvas, you are to submit ***two*** files:
+
+a. Your reproducible document file (.Rmd) which should be saved as homework##-ID.Rmd. For example, my homework07 file would be saved as homework07-jperrigan.Rmd.
+
+b. Your rendered reproducible document file (.html) which should be saved as homework##-ID.html. For example, my homework07 file would be saved as homework07-jperrigan.html.
+
+Your ID is your Canvas username. It is also the text before the "@" symbol in your UNO email address.
+
+You have an unlimited number of submissions, but only the latest submission will be viewed and graded. **Proper means that the file is correctly named and formatted. Latest means that the file is the most recent submission prior to the deadline. Remember the .Rmd file needs to render properly to .html before submitting.** 
+
+
+***
+
+All students are expected to complete all problems. If any problem asks you a particular question, be sure to answer it completely (with code, written sentences, or both).
+
+***Do not change anything in this file above the double line. Doing so will prevent your homework from being graded.***
+
+***
+***
+
+---
+
+# Packages + data
+
+We'll use the `mroz` labor supply data (wooldridge package). The variables we'll focus on:
+
+- `inlf`: in labor force (1/0)
+- `hours`: annual hours worked (0 for non-participants) — this will be our left-censored outcome for tobit
+- `educ`, `exper`, `age`, `kidslt6`, `kidsge6`, `nwifeinc` as regressors
+
+I'll turn the `inlf` variable into an integer, and also turn any null `hours` values into zeros. 
+
+**Make sure to use this `df` data for the rest of the homework.**
+
+```{r}
+df <- mroz %>%
+  as_tibble() %>%
+  mutate(
+    inlf = as.integer(inlf),          
+    hours = if_else(is.na(hours), 0, hours)  
+  )
+
+```
+
+
+**#1** 
+
+**Problem:** 
+
+a) Produce one table of summary statistics for the following variables, split by `inlf`:
+
+- `hours`, `educ`, `exper`, `age`, `kidslt6`, `kidsge6`, `nwifeinc`
+
+Your table must include: mean, sd, min, max, and N. 
+
+b) Make boxplots of `educ`, `exper`, and `age` by `inlf`. (Facet if you want.)
+
+This R code should be written in the code chunk of the **Answer** section below. Assign your summary statistics table to "prob01". 
+
+```{r, problem01}
+#prob01
+```
+
+***
+
+
+
+**#2** 
+
+**Problem:** Considering what you see in your summary statistics and box plots, what is the direction of the unconditional differences between participants and non-participants? What is a plausible omitted variable driving some of these differences?
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer as a string to summary to "prob02". 
+
+```{r, problem02}
+#prob02
+```
+
+***
+
+**#3** 
+
+**Problem:**  
+
+a) Estimate the LPM: $P(\text{inlf}_i=1 \mid X_i) = \beta_0 + \beta_1\,educ_i + \beta_2\,age_i + \beta_3\,kidslt6_i + \beta_4\,nwifeinc_i + u_i$. Report heteroskedasticity-robust SEs (HC1).
+
+b) Create a residual vs. fitted plot from your model that you created in part a. Then make the same plot again, but this time using squared residuals.
+
+c) **Write 2–4 sentences**: Explain why the LPM is necessarily heteroskedastic. 
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer to part c as a string to "prob03".
+
+```{r, problem03}
+#prob03
+```
+
+
+***
+
+**#4** 
+
+**Problem:** 
+
+a) Estimate the probit and logit models with the same covariates as the LPM:
+
+b)  Report coefficients with robust SEs (HC1).
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the probit results summary to "prob04_probit" and the logit results summary to "prob04_logit". 
+
+```{r, problem04}
+#prob04_probit
+#prob04_logit
+```
+
+***
+
+**#5** 
+
+**Problem:** 
+
+Compute average marginal effects for `educ` and `nwifeinc` for both probit and logit.
+- You may use the `margins` package or compute AMEs directly.  
+- If you use `margins`, make sure you know whether you computed Average Marginal Effects vs Marginal Effects at the Mean.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the probit AMEs to prob05_probit and the logit AMEs to prob05_logit as a vector, with the AME for `educ` first and the AME for `nwifeinc` second.
+
+```{r, problem05}
+#prob05_probit
+#prob05_logit
+```
+
+***
+
+**#6** 
+
+**Problem:** 
+
+Plot predicted probabilities as a function of `educ` (from 8 years to 18 years), holding other covariates fixed at their sample means.
+
+Overlay three curves on one figure: LPM, probit, logit.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the plot to "prob06". 
+
+
+```{r, problem06}
+#prob06
+```
+
+***
+
+**#7** 
+
+**Problem:** 
+
+**Write 1 paragraph**:  
+
+Compare (i) coefficient signs, (ii) the meaning of coefficients across LPM vs probit/logit, and (iii) AME interpretation.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer as a string to "prob07". 
+
+
+```{r, problem07}
+#prob07
+```
+
+***
+
+**#8** 
+
+Now model hours worked with censoring at 0:
+
+$y_i^* = x_i'\beta + u_i,\quad u_i \sim N(0,\sigma^2),$
+$y_i = \max(0, y_i^*)$
+
+a) Estimate a Tobit model for `hours` using:
+
+$hours_i \sim educ_i + exper_i + age_i + kidslt6_i + kidsge6_i + nwifeinc_i$
+
+Report your results.
+
+b) Explain why Tobit coefficients are not “marginal dollars/hours” effects on observed `hours`.
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer to part b as a string to "prob08". 
+
+
+```{r, problem08}
+#prob08
+```
+
+***
+
+**#9** 
+
+Compute the AME of `educ` on $(E[hours \mid X])$ using the Tobit identity:
+
+$\frac{\partial E[y\mid x]}{\partial educ} =\Phi\!\left(\frac{x'\beta}{\sigma}\right)\beta_{educ}.$
+
+Compute $(x'\beta)$ at each observation, then average the observation-specific effects to get the AME. 
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the value of the AME to "prob09". 
+
+
+```{r, problem09}
+#prob09
+```
+
+***
+
+**#10** 
+
+
+a) Estimate OLS of `hours` on the same covariates using the full sample (including zeros). 
+
+b) Estimate OLS restricting to $hours > 0$. 
+
+c) **Write 1 paragraph**:  What *exactly* is the difference across these (OLS including zeros, OLS excluding zeros, Tobit) approaches? What is the difference in interpretation? When is Tobit plausibly appropriate for labor supply hours, and when is it a misspecification?
+
+This R code should be written in the code chunk of the **Answer** section below. Assign the answer to part c as a string to "prob10". 
+
+
+```{r, problem10}
+#prob10
+```
+
+***
+
+
