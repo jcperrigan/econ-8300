@@ -1,0 +1,643 @@
+---
+title: "Sample Notebook - Panel Data"
+output: 
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+You will need the following packages, so install them before running the following code chunk if required:
+
+`AER`, `tidyverse`, `plm`, `sandwich`, `lmtest`, `knitr`, `kableExtra`, `pacman`
+
+```{r}
+
+# Install pacman if you don't have it
+if (!require("pacman")) install.packages("pacman")
+
+# Load (and install if missing) multiple packages instantly
+pacman::p_load(AER, tidyverse, plm, sandwich, lmtest, knitr, kableExtra)
+
+
+source("reporting.R")
+```
+
+# Panel Data
+
+Panel data are both multidimensional data involving measurements over time. Panel data are a subset of longitudinal data where observations are for the same subjects at each time period.
+
+Time series and cross-sectional data can be thought of as special cases of panel data that are in one dimension only.
+
+The difference between panel data and pooled cross-sections is that panel data observes the same entities over time, which can't be proven in pooled cross-sections.
+
+## Why Panel Data?
+
+(Note: this example comes from [this post](https://towardsdatascience.com/a-guide-to-panel-data-regression-theoretics-and-implementation-with-python-4c84c5055cf8) on Towards Data Science. I thought it was so clear that I am reproducing it here!)
+
+Let's imagine we are studying the relationship between coffee consumption and the level of concentration. We posit a simple linear relationship:
+
+$concentration\_level = \beta_0 + \beta_1 coffee\_consumption_i + u_i$
+
+So our main goal is to explore how coffee consumption is related to the concentration level. 
+
+But what if there is another variable that would affect coffee consumption and concentration level that is not explicitly included in the model? How tired you are would definitely affect both how well you can concentrate and how much caffeine you want to consume, so it fits the definition for omitted variable bias.
+
+Since our omitted variable *tiredness* is currently included in the error term, that means that our zero conditional mean assumption is violated and our $u_i$ will increase along with *coffee_consumption*. We get biased estimators:
+
+Panel data help us to deal with this issue, as we can control heterogeneity in our regression model.
+
+
+### Panel Data Notation
+
+In cross-sectional data we have observations for one time period for $n$ subjects (entities). In panel data, we have observations on $n$ entities for $T$ time periods, where $T \geq 2$. 
+
+This is denoted
+
+$(X_{it}, Y_{it}), i = 1, \dots, n$ and $t = 1, \dots, T$
+
+where the index $i$ refers to the entity and $t$ refers to the time period.
+
+
+### Example Data
+
+Some U.S. states have enacted laws that allow citizens to carry concealed weapons. These laws are known as “shall-issue” laws because they instruct local authorities to issue a concealed weapons permit to all applicants who are citizens, are mentally competent, and have not been convicted of a felony. (Some states have some additional restrictions.)
+
+Proponents argue that if more people carry concealed weapons, crime will decline because criminals will be deterred from attacking other people. Opponents argue that crime will increase because of accidental or spontaneous use of the weapons. In this exercise, you will analyze the effect of concealed weapons laws on violent crimes. 
+
+We will be using the data file "guns", which contains a balanced panel of data from the 50 U.S. states plus the District of Columbia for the years 1977 through 1999. You can find the data and a detailed description in the AER package.
+
+Before we move on, let's change the "law" factor to a 0 to 1 encoding. That will help us look at calculations like correlations later on. 
+
+```{r}
+data("Guns")
+
+df <- Guns %>%
+  mutate(law = if_else(law == "yes", 1, 0))
+```
+
+#### Exploring the data
+
+Let's take a look at some information about our data and its summary statistics.
+
+
+```{r}
+glimpse(df)
+```
+
+We see that this dataset contains 1,173 observations on 13 variables.
+
+Finally we will look at our summary statistics:
+
+```{r, results = 'asis'}
+mk_dataset_summary(df)
+```
+
+Looks like a balanced panel with no missing observations! This is usually not the case however. We will return to unbalanced panels later in this sample notebook.
+
+
+# The Base Model
+
+## Visualizing the data
+
+Let's start by visualizing $violent$, the violent crime rate (incidents per 100,000 members of the population).
+
+```{r, fig.alt = "density histogram of violent crime rate per 100,000"}
+ggplot(df, aes(x = violent)) +
+  geom_histogram(
+    aes(y = ..density..),
+    fill = "lightsteelblue",
+    color = "steelblue4",
+    bins = 30
+  ) +
+  labs(title = "histogram of violent crime rate per 100,000", x = "violent crime rate per 100,000", y = "Density") +
+  theme_minimal()
+```
+
+$Violent$ looks like a log-normal distribution--it's skewed to the right. Let's take the log of $violent$ to see if we can make it look more like a normal distribution.
+
+```{r}
+df <- df %>%
+  mutate(
+    ln_vio = log(violent)
+  )
+```
+
+```{r, fig.alt = "density histogram of logged violent crime rate per 100,000"}
+ggplot(df, aes(x = ln_vio)) +
+  geom_histogram(
+    aes(y = ..density..),
+    fill = "lightsteelblue",
+    color = "steelblue4",
+    bins = 30
+  ) +
+  labs(title = "histogram of log of violent crime rate per 100,000", x = "log(violent crime rate per 100,000)", y = "Density") +
+  theme_minimal()
+```
+
+That looks more normal. 
+
+Next we will with visualize the relationship between $law$ and $ln_vio$. 
+
+```{r, fig.alt = "density histogram of logged violent crime rate per 100,000"}
+ggplot(df, aes(x = factor(law), y = ln_vio)) +
+  geom_boxplot(
+    fill = "lightsteelblue",
+    color = "steelblue4"
+  ) +
+  labs(
+    title = "Boxplot of log violent crime by law",
+    x = "Law",
+    y = "Log violent crime rate"
+  ) +
+  theme_minimal()
+```
+
+It looks like there could be a difference between the log of the violent crime rate in states with shall-carry laws versus in states without during the 1977 through 1999 time period. 
+
+Let's estimate the relationship using an OLS regression.
+
+## Simple OLS
+
+We will estimate a simple linear regression, using robust standard errors.
+
+```{r, results = 'asis'}
+simple_ols = lm(ln_vio ~ law, data = df)
+
+mk_coeftab_robust(
+  simple_ols,
+  mode = "simple",
+  caption = "log(violent crime rate) on shall-carry law (robust SEs, HC1)",
+  robust_type = "HC1"
+)
+```
+
+As we look at these results, we see that the coefficient for "law yes" is $-0.4430$, and is significant at 1%. 
+
+Our dependent variable is a log, so let's use the log-linear interpretation on our coefficient.
+
+For a log-linear model (where the dependent variable is log transformed), each one-unit increase in *x* multiples the expected value of *y* by $e^\hat{\beta_1}$.
+
+For small values of $\hat{\beta_1}$, $e^\hat{\beta_1} \approx 1 + \hat{\beta_1}$. 
+
+$100 \cdot \hat{beta}$ is the expected percentage change in *y* for a unit increase in *x*.
+
+So with a coefficient value of $-0.4430$, the expected approximate percentage difference in the violent crime rate per 100,000 is $-44.3\%$ for locales where the value of law is 0 ("no") vs 1 ("yes"). 
+
+For the exact difference we use exponentiation:
+
+```{r}
+(exp(simple_ols$coefficients["law"]) - 1) * 100
+```
+
+
+## Multiple OLS
+
+I will be adding the variables $prisoners$,  $density$, $male$, and the log of $income$ to my regression (income usually has a distribution that is skewed to the right, so I'll be taking the log to give it a more normal distribution). 
+
+* $prisoners$ measures the incarceration rate in the state in the previous year (sentenced prisoners per 100,000 residents), and is correlated with both $ln_vio$ and $law$. 
+
+* $density$ is the population per square mile of land area, divided by 1,000, and is also correlated with both $ln_vio$ and $law$. 
+
+* $male$ is the percent of the state population that is male, ages 10 to 29. 
+
+* $income$ is the real per capita personal income in the state in US dollars. I will be taking the log of this variable.
+
+We will need to use the $shall_law$ variable with the 0 - 1 encoding to calculate the correlations--you can't use factors here.
+
+```{r}
+df <- df %>%
+  mutate(
+    ln_income = log(income)
+  )
+
+
+corr_data = df[, c('ln_vio', 'law', 'prisoners', 'density', "male", "ln_income")]
+
+kable(corr_data, digits = 3, caption = "Correlation Matrix") %>%
+  kable_styling(full_width = FALSE)
+```
+
+Looking at this correlations matrix, $prisoners$, $density$, $male$, and $ln_income$ seem that they might be useful to add to the regression to control for omitted variable bias.
+
+## Pooled OLS
+
+Pooled OLS is an OLS technique that is specific to panel data. Pooled OLS, much like its name, pools all observations into one regression and treats all entity-time periods (each $it$) as an i.i.d. unit. It ignores time and individual characteristics and focuses only on dependencies between the entities.
+
+The problem with pooled OLS is that it requires our OLS assumptions to be true, especially that $E(u|x) = 0$. 
+
+So pooled OLS is likely to suffer from issues of heteroskedasticity and possible violation of zero conditional mean errors. Both of these arise out of ignoring the any unobserved heterogeneity across entities or time periods.
+
+We can use robust standard errors to help deal with heteroskedasticity, but pooled OLS by definition will require that there isn't any correlation between unobserved independent variables (included in the error term) and the independent variables included in the model.
+
+We will use the `plm` package to estimate our pooled OLS and fixed effects models. I highly suggest checking out [this page](https://cran.r-project.org/web/packages/plm/vignettes/A_plmPackage.html) for more information on plm.
+
+
+We will first convert our dataframe into a pdata frame to take full advantage of `plm.`
+
+```{r}
+df <- pdata.frame(df,index=c("state","year")) 
+```
+
+
+```{r, results = 'asis'}
+pooled_ols = plm(ln_vio ~ law + prisoners + density + male + ln_income, 
+                    data = df,
+                    model = "pooling")
+
+mk_coeftab_robust(
+  pooled_ols,
+  mode = "simple",
+  caption = "log violent crime on shall-carry law and controls, pooled OLS, (robust SEs, HC1)",
+  robust_type = "HC1"
+)
+
+```
+
+
+We see that the $law$ estimated coefficient didn't change very much! However, all of the additional variables are statistically significant (except $density$), so they are still useful to include in our regression.
+
+We need to use robust standard errors here due to the issue of heteroskedasticity.
+
+Interpretation of the coefficients is just like in a normal OLS log-linear model. In this case, changing from $law = no$ to $law = yes$ changes the expected value of the violent crime rate by $-43.4\%$.
+
+Pooled OLS does not allow for intercept or slope differences among individuals, which is a problem! 
+
+What if the true population model for entity $i$ is:
+
+$y_i = \beta_1 x_1 + \gamma_i Z_i + u_i$,
+
+where $Z_i$ contains the unobserved effect of being in entity *i*, and $\gamma_i$ is the regression coefficient for that unobserved effect?
+
+If the unobservable individual effect $Z_i$ is correlated with $x_1$, we get a problem with biased estimators:
+
+$\hat{\beta}_1 = \beta_1 + \gamma_i \frac{Cov(x_1, z_i)}{Var(x_1)}$
+
+We can see that the bias is proportional to the covariance between the omitted variable $Z_i$ (the effect of being in entity $i$) and the included explanatory variable $x_1$.
+
+Fixed effects can help compensate for this bias.
+
+# Fixed Effects
+
+I really enjoyed this paper [(click here to access it)](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0231349) and it helped sharpen my understanding of how best to ask questions of entity and time fixed effects models! Definitely recommend you take a look. Now, that doesn't necessarily mean that two-way fixed effects models are invalid, but it does mean that you need to be careful about how you interpret their coefficients! “We will return to these models later on. 
+
+
+## Entity Fixed Effects
+
+While adding additional variables can help us fix omitted variable bias, we have to actually *have* access to those data.
+
+Fixed Effects help to control for **unobserved** time-invariant heterogeneity between entities, but where this heterogeneity is constant over time. It assumes that the bias introduced due to the omission of the entity-specific factors is fixed.
+
+By controlling for this unobserved heterogeneity, we can get a better answer to our question "how much does an entity change in relation to itself over time?" 
+
+The pooled OLS model let us look at variation from one entity to the next, while fixed effects let us look at variation within each entity over time. The fixed effects coefficients soak up all the across-entity action, leaving behind the within-entity action.
+
+Each entity has its own individual characteristics, and when using FE we assume that something within the individual entity may impact or bias the dependent variable. The FE model controls for the time-invariant differences between the individuals, so the estimated coefficients of the FE model can't be biased because of omitted time-invariant characteristics (they can still be biased in other ways, though!).
+
+Please note: fixed effects do *not* control for omitted variables, but rather isolate one dimension of model variance. Any variables that don't vary on that dimension will by definition be removed from the model.
+
+When considering fixed effects, ask yourself whether you are interested in looking at comparing entities to themselves over time or comparing how entities changes relative to other entities?
+
+If you are more interested in the former, you want entity fixed effects.
+
+### Fixed Effects Models
+
+(Note: this is from Econometrics with R, just less detailed. Go there for more!)
+
+Consider the panel regression model 
+
+$Y_{it} = \beta_0 + \beta_1 X_{it} + \beta_2 Z_i + u_{it}$, 
+
+where the $Z_{i}$ are unobserved time-invariant heterogeneities across the entities in our sample. Our goal is to estimate $\beta_1$.
+
+If we let $\alpha_i = \beta_0 + \beta_2 Z_i$ (because $\beta_0$ is constant), we get our model
+
+$Y_{it} = \alpha_i + \beta_1 X_{it} + u_{it}$. Those $\alpha_i$ is the effect of being in entity $i$.
+
+R (like most software packages) uses the "entity demeaned" OLS algorithm. 
+
+As long as our fixed effects assumptions hold, the sampling distribution of the OLS estimator is normal in large samples, and we can computer standard errors and *t*-statistics for our coefficients.
+
+
+### Fixed Effects Estimation
+
+We can re-write our regression model as a fixed effects model:
+
+$Ln(violent)_{it} = \beta_1 law_{it} + \beta_2 prisoners_{it} + \beta_3 male_{it} + \beta_4 ln_income_{it} + StateFixedEffects + u_{it}$,
+
+where $StateFixedEffects$ are our $\alpha_i$ values.
+
+For more information on the panel data estimators available, you can use ?plm or [click here](https://cran.r-project.org/web/packages/plm/plm.pdf) for the documentation.
+
+
+### Dummy Variable Estimation
+
+We can take our model with entity-specific effects $Y_{it} = \beta_1 x_{it} + \alpha_i + u_{it}$ and rewrite it by adding $n-1$ entity-specific dummy variables:
+
+$y_{it} = \beta_0 + \beta_1 x_{it} + \gamma_2 D2_i + \gamma_3 D2_i + \cdots + \gamma_n Dn_i + u_{it}$
+
+To use the dummy variable estimation method, we create dummy variables that indicate that you are in unit *i*.
+
+I will take a subset of the states for this demonstration, as 50 dummy variables would make our results very crowded! 
+
+```{r}
+state_filter = c('Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California')
+
+df_subset = df %>%
+  filter(state %in% state_filter) %>%
+  droplevels
+```
+
+
+I can now estimate my fixed effects model. The intercept will now hold the value for the first factor on the list, the omitted dummy variable for Alabama. We will use robust standard errors when looking at our results.
+
+```{r, results = 'asis'}
+dummy_fe_mod = lm(ln_vio ~ law + factor(state),
+                   data = df_subset)
+
+mk_coeftab_robust(
+  dummy_fe_mod,
+  mode = "simple",
+  caption = "log(violent crime rate) on shall-carry law, dummy fixed effects model (robust SEs, HC1)",
+  robust_type = "HC1"
+)
+```
+
+The first thing we do is look at our main coefficient of interest, $law$. We see that it is significant at 1%, meaning that as $law$ changes from 0 to 1 its impact on $ln\_vio$ can be described by its coefficient. 
+
+For a log-linear model (where the dependent variable is log transformed), each one-unit increase in *x* multiples the expected value of *y* by $e^\hat{\beta_1}$.
+
+$100 \cdot \hat{beta}$ is the approximate expected percentage change in *y* for a unit increase in *x*.
+
+So with a coefficient value of $0.135$, the expected percentage change in the violent crime rate per 100,000 is $13.5\%$ when the value of $law$ changes from 0 ("no") to 1 ("yes"). This is quite different from what we found in our initial regression once we add those state-specific factors.
+
+Let's look at the coefficients for our dummy variables that represent the state-specific effects.
+
+We see that the intercept (which represents the state-specific effect of being in Alabama) is 6.3 and is statistically significant at `%.
+
+We also see that the $state\_Arkansas$ variable is significant at 1%. The actual state-specific effect for Arkansas is calculated as $6.3 - 0.27 = 6.03$. Because it is significant, the state-specific effect due to being in Arkansas is different from the state-specific effect due to being in Alabama.
+
+In contrast, the coefficient for $state\_Alaska$ is not significant. This means that we do not have evidence that the effect is being in Alaska is statistically different from being in Alabama.
+
+### Entity-Demeaned Estimation
+
+R uses an "entity-demeaned" way to estimate fixed effects instead of the dummy-variable approach by taking averages on both sides of our regression equation:
+
+$Y_{it} = \beta_1 x_{it} + \alpha_i + u_{it}$
+
+$\frac{1}{n}\Sigma_{i=1}^n Y_{it} = \beta_1 \frac{1}{n} \Sigma_{i=1}^n X_{it} + \frac{1}{n} \Sigma_{i=1}^n \alpha_i + \frac{1}{n} \Sigma_{i = 1}^n u_{it}$
+
+giving us
+
+$\bar{Y} = \beta_1 \bar{X}_i + \alpha_i + \bar{u}_i$
+
+If we subtract the average equation from our original equation, we get:
+
+$Y_{it} - \bar{Y}_i = \beta_1(X_{it} - \bar{X}_i) + (u_{it} - \bar{u}_i)$
+
+which we can rewrite as
+
+$\tilde{Y}_{it} = \beta_1 \tilde{X}_{it} + \tilde{u}_{it}$.
+
+This lets us estimate our $\beta_1$ without the need to also estimate the $n-1$ dummies plus an intercept.
+
+As this is how R estimates fixed effects models, we only need to pass it the formula, the data, the effect ("individual", "time", "twoways", or "nested"; default is "individual" and it will take the first stated index as the individual/ entity effect), and the model (fixed effects models use "within" here.)
+
+Because we've saved the data in a pdata frame, we do not need to pass it the index (state and year), because we did that when we converted the data into a pdata frame. If we weren't using the plm pdata frame, we would also need to pass it the index as well.
+
+First we will estimate using the subset of states, to more directly compare with our dummy variable estimation above.
+```{r, results = 'asis'}
+guns_subset_fe_mod = plm(ln_vio ~ law,
+                    data = df_subset,
+                    effect = "individual",
+                    model = "within")
+
+
+mk_coeftab_robust(
+  guns_subset_fe_mod,
+  mode = "simple",
+  caption = "log(violent crime rate) on shall-carry law, entity-demeaned fixed effects model (robust SEs, HC1)",
+  robust_type = "HC1"
+)
+
+```
+
+
+Notice that the estimated coefficient on $law$ is nearly the same! The standard error increased, but the p-value is still significant at 1%.
+
+Now let's build a fixed effects model with all of the variables and all of the states, and compare it to our pooled OLS model.
+
+```{r, results = 'asis'}
+fe_mod = plm(ln_vio ~ law + prisoners + density + male + ln_income, 
+                    data = df,
+                  effect = "individual",
+                    model = "within")
+
+mk_coeftab_robust(
+  fe_mod,
+  mode = "simple",
+  caption = "log(violent crime rate) on shall-carry law, entity fixed effects (robust SEs, HC1)",
+  robust_type = "HC1"
+)
+```
+
+We need to use robust standard errors, so we will look at our summary using coeftest() for our summary.
+
+Hold on. Look at how much those coefficients changed! Now *none* of them are statistically significant at 5%. This result suggests that $violent$ has a stronger relationship with the state fixed effects (those unobserved or unobservable effects of being in state $i$) than with any of the variables that we have included!
+
+### Comparing Pooled and Fixed Effects models
+
+We can use the F test to check for poolability, where the null hypothesis assumes that slope coefficients for our different entities are the same (pooled OLS is appropriate) and the alternative is that fixed effects are needed.
+
+The *F*-statistic is therefore
+
+$F_{1-way} = \frac{(SSR_R - SSR_U) / N - 1}{SSR_U / ((T-1)N - K)}$$
+
+where $SSR_R$ is the sum of squared residuals under the null and $SSR_U$ the sum of squared residuals under the alternative. *K* is the number of regressors, *T* the number of time periods, and *N* the number of observations.
+
+This is for a one-way model, and if it remains insignificant then no panel model needs to be specified as all of the individual entities are sufficiently homogeneous.
+
+The plm package has a handy method to perform this test.
+
+```{r}
+ftest <- pFtest(fe_mod, pooled_ols)
+
+ftest_table <- tibble(
+  Statistic = round(unname(ftest$statistic), 3),
+  DF1 = unname(ftest$parameter[1]),
+  DF2 = unname(ftest$parameter[2]),
+  `p-value` = format.pval(ftest$p.value, digits = 3, eps = .001),
+  Alternative = ftest$alternative
+)
+
+kable(ftest_table, digits = 3, caption = "F-test: Pooled OLS vs Fixed Effects") %>%
+  kable_styling(full_width = FALSE)
+```
+
+Looking at the *p*-value for this *F*-test, we can reject the null that the states are homogenous enough to not need a fixed effects model.
+
+
+## Time Fixed Effects
+
+Along with entity fixed effects, we can also consider time fixed effects. This is when we control for variables that are constant across entities but vary over time. Now instead of $StateFixedEffects$ being included as a term in our model, we instead have $TimeFixedEffects$.
+
+By controlling for that heterogeneity across time, we can get a better estimate to answer our question "how much does an entity change relative to other entities?" Think of it as a cross-sectional analysis plus, and you use it when most of your variation is between entities as opposed to within entities.
+
+An example in this context could be federal gun legislation that was passed in the 1990s. This therefore varies across the time period of our data, but does not vary across the states since they were all subject to the same legislation.
+
+We again use plm to estimate our model, but we will change our effect to "time":
+
+```{r, results = 'asis'}
+time_mod = plm(ln_vio ~ law + prisoners + density + male + ln_income, 
+                    data = df,
+                    effect = "time",
+                    model = "within")
+
+mk_coeftab_robust(
+  time_mod,
+  mode = "simple",
+  caption = "log(violent crime rate) on shall-carry law (robust SEs, HC1)",
+  robust_type = "HC1"
+)
+
+```
+
+Including fixed effects does not change the meaning of our $\hat{\beta}$'s; rather, it is controlling for unobservables that are constant across entities but vary over time. As we are holding different things constant in our two models, we get different parameter estimates.
+
+
+We now have $law$, $prisoners$, and $ln_income$ significant at least at the 5% level. When looking at this time fixed effects model compared to the entity fixed effects, the fact that $law$ is now significant suggests that what is going on varies across entities but is common to those entities over time.
+
+### Entity and Time Fixed Effects
+
+By using entity and time fixed effects, the tin says we should be able to examine both within-state variation and also between-state variation.
+
+Now we will use the "twoways" effect:
+
+```{r, results = 'asis'}
+twFe_mod = plm(ln_vio ~ law + prisoners + density + male + ln_income, 
+                    data = df,
+                    effect = "twoways",
+                    model = "within")
+
+mk_coeftab_robust(
+  twFe_mod,
+  mode = "simple",
+  caption = "log(violent crime rate) on shall-carry law, two-way fixed effects model (robust SEs, HC1)",
+  robust_type = "HC1"
+)
+
+```
+
+But does this make sense? A lot of the time you hear "After removing entity and time fixed effects” and that can make TWFE sound like we simply control for two sets of nuisance variables and then interpret $\beta$ like normal. 
+
+The more precise interpretation is instead for:
+
+$$
+Y_{it} = \alpha_i + \lambda_t + \beta X_{it} + u_{it}
+$$
+TWFE is effectively estimating:
+
+$$
+\tilde{Y}_{it} = \beta \tilde{X}_{it} + \tilde{u}_{it}
+$$
+where, in a balanced panel,
+
+$$
+\tilde{X}_{it} = X_{it} - \bar{X}_i - \bar{X}_t + \bar{X}
+$$
+and likewise for $Y$. So the $\tilde{X}_{it}$ being used in TWFE has been double de-meaned. So $\beta$ is better described as the relationship between deviations in $X$ from what we would expect given both the unit and the time period, and corresponding deviations in $Y$. 
+
+There are really two comparisons happening simultaneously:
+- within entity: is $X_{it}$ different from what is typical for entity $i$?
+- within time: is $X_{it}$ different from what is typical across entities at time $t$?
+
+The identifying variation is what survives both comparisons.
+
+For example, let's say we're looking at state minimum wage. Nebraska raising its minimum wage isn't identifying just because Nebraska's wage changed over time. If *every state* raised its minimum wage by the same amount at the same time, the year fixed effect absorbs that variation. What matters is essentially that Nebraska changed relative to its own typical level in a way that is different from the contemporaneous change in other states.
+
+TWFE asks whether an entity experiencing an unusual change in $X$, relative both to itself and to what is happening to everyone else at that time, also experiences an unusual change in $Y$.
+
+So there are usually two issues that I see with the naive presentation of TWFE models, basically the idea that "$\beta$ is the average effect of $X$ on $Y$, controlling for entity and time fixed effects." The first, and in my opinion bigger, issue is the interpretation/ identification issue in applied work because it skips over the problem that the coefficient is identified only by the double-demeaned variation. 
+
+Then there is the separate linear-algebra issue with writing the "standard" dummy variable version too casually, because if you do the textbook OLS expression is undefined and software quietly fixes this for us by dropping a reference entity/ time category.
+
+I will leave you with this quote from Robert Kubinec, who co-authored the paper I linked to above:
+
+>If fixed effects enable comparisons, then what happens if we have dummy variables/intercepts for every case and time point (the so-called two-way fixed effects model)? What comparison are we then making? As it turns out, the answer to this question is not very clear at all. I refer you to the paper above for a full exposition, but in essence, because cases and time points are nested, we end up making comparisons across both dimensions simultaneously, and this is just as obtuse as it sounds. There is no clear research question that matches this model.
+
+While I think there could possibly be a model that needs a coefficient that has been double de-meaned, across both entity and time. Because with Two-way Fixed Effects models, the question is what identifying variation is left?
+
+
+In a lot of settings, people throw in two-way FE as a magic bullet without thinking about actual interpretability.
+
+In a one-way model, you have entity FE that give you within-entity variation, or you have time FE that give you cross-sectional variation within a year. This is nice and clear. In two-way FE models, the remaining variation is not a clean dimension but is instead a residual component after removing two sets of means. 
+
+Whether we use entity fixed effects or time fixed effects depends on the question we are asking, and be wary of using time *and* fixed effects together. The interpretation can be muddy because the coefficient is identified only by the double de-meaned variation, and most of the time most of the variation in X is either cross-sectional or aggregate time trends, so after double demeaning very little variation remains and our identification is fragile anyway.
+
+
+## Choosing our model
+
+In this case, which are we more interested in: how states change in relation to themselves over time (entity fixed effects) or how states change in relation to other cases (time fixed effects)?
+
+That will depend on what you're testing and what your question is. If your entities are human beings, you might want to know whether getting more education leads to higher earnings (entity fixed effects). If your entities are countries, you might want to know whether wealthier countries tend to be more democratic than poorer countries (time fixed effects). Make sure to define your question carefully to know which is the better option for your analysis!
+
+
+## Dealing with Unbalanced Panels
+
+Balanced data is preferred over unbalanced panels because it has an observation of each entity in every time period, which reduces the noise introduced by entity heterogeneity.
+
+R can estimate fixed effects models even with missing data. The main concern with unbalanced panel data is the question why the data is unbalanced. If observations are missing at random then this is not a problem. If the attrition of entities in your data over time is not random (it's related to the errors $u_{it$}$ then this sample selection may bias your estimates.
+
+A simple test for such sample selection was proposed by [Nijman and Verbeek (1992)](http://repub.eur.nl/pub/12650/TestingforSelectivity_1992.pdf) for fixed and random effects models. You generate a selection indicator $s_{it}$ which equals one if an entity has an observatino for that variable in a given year and zero otherwise.
+
+Add the lagged selection indicator $s_{i, t-1}$ to your model and estimate it via fixed effects. Then you test whether $s_{i, t-1}$ is significant. The hypothesis is that the error $u_it$ is uncorrelated with the lagged selection indicator, so $s_{i, t-1}$ should be insignificant in order to conclude that attrition is random.
+
+I first convert the dataframe into a pdata.frame (from plm). The reason I do this is because the base R lag() functions don't correctly compute these transformations for panel data because they can't tell when there is a change in the entity in the data; plm has specific methods to do this. 
+
+I then create a vector of random numbers to simulate missing observations from $law$, such that $law_binary = 1$ when $law$ is "observed" and $law_binary = 0$ when $law$ is "not observed." 
+
+
+```{r}
+set.seed(194842)
+
+df <- df %>%
+  mutate(law_binary = sample(c(0,1), replace=TRUE, size=1173)
+  )
+
+df = pdata.frame(transform(df, l_law=lag(law_binary,1)), index = c("state", "year"))  
+```
+
+Because I transformed the Guns dataset, I had to reset it as a pdata frame.
+
+I will them estimate an entity fixed effects model, replacing $law$ with $law_binary$:
+
+```{r, results = 'asis'}
+nv_mod = plm(ln_vio ~ l_law + prisoners + density + male + ln_income, 
+                    data = df,
+             index = c("state", "year"),
+                    effect = "individual",
+                    model = "within")
+
+mk_coeftab_robust(
+  nv_mod,
+  mode = "simple",
+  caption = "log(violent crime rate) on lagged shall carry law (robust SEs, HC1)",
+  robust_type = "HC1"
+)
+
+```
+
+We can see that our lagged binary variable indicating whether $law$ is observed is not statistically significant. That means we can say that attrition is random.
+
+This is good, because it was a random vector! But the process to check whether missing observations are randomly missing is:
+
+1. Generate new variable where 0 indicates missing observation and 1 indicates existing observation.
+2. Estimate your model but replace the variable in question with the lagged value of the binary variable.
+3. Check to see if your new variable is statistically significant. If it is, you have a problem with non-randomness in your missing data. If it isn't, you can conclude that data are missing randomly.
