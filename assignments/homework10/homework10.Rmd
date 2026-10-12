@@ -98,7 +98,7 @@ After doing the assignment and before submitting, make sure you can complete the
 
 Write one research question about the relationship between `capital` and `inv` that a firm fixed effects model could help answer. 
 
-Name the outcome and the explanatory variable. Explain what stable differences across firms could otherwise muddy the comparison—for example, persistent differences in scale, technology, or business model.
+Name the outcome and the explanatory variable. Explain what stable differences across firms could otherwise muddy the comparison. Think about things like persistent differences in scale, technology, or business model.
 
 A useful question should make clear what changes within the same firm over time. Avoid claiming that a regression alone proves a causal effect.
 
@@ -140,7 +140,7 @@ Interpret the pooled OLS coefficient on `capital` from Question 2. Include:
 - what a one-unit increase in capital means in the dataset's units and what change in investment the estimate associates with it
 - what the unit of analysis is
 - whether the estimate combines differences **between firms** with changes **within firms over time**
-- whether the coefficient is statistically distinguishable from zero at the 5% level, based on the robust test
+- whether the coefficient is statistically different from zero at the 5% level, based on the robust test
 
 End with one sentence on why this pooled association alone may not answer the research question you wrote in Question 1.
 
