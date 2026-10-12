@@ -1,0 +1,327 @@
+---
+title: "In-Class Activity: Heteroskedasticity"
+output: html_document
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+library(wooldridge)
+library(tidyverse)
+library(lmtest)
+library(sandwich)
+library(broom)
+
+data("saving")
+saving <- na.omit(saving)
+```
+
+# In-class activity overview
+
+**Topic:** Heteroskedasticity — what causes it, how to diagnose it, and how to deal with it
+
+**Dataset:** `saving` from the `wooldridge` package
+
+
+
+## Learning goals
+
+By the end of class, you should be able to:
+
+1. explain why heteroskedasticity often appears in cross-sectional data,
+2. diagnose heteroskedasticity using plots and formal tests,
+3. explain what heteroskedasticity changes about OLS inference,
+4. use robust standard errors, and
+5. estimate a simple WLS model when we assume a form of the variance.
+
+## Data reminder
+
+The `saving` dataset includes household annual savings (`sav`), annual income (`inc`), family size (`size`), education of the household head (`educ`), age of the household head (`age`), and a race indicator (`black`).
+
+Use `?saving` for more information.
+
+---
+
+# Activity 1 (10 minutes): Check out the data and think about causes
+
+
+## 1a. Inspect the data
+
+Take a look at the summary statistics and data structure.
+
+```{r}
+# data structure
+
+# summary stats
+```
+
+## 1b. Plot savings against income
+
+Create a scatterplot of `sav` against `inc`. Add a linear regression line.
+
+```{r}
+# put your scatterplot here
+```
+
+## 1c. Write 2–3 sentences
+
+In words, why might higher-income households show more variation in savings than lower-income households?
+
+> **Answer:**
+
+
+
+---
+
+# Activity 2 (10 minutes): Fit OLS and diagnose with plots
+
+Estimate the simple model
+
+
+$sav_i = \beta_0 + \beta_1 inc_i + u_i$
+
+```{r}
+# estimate your model here
+
+# show your results here
+```
+
+## 2a. Residual plot against fitted values
+
+Plot your model residuals against your fitted values.
+
+```{r}
+# save your residuals and fitted values
+
+
+# plot your residuals against your fitted values. Add a horizontal line at zero.
+
+```
+
+## 2b. Plot squared residuals against income
+
+Plot your squared residuals from your model against income.
+
+```{r}
+# create your scatterplot of your squared residuals from your model against income here
+```
+
+## 2c. Write 2–3 sentences
+
+What pattern do you see? Does it look consistent with homoskedasticity or heteroskedasticity?
+
+> **Answer:**
+
+
+
+---
+
+---
+
+# Activity 3 (12 minutes): Breusch–Pagan test by hand
+
+We will now carry out the BP test manually.
+
+## 3a. Step 1: get squared residuals
+
+```{r}
+# save your model's squared residuals
+
+```
+
+## 3b. Step 2: auxiliary regression
+
+Regress the squared residuals on `inc`.
+
+```{r}
+# Regress the squared residuals on the dependent variable
+```
+
+## 3c. Step 3: compute the BP test statistic
+
+Recall:
+
+
+$BP = n \times R^2$
+
+### 3a. Compute the test statistic
+
+### 3b. Compute the critical value at 5 %
+
+### 3c. Compute the p-value of the test statistic
+
+
+
+```{r}
+# compute the test statistic
+
+# compute the critical value at 5%
+
+# Compute the p-value of the test statisitc
+```
+
+## 3d. Decision
+
+State the null and alternative hypotheses, then say whether you reject the null at the 5% level.
+
+> **Answer:**
+
+
+
+---
+
+# Activity 4 (10 minutes): White test
+
+Now perform a White-style heteroskedasticity test for our model. You may use `bptest()` for this one.
+
+```{r}
+# do your White test here
+
+```
+
+## 4a. Compare BP and White
+
+In 3–4 sentences, explain the difference between the BP test and the White test.
+
+> **Answer:**
+
+
+
+## 4b. Why might the White test be useful?
+
+> **Answer:**
+
+
+
+
+---
+
+# Activity 5 (10 minutes): Conventional vs robust standard errors
+
+## 5a. Usual OLS output
+
+```{r}
+# display the usual OLS output here (homoskedasticity-assumed standard errors)
+```
+
+## 5b. HC1 robust standard errors
+
+```{r}
+# display OLS output here with robust standard errors.
+```
+
+## 5c. Short response
+
+Did the coefficient estimate on `inc` change? Did the standard error change? Why?
+
+> **Answer:**
+
+
+
+---
+
+# Activity 6 (10 minutes): Add controls and think about pure vs impure heteroskedasticity
+
+Now estimate a richer model:
+
+
+$sav_i = \beta_0 + \beta_1 inc_i + \beta_2 size_i + \beta_3 educ_i + \beta_4 age_i + \beta_5 black_i + u_i$
+
+```{r}
+# estimate your model here 
+
+# now display results with robust standard errors.
+```
+
+## 6a. Diagnose again
+
+Make a residual-versus-fitted plot for `mod2`.
+
+```{r}
+# save your residuals and fitted values here
+
+# create your scatterplot of residuals vs. fitted values here. Add a horizontal line at zero.
+```
+
+## 6b. Reflection
+
+Did adding controls eliminate the heteroskedasticity? If not, is that more consistent with pure or impure heteroskedasticity?
+
+> **Answer:**
+
+
+
+
+
+---
+
+# Activity 7 (12 minutes): Weighted least squares
+
+Suppose we believe the error variance rises proportionally with income squared:
+
+
+$Var(u_i \mid inc_i) = \sigma^2 inc_i^2$
+
+Then a simple WLS approach is to weight observations by \(1 / inc_i^2\).
+
+## 7a. Estimate WLS
+
+```{r}
+#estimate your weighted least squares model sav ~ inc
+
+# display your model's results with robust standard
+
+```
+
+## 7b. Compare OLS and WLS coefficients
+
+```{r}
+# compare your coefficients from your simple linear model and your WLS model
+
+```
+
+## 7c. Short response
+
+Why do high-income observations receive less weight in this WLS model?
+
+> **Answer:**
+
+
+
+---
+
+# Activity 8 (8 minutes): Wrap-up synthesis
+
+Answer each in 1–2 sentences.
+
+## 8a. What usually causes heteroskedasticity in cross-sectional data like this?
+
+> **Answer:**
+
+
+
+## 8b. What are two ways to diagnose heteroskedasticity?
+
+> **Answer:**
+
+
+
+## 8c. What are two ways to deal with heteroskedasticity?
+
+> **Answer:**
+
+
+
+## 8d. Final takeaway
+
+Complete the sentence:
+
+> “Heteroskedasticity matters mainly because ____________________________________________.”
+
+
+
+---
+
+# Optional extension if your pair finishes early
+
+1. Repeat the BP test for `mod2`.
+2. Compare `coeftest(mod2)` to `coeftest(mod2, vcov = vcovHC(mod2, type = "HC1"))`.
+3. Try plotting `abs(.resid)` against `inc` for both `mod1` and `mod2`.

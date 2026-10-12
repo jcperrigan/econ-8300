@@ -1,0 +1,771 @@
+---
+title: "Heteroskedasticity Sample Notebook"
+output: 
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+
+```{r}
+# quantreg has the engel dataset, modelsummary is used for the model comparison tables at the end of the notebook
+
+need <- c("tidyverse", "quantreg", "sandwich", "lmtest", "car", "kableExtra", "modelsummary")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have])
+invisible(lapply(need, library, character.only = TRUE))
+source("reporting.R")
+```
+
+```{r}
+data("engel")
+```
+
+# What is heteroskedasticity?
+
+Let’s start with what heteroskedasticity is not. The Gauss Markov assumption is that all of the observations of the response/ dependent variable come from distributions with the same variance. That means that the variance of the unobservable $u$, conditional on $x$, is constant:
+
+$Var(u | x) = \sigma^2$.
+
+This is different from the conditional mean assumption, $E(u|x) = 0$. That assumption involves the expected value of $u$, while the assumption of homoskedasticity concerns the variance of $u$ (both conditional on $x$).
+
+## Pure vs. impure heteroskedasticity
+
+We can classify heteroskedasticity into two general types:
+
+* Pure heteroskedasticity refers to cases where we've specified the correct model and yet still observe non-constant variance in the residuals.
+
+* Impure heteroskeskedasticity refers to when we have incorrectly specified the model and that is causing the non-constant variance. As the omitted variable is absorbed into the error term, if the effect of the omitted variable varies throughout the observed range of data it can produce signs of heteroskedasticity in the residuals.
+
+When we observe heteroskedasticity in the residuals using residual plots, it's important to determine whether it's pure or impure because that will help to determine the solution. If it's the impure form, you need to identify the omitted variable(s) and refit the model. For the remainder of the sample notebook, I'll discuss the pure form of heteroskedasticity.
+
+## The variance of the error
+
+### Reminding ourselves of OLS in matrix form
+
+If we have a linear model:
+
+$Y = X \beta + u$,
+
+where $Y$ is an $n \times 1$ column vector of $y_i$:
+
+$$
+\begin{bmatrix}
+y_1 \\
+y_2 \\ 
+\vdots \\
+y_n
+\end{bmatrix}
+$$
+
+$X$ is some $n \times k$ matrix of $x$ variables plus the intercept:
+
+$$
+\begin{bmatrix}
+1 & x_{11} & x_{21} & \dots & x_{k1} \\
+1 & x_{12} & x_{22} &  \dots & x_{k2} \\ 
+\vdots & \vdots & \vdots & \dots & \vdots \\
+1 & x_{1n} & x_{2n} & \dots & x_{kn} 
+\end{bmatrix}
+$$
+
+$\beta$ is a column vector of $\beta$s:
+
+$$
+\begin{bmatrix}
+\beta_0 \\
+\beta_1 \\
+\vdots \\
+\beta_n
+\end{bmatrix}
+$$
+
+and $u$ is a column vector of errors:
+
+$$
+\begin{bmatrix}
+u_1 \\
+u_2 \\ 
+\vdots \\
+u_n
+\end{bmatrix}
+$$
+
+Since we're solving the whole "Ordinary Least Squares" problem by minimizing the sum of the squared residuals, we're taking:
+
+$$
+\begin{bmatrix} u_1 & u_2 & \dots & u_n \end{bmatrix}_{1 \times n}
+\quad
+\begin{bmatrix} u_1 \\ u_2 \\ \vdots \\ u_n \end{bmatrix}_{n \times 1}
+\quad
+= \begin{bmatrix} u_1 \times u_1 + u_2 \times u_2 + \dots + u_n \times u_n \end{bmatrix}_{1 \times 1}
+$$
+
+
+
+Since we can also write our residuals as $u = y -X\hat\beta$, we can then write the sum of squared residuals as:
+
+$$
+\begin{align*}
+u'u &= (y - X \hat\beta)' (y - X \hat\beta) \\\\
+&= y'y - \hat\beta X'y - y'X \hat\beta + \hat\beta X'X \hat\beta \\\\
+&= y'y - 2 \hat\beta X'y + \hat\beta X'X \hat\beta
+\end{align*}
+$$
+(This is using the fact that the transpose of a scalar is the scalar: $y'X\hat\beta = (y'X\hat\beta)' = \hat\beta X'y$). A scalar is a $1 \times 1$ matrix, so switching its rows and columns gives us the same value. This is because $y'$ is a $1 \times n$ matrix, multiplied by $X$, which is a $n \times k$ matrix. The result of $y'X$ is a $1 \times k$ matrix. $\hat\beta$ is a $k \times 1$ matrix, so when we multiply that to the result of $y'X$ we get a $1 \times 1$ matrix, otherwise known as a scalar.)
+
+We then find the derivative of the equation above with respect to our $\hat\beta$ and set it equal to zero, and we get our "normal equations":
+
+$$
+(X'X)\hat{\beta} = X'y
+$$
+
+
+We want to get $\hat{\beta}$ alone on one side of the equation, but we can't just divide each side by $(X'X)$ exactly, we have to do it in the matrix way. So if the inverse of $(X'X)$ exists, then if we pre-multiply both sides by the inverse it's basically the way to do this division:
+
+$$
+\begin{align*}
+(X'X)\hat{\beta} &= X'y \\
+(X'X)^{-1} (X'X) \hat{\beta} &= (X'X)^{-1}X'y \\
+\hat{\beta} &= (X'X)^{-1}X'y
+\end{align*}
+$$
+
+
+### Back to the variance
+
+So now we have our expression for $\hat\beta = (X'X)^{-1}X'y$.
+
+We will also assume that $E[\hat\beta] = \beta$ and our estimators are unbiased.
+
+If we start from the Data Generating Process $y = X\beta + u$ and substitute:
+
+$$
+\begin{align*}
+\hat\beta &= (X'X)^{-1}X'(X\beta + u) \\
+&= \beta + (X'X)^{-1}X'u
+\end{align*}
+$$
+
+Then we take the variance. And since $\beta$ is constant and we know the $X$ from our data, we can pull the constants outside:
+
+$$
+\begin{align*}
+Var(\hat\beta | X) &= Var((X'X)^{-1}u | X) \\
+&= (X'X)^{-1}X' Var(u | X) X(X'X)^{-1}
+\end{align*}
+$$
+
+
+We can define
+
+$\Omega = Var(u | X)$
+
+And then rewrite the general variance formula as:
+
+$$
+Var(\hat\beta | X) = (X'X)^{-1}X' \Omega X(X'X)^{-1}
+$$
+
+Under the Gauss Markov assumptions, error are heteroskedastic and uncorrelated, so 
+
+$$
+Var(u_i) = \sigma^2 \\
+\text{and} \\
+Cov(u_i, u_j) = 0
+$$
+
+This means that the covariance matrix becomes 
+
+$$
+\Omega = \sigma^2 I,
+$$
+
+
+where $I$ is the identity matrix (the matrix version of 1).
+
+It means that each observation contributes independent noise, and each with the same variance
+
+If we substitute $\Omega = \sigma^2 I$ into the equation for the variance of $\hat\beta$, you'll get the equation for the variance you may have seen before:
+
+$$
+\begin{align*}
+Var(\hat\beta | X) &= (X'X)^{-1}X' (\sigma^2 I) X (X'X)^{-1} \\
+&= \sigma^2 (X'X)^{-1}X'IX(X'X)^{-1} \\
+&= \sigma^2 (X'X)^{-1}X'X(X'X)^{-1} \\
+&= \sigma^2(X'X)^{-1}
+\end{align*}
+$$
+
+
+(We used the fact that $IX = X$ here).
+
+### What is the variance isnt' constant?
+
+If the variance isn't constant, then our $\Omega$ matrix instead looks like:
+
+$$
+\begin{bmatrix}
+\sigma^2_1 & 0 & 0 \\
+0 & \sigma^2_2 & 0 \\ 
+0 & 0 & \sigma^2_3
+\end{bmatrix}
+$$
+
+and the simplification to $\sigma^2 (X'X)^{-1}$ doesn't work anymore.
+
+And that's also why it's called the "sandwich" estimator. 
+
+if we look at the structure of the variance term:
+
+$$
+Var(\hat\beta | X) = (X'X)^{-1}X' \Omega X(X'X)^{-1}
+$$
+
+We can think of it like "bread -> filling -> bread".
+
+The top bread is the $(X'X)^{-1}$, the filling is the $X' \Omega X$, and the bottom bread is the $(X'X)^{-1}$.
+
+It's basically the same term as before for the variance. It's just that without the assumption of homoskedasticity, we can't simplify it down.
+
+If we don't use the simplifying assumption, then we replace the $\Omega$ matrix of $\sigma^2$ with an estimate using squared residuals instead, so they can vary instead of being all the same:
+
+
+$$
+\begin{bmatrix}
+\hat{u}^2_1 & 0 & 0 \\
+0 & \hat{u}^2_2 & 0 \\ 
+0 & 0 & \hat{u}^2_3
+\end{bmatrix}
+$$
+
+
+If we plug this in we get the heteroskedasticity-robust variance estimator.
+
+## Consequences of heteroskedasticity
+
+The assumption of homoskedasticity plays no role in proving that our estimators $\hat{\beta}$ are unbiased, (remember that unbiasedness means that $E(\hat{\beta}) = \beta$). The assumption also doesn't play a role in whether OLS is consistent.
+
+But the presence of heteroskedasticity does mean that the estimators of the *variances* are biased. Because the OLS standard errors are directly based on these variances, they are no longer valid for constructing confidence intervals and *t *-statistics. This is a problem since that's what we use for hypothesis testing! 
+
+Heteroskedasticity tends to produce p-values that are smaller than they should be. This happens because heteroskedasticity increases the variance of the coefficient estimates but OLS doesn't detect this increase, and OLS calculates the *t*-statistics and *F*-values using an underestimated amount of variance. This problem can lead you to conclude that a model term is statistically significant when it isn't actually significant.
+
+The usual OLS t statistics do not have *t* distribution when there is heteroskedasticity, and we can’t fix it by using larger sample sizes.
+
+Plus, the Gauss-Markov theorem that says that OLS is BLUE relies on the homoskedasticity assumption. If $Var(u|x)$ is no longer constant, OLS is no longer BLUE and is no longer asymptotically efficient. If there is heteroskedasticity, it is possible to find estimators that are more efficient than OLS.
+
+# What causes heteroskedasticity?
+
+The causes for heteroskedasticity vary widely by subject area. If you detect heteroskedasticity in the model, you'll need to use your expertise to understand why it's occurring. Often, the key is to identify the proportional factor that's associated with the changing variance (see below). In general, though, a cause of heteroskedasticity is a wide range of values.
+
+## Wide ranges of values
+
+Heteroskedasticity occurs more often in datasts that have a large range between the smallest and largest observed values. 
+
+A common explanation is that the error variance changes proportionally with a factor. This factor might be a variable in the model.
+
+In some cases, the variance increases proportionally with this factor but remains constant as a percentage. For example, a 10% change when the initial value is 100 is much smaller than a 10% change when the initial value is 100,000. 
+
+That's why there can be problems to look out for when working with wide ranges of values, including that they're more prone to heteroskedasticity.
+
+## Heteroskedasticity in cross-sectional studies
+
+Cross-sectional data usually have very small and very large values and are therefore more likely to have heteroskedasticity. A cross-sectional study that involves the U.S. can have very low values for Rhose Island and very high values for California. Or a cross-sectional study of incomes can have a range that extends from people living in poverty to billionaires.
+
+## Heteroskedasticity in time series
+
+A time-series model can have heteroskedasticity if the dependent variable changes significantly from the beginning to the end of the series. For example, if we model the sales of DVD players from their first sales in 2000 to 2010, the number of units sold changed a lot over that time. But we'll return back to time series later.
+
+
+# Diagnosing heteroskedasticity
+
+To illustrate heteroskedasticity, we're going to be using household expenditure data.
+
+We are going to be regressing food expenditures on income:
+
+$food\_exp = \beta+0 + \beta_1 \cdot income$.
+
+In this food model, we’d expect that expenditures on food would stay close to the regression line (its mean) at lower incomes, and be more spread about its mean at higher incomes.
+
+That’s because, at higher incomes, people have more choices whether to spend their extra income on food or something else. This would cause the variance of the error term given values of the independent variable, $Var(u | x)$,  to be different at lower levels of income than at higher levels of income, meaning that it’s not constant! 
+
+**Sample data description**
+
+This dataset is the `Engel` food expenditure data used in Koenker and Bassett (1982). This is a regression data set consisting of 235 observations on income and expenditure on food for Belgian working class households.
+
+The data frame contains 235 observations on 2 variables:
+
+* **income** - annual household income in Belgian francs
+
+* **foodexp** - annual household food expenditure in Belgian francs
+
+References:
+
+Koenker, R. and Bassett, G (1982) Robust Tests of Heteroscedasticity based on Regression Quantiles; Econometrica 50, 43–61.
+
+## Diagnosing heteroskedasticity with plots
+
+### Spotting heteroskedasticity in scatter plots
+
+First we'll take a look at a scatter plot of the `engel` data with the regression line.
+
+```{r, fig.alt = "Scatterplot of income vs food expenditure."}
+ggplot(engel, aes(x = income, y = foodexp)) + 
+  geom_point(color = 'darkorchid') + 
+  geom_smooth(method = 'lm', formula = y ~ x, color = 'cornflowerblue') + 
+  labs(x = 'income', y = 'foodexp')
+```
+
+Here we see how the observations are more spread out at higher incomes, which is also reflected in how the confidence interval (the lighter blue shading around the regression line) gets wider at higher levels of income.
+
+**Plotting the residuals against fitted values**
+
+Another useful way to visualize potential heteroskedasticity is to plot the residuals against the regressors that we think may be causing the heteroskedasticity, or against the fitted values of the regression. We'll add a horizontal line at zero, as the residuals should look random around zero.
+
+
+In this visualization, we're using the fitted values on the x-axis. To do this, we're using the model we built and then getting the predicted values of *y* ($\hat{y}$).
+
+This plot shows the difference between the observed response (our $y_i$) and the predicted response (the $\hat{y}$).
+
+The ideal residual plot shows a random scatter of points around the horizontal line at $y = 0$.
+
+```{r}
+mod1 = lm(foodexp ~ income, data = engel)
+```
+
+```{r, fig.alt = "Scatterplot of fitted values vs residuals, food expenditure on income model."}
+ggplot(mod1) + 
+  geom_hline(aes(yintercept = 0), color = 'cornflowerblue', size = 1) + 
+  geom_point(aes(x = fitted(mod1), y = residuals(mod1)), color = 'darkorchid') + 
+  labs(x = 'fitted values', y = 'residuals')
+```
+As we can see in both of our residual plots, we're seeing the classic pattern for heteroskedasticity: a cone or fan shape. This shows us that, as the values of income or the fitted values increase, the variance of the residuals is also increasing.
+
+## Heteroskedasticity tests
+
+Let's say we have a regression model that we want to test for heteroskedasticity:
+
+$y_i = \beta_0 + \beta_1 x_{i1} + \cdots + \beta_K x{iK} + u_i$.
+
+Our null hypothesis is homoskedasticity:
+
+$H_0: Var(u | x_1, x_2, \cdots , x_k) = \sigma^2$.
+
+Because we're assuming that $u$ has a zero conditional expectation ($E(u|x) = 0$), that means that $Var(u|x) = E(u^2 | x)$. We can therefore also write the null hypothesis as:
+
+$H_0: E(u^2 | x_1, x_2, ..., x_k) = E(u^2) = \sigma^2$.
+
+We're testing whether $u^2$ is related in expected value to one or more of the explanatory variables. 
+
+To test this hypothesis, we assume a linear function:
+$u^2 = \delta_0 + \delta_1 x_1 + \cdots + \delta_k x_k + v$, where $v$ is an error term with mean zero given the $x_j$.
+
+Our null hypothesis then becomes:
+
+$H_0: \delta_1 = \cdots = \delta_k = 0$.
+
+### The Breusch-Pagan test
+
+The **Breusch-Pagan heteroskedasticity test** uses this method, where the regressors $\delta_k$ are the variables $x_k$ in the initial model.
+
+1. Estimate the initial model
+2. Get the residuals from that model and square them
+3. Estimate a new model with the squared residuals as the dependent variable
+4. Get the $R^2$ of the new model and the number of observations *n*
+5. Multiply the $R^2$ and the number of observations *n* to find the test statistic
+6. Compare that test statistic to the $\chi^2_{k}$ critical value.
+
+The relevant test statistic is $\chi^2$, where $R^2$ is the one we got when estimating the final equation above:
+
+$\chi^2 = N \times R^2 \sim \chi^2_{k}$.
+
+Let's apply this test to our food expenditure model. The function to determine a critical value of the $\chi^2$ distribution for a significance level $\alpha$ and $S-1$ degrees of freedom is qchisq(1-alpha, S-1).
+
+```{r}
+# Set significance level 
+alpha = .05
+
+# Estimate the initial model
+mod1 = lm(foodexp ~ income, data = engel)
+
+# Square the residuals from the initial model
+resid_sq = resid(mod1)^2
+
+# Estimate the test equation
+mod_res = lm(resid_sq ~ income, data = engel)
+
+# Get the number of observations
+N = nobs(mod_res)
+
+## Number of predictors
+k = length(coef(mod_res))-1  #-1 for intercept
+
+# Find the critical value (chi-square is a right-tail test, so we need lower.tail to be FALSE)
+chisqcr = qchisq(p = alpha, df = k, lower.tail = FALSE) 
+
+# Get the R-squared from the test model
+Rsqres = summary(mod_res)$r.squared
+
+# Calculate the test statistic
+chisq = N * Rsqres
+
+# Get the p-value for the test statistic
+pval = 1 - pchisq(chisq, k) #pchisq gives the chi-squared distribution function
+pval
+```
+
+We could also do the same thing using "bptest()":
+
+```{r}
+cat("the p-value of the BP test is", bptest(foodexp ~ income, data = engel)$p.value)
+```
+We see that the p-value is very small, no matter which way we do the test. The null value is homoskedasticity, and since our p-value is lower than the significance level we can reject the null.
+
+### The White test
+
+The **White test for heteroskedasticity** uses a quadratic form. Let's use this version:
+
+```{r}
+# Set significance level alpha
+alpha = .05
+
+# Estimate the initial model
+mod1 = lm(foodexp ~ income, data = engel)
+
+# Square the residuals from the initial model
+resid_sq = resid(mod1)^2
+
+# Estimate the test equation
+mod_resres = lm(resid_sq ~ income + I(income^2), data = engel)
+
+# Get the number of observations
+N = nobs(mod_res)
+
+## Number of predictors
+k = length(coef(mod_res))-1  #-1 for intercept
+
+# Get the R-squared from the test model
+Rsqres = summary(mod_res)$r.squared
+
+# Calculate the test statistic
+chisq = N * Rsqres
+
+# Get the p-value for the test statistic
+pval = 1 - pchisq(chisq, k) #pchisq gives the chi-squared distribution function
+pval
+```
+
+Or we can do the same thing using bptest() and the White version of the test equation:
+
+```{r}
+cat("The p-value of the White test is", bptest(foodexp ~ income + I(income^2), data = engel)$p.value)
+```
+
+We again see that the p-value is very small, no matter which way we do the test. The null value is homoskedasticity, and since our p-value is lower than the significance level we can reject the null. Looks like we need to deal with this heteroskedasticity!
+
+# Dealing with heteroskedasticity
+
+Now that we've detected heteroskedasticity, what do we do about it? There are various methods for resolving this issue, which I will list in order of preference. This preference is based on minimizing the amount of data manipulation.
+
+## Robust standard errors
+
+Since heteroskedasticity makes the least-squares standard errors incorrect, we need to use another method to calculate them. White robust standard errors does the job.
+
+To calculate robust standard errors, we can use the coeftest() function from the lmtest package and the vcovHC() function from the sandwich package.
+
+Let's compare the regular (incorrect) errors with the robust standard errors for our food expenditure model. We will use "HC1" because it works well with larger sample sizes ("HC2" and "HC3" are better for smaller sample sizes).
+
+
+```{r, results = "asis"}
+foodeq = lm(foodexp ~ income, data = engel)
+
+mk_coeftab(
+  foodeq,
+  mode = "simple",
+  caption = "Food expenditure on income (regular standard errors",
+  digits = 4
+)
+```
+
+```{r, results = "asis"}
+mk_coeftab_robust(
+  foodeq,
+  mode = "simple",
+  caption = "Food expenditure on income (robust SEs, HC1)",
+  digits = 4,
+  robust_type = "HC1"
+)
+
+```
+
+When we compare our results using robust standard errors to the initial results without standard errors, we see that the robust standard errors are larger. Since the coefficients are the same, the $t$-statistics are smaller and the $p$-values are higher.
+
+Why not always use robust standard errors? After all, if the robust standard errors are valid more often, why not use them all the time? 
+
+The robust standard errors and robust $t$ statistics are justified only as the sample size becomes large. With small sample sizes, the robust $t$ statistics can have strange distributions that can affect our inference.
+
+
+## Redefining the variables
+
+If the model is a cross-sectional model that includes a wide range of observations, you can find ways to specify the model that reduces that impact. For example, you could use logarithms instead of level variables.
+
+I prefer this method because it involves the least amount of tinkering with the original data. You only adjust the specific variables that need to be changed in a way that makes sense. Since this makes you think about different ways to specify your model, it can frequently improve it beyond just removing heteroskedasticity.
+
+When to use robust standard errors vs. a log transformation (or other variable redefinition)? I had saved a comment from Jeff Wooldridge himself in a Stata forum regarding this topic:
+
+"I don't think finding heteroskedasticity is, in itself, a good way to do model selection. A linear model for $y$ and for $ln(y)$ are different. Typically, the case for $ln(y)$ when $y > 0$ can be made without considering heteroskedasticity, although that can play a role. Typically the linear model for $ln(y)$ gives more natural meanings of the coefficients and fits better (although the latter is a bit tricky). As a bonus, it often does reduce heteroskedasticity and also makes the error more normally distributed. But this is not guaranteed; it is casual empiricism.
+
+You can always make your standard errors robust to heteroskedasticity when using linear regression; it doesn't matter what transformation of y you use. If you are trying to choose between $y$ and $ln(y)$ based purely on statistics, you should use valid goodness of fit measures. I propose some possibilities in my introductory econometrics book." 
+
+The specific question was regarding $ln(y)$, but we can use the same logic with any log transformation: the transformation (or other redefinition) should make sense without considering heteroskedasticity. In the case of $income$, using the log definitely makes sense, heteroskedasticity or not!
+
+So instead of using $income$, let's use $ln(income)$ in our food expenditure model. First we'll look at the residual plots and see if they're any better:
+
+```{r}
+foodeq_log = lm(foodexp ~ log(income), data = engel)
+```
+
+```{r, fig.alt = "Scatterplot of fitted values vs residuals, food expenditure on income model."}
+ggplot(foodeq_log) + 
+  geom_hline(aes(yintercept = 0), color = 'cornflowerblue', size = 1) + 
+  geom_point(aes(x = fitted(foodeq_log), y = residuals(foodeq_log)), color = 'darkorchid') + 
+  labs(x = 'fitted values', y = 'residuals')
+```
+
+It still looks like there's a pattern, but perhaps less of one. Let's do a Breusch-Pagan test to see if there's an improvement:
+
+```{r}
+cat("the p value of the BP test is", bptest(foodexp ~ log(income), data = engel)$p.value)
+```
+
+The test statistic decreased, but not by enough! 
+
+## Generalized Least Squares: Known Form of Variance
+
+Weighted Least Squares regression is a type of GLS that assigns each data point a weight based on the variance of its fitted value. Here we know the form of the variance. The idea is to give small weights to observations associated with higher variances to shrink their squared residuals. Weighted regression minimizes the sum of the weighted squared residuals.
+
+For our data, we know that higher incomes are associated with higher variances. We therefore need to assign lower weights to observations of higher incomes. Finding the theoretically correct weight can be difficult. We will try some different weighting methods to see which one is the best.
+
+First we will assign a weight to $income$, then reestimate the model. Then we'll estimate WLS regression using $ln(income)$. Finally, we'll compare all of our models with log-transformed income (OLS, OLS with robust standard errors, and WLS).
+
+
+```{r}
+foodeq_log = lm(foodexp ~ log(income), data = engel)
+
+wt = 1 / log(engel$income)
+food.wls = lm(foodexp ~ log(income), weights = wt, data = engel)
+
+```
+
+```{r, results = "asis"}
+mk_coeftab(
+  food.wls,
+  mode = "simple",
+  caption = "Weighted least squares estimates",
+  digits = 4
+)
+```
+Let's compare these results to those using the log transformation of income but with regular and robust standard errors:
+
+
+```{r, results = "asis"}
+mk_coeftab(foodeq_log,
+           mode = "simple",
+           caption = "Food expenditure on log(income) (regular standard errors)",
+           digits = 4)
+```
+
+
+```{r, results = "asis"}
+mk_coeftab_robust(foodeq_log,
+           mode = "simple",
+           caption = "Food expenditure on log(income) (robust SE, HC1)",
+           digits = 4, 
+           robust_type = "HC1")
+```
+
+
+The WLS model multiplies the variables by $1 / \sqrt{income}$, where the weights provided are $w = 1 / income$. The effect of introducing the weights is a slightly lower intercept and, more importantly, different standard errors. Note that the WLS standard errors are closer to the OLS standard errors than the robust (HC1) standard errors.
+
+## Grouped data 
+
+The **Goldfelt-Quandt** heteroskedasticity test is used when we need to test whether a dummy indicator variable has the same variance across groups 1 and 2:
+
+$$
+H_0: \hat{\sigma^2_1} = \hat{\sigma^2_2}.
+$$
+
+
+The test statistic has an $F$ distribution with its degrees of freedom equal to the degrees of freedom of the two subsamples, $N_1 - K$ and $N_0 - K$.
+
+$$
+F = \frac{\hat{\sigma^2_1}}{\hat\sigma^2_2}
+$$
+
+
+
+We'll use the wage2 data from the wooldridge package:
+
+```{r}
+library(wooldridge)
+data('wage2')
+```
+
+In the wage2 data there's a dummy variable that splits the data into two groups, urban and rural, that may have different variances.
+
+We'll split the data into the two groups to test.
+
+```{r}
+alpha = .05
+urban = wage2[which(wage2$urban == 1),]
+rural = wage2[which(wage2$urban == 0),]
+
+wgurban = lm(wage ~ educ + exper, data = urban) # wage on education and experience for the urban group 
+wgrural = lm(wage ~ educ + exper, data = rural) # wage on education and experience for the rural group 
+
+dfurban = wgurban$df.residual #numerator degrees of freedom, urban group
+dfrural = wgrural$df.residual #denominator degrees of freedom, rural group
+
+#gets the standard deviation of the residuals and squares them
+sigurbansq = glance(wgurban)$sigma^2
+sigruralsq = glance(wgrural)$sigma^2
+
+# gets the f statistic
+fstat = sigurbansq / sigruralsq
+
+Flc <- qf(alpha/2, dfurban, dfrural) #Left (lower) critical F
+Fuc <- qf(1-alpha/2, dfurban, dfrural) #Right (upper) critical F
+
+cat("The F statistic is", fstat, ", the lower tail critical F value is", Flc, ", and the upper tail critical F value is", Fuc)
+
+```
+
+Since our calculated $F$ statistic is greater than the upper critical value, we reject the null hypothesis that the two variances are equal. 
+
+The generalized least squares method can account for group heteroskedasticity, by choosing appropriate weights for each group; if the variables are transformed by multiplying them by  $1/\sigma_j$, for group $j$, the resulting model is homoskedastic. Since  $\sigma_j$ is unknown, we replace it with its estimator $\hat{\sigma_j}$. 
+
+```{r}
+# rural OLS model
+rural.lm = lm(wage~educ+exper, data=wage2, subset=(urban==0))
+# Extract the residual standard deviation for our FGLS sigma
+sigR = summary(rural.lm)$sigma
+
+# urban OLS model
+urban.lm = lm(wage~educ+exper, data=wage2, subset=(urban==1))
+#Extract the residual standard deviation for our FGLS sigma
+sigU = summary(urban.lm)$sigma
+
+# creates a vector of zeros and adds them to the wage2 data
+wage2$wght = rep(0, nrow(wage2))
+
+# Create a vector of weights
+# If observation i is rural (urban = 0) then weight = 1/sigR^2
+# If observation i is urban (urban = 1) then weight = 1/sigU^2
+for (i in 1:nrow(wage2)) 
+{
+  if (wage2$urban[i]==0){wage2$wght[i] = 1/sigR^2}
+  else{wage2$wght[i] = 1/sigU^2}
+}
+
+#Estimate the FGLS model
+wge.fgls = lm(wage ~ educ + exper + urban, weights=wght, data=wage2)
+
+#Estimate the OLS model
+wge.lm = lm(wage ~ educ + exper + urban, data=wage2)
+
+```
+
+
+Now let's take a look at our results:
+
+```{r, results = "asis"}
+
+mods <- list(rural.lm, urban.lm, wge.fgls, wge.lm)
+
+vcovs <- list(
+  NULL,
+  NULL,
+  NULL,
+  sandwich::vcovHC(wge.lm, type = "HC1")
+)
+
+mk_coef_compare(
+  models = mods,
+  model_names = c("Rural OLS", "Urban OLS", "FGLS", "HC1"),
+  vcov_list = vcovs,
+  caption = "Coefficient and standard error comparison across models"
+)
+```
+
+The table helps comparing the coefficients and standard errors of four models: OLS for rural area, OLS for urban area, feasible GLS with the whole dataset but with two types of weights, one for each area, and, finally, OLS with heteroskedasticity-consistent (HC1) standard errors. Remember that the regular OLS standard errors are not to be trusted in the presence of heteroskedasticity.
+
+Why are the residuals used for weights squared? It's because the weights argument in the lm() function requires the square of the factor multiplying the regression model in the WLS method.
+
+
+## GLS: Unknown Form of Variance
+
+Let's say we have a regression model that we want to test for heteroskedasticity:
+
+$y_i = \beta_0 + \beta_1 x_{i1} + \cdots + \beta_K x{iK} + u_i$.
+
+We use the residuals from this equation as estimates of the variance of the error terms and estimates the functional form of the variance. 
+
+If the assumed functional form of the variance is the exponential function $var(u_i) = \sigma^2_i$, then the regressors in the following equation are the logs of the initial regressors $x_{ik}$, $z_{is} = ln(X_{is})$:
+
+$ln(u^2) = \alpha_0 + \alpha_1 z_1 + \cdots + \alpha_s z_{is} + v_i$, where $v$ is an error term with mean zero given the $z_j$.
+
+Let's go back to our food equation, where we assume that the variance of error term $i$ is an unknown exponential function of income. What we need to do is figure out the weights and to give them to the lm() function.
+
+Remember, lm() multiplies each observation by the square root of the weight you give it. So if you want to multiply the observations by $1/\sigma_i$, you should supply the weight $w_i = 1/sigma^2_i$.
+
+
+```{r}
+# OLS
+food.ols = lm(foodexp ~ income, data = engel)
+
+# FGLS
+uhatsq = resid(food.ols)^2
+sighatsq.ols = lm(log(uhatsq) ~ log(income), data = engel)
+vari = exp(fitted(sighatsq.ols))
+food.fgls = lm(foodexp ~ income, weights = 1/vari, data = engel )
+
+#WLS
+wt = 1 / engel$income
+food.wls = lm(foodexp ~ income, weights = wt, data = engel)
+
+# HC1 standard errors 
+food.hc1 = coeftest(food.ols, vcov = vcovHC(food.ols, type = 'HC1'))
+```
+
+
+```{r, results = "asis"}
+mods <- list(food.ols, food.fgls, food.wls, food.ols)
+
+vcovs <- list(
+  NULL,
+  NULL,
+  NULL,
+  sandwich::vcovHC(food.ols, type = "HC1")
+)
+
+mk_coef_compare(
+  models = mods,
+  model_names = c("Regular SE", "FGLS", "WLS", "HC1"),
+  vcov_list = vcovs,
+  caption = "Coefficient and standard error comparison across models"
+)
+```
+
+As we see in the table, the FGLS with unknown variances model lowers the standard errors of the coefficients compared to robust standard errors, which in turn increases the $t$-statistics, making an important difference for hypothesis testing.
+
+

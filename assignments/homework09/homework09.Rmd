@@ -1,0 +1,284 @@
+---
+title: "ECON-8300"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+library(wooldridge)
+library(lmtest) #for coeftest() and bptest().
+library(sandwich) # for robust standard errors
+library(tidyverse) 
+```
+
+
+## Homework08
+
+Grading Rubric (per question):  
+2 points if complete and correct  
+0 points otherwise 
+
+
+#### Retrieving your work
+
+This and all future homework .Rmd files are written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing. 
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment. 
+
+#### Submitting your work
+
+When you upload your files to Canvas, you are to submit ***two*** files:
+
+a. Your reproducible document file (.Rmd) which should be saved as homework##-ID.Rmd. For example, my homework08 file would be saved as homework09-jperrigan.Rmd.
+
+b. Your rendered reproducible document file (.html) which should be saved as homework##-ID.html. For example, my homework08 file would be saved as homework09-jperrigan.html.
+
+Your ID is your Canvas username. It is also the text before the "@" symbol in your UNO email address.
+
+You have an unlimited number of submissions, but only the  latest submission will be viewed and graded. **Proper means that the file is correctly named and formatted. Latest means that the file is the most recent submission prior to the deadline. Remember the .Rmd file needs to render properly to .html before submitting.**
+
+
+***
+
+All students are expected to complete all problems.
+
+
+***Do not change anything in this file above the double line. Doing so will prevent your homework from being graded.***
+
+***
+***
+
+### Use the URLs to access the data. No local files allowed.
+
+
+For this problem set, we will be looking at the dataset "econmath", which looks at scores in an Economics class at Michigan State.
+
+$score = \beta_0 + \beta_1 age + \beta_2 work + \beta_3 study + \beta_4 act + \beta_5 male + u$, 
+
+where $score$ is course score in percentage points, $age$ is age in years, $work$ is hours worked per week, $study$ is hours spent studying per week, $act$ is a composite ACT score, and $male = 1$ if male. 
+
+The econmath data is in the wooldridge package. We will omit any rows with missing values by using na.omit().
+
+```{r}
+data("econmath")
+econmath = na.omit(econmath)
+?econmath
+```
+
+**#1** 
+
+**Problem:** Use the data in econmath to estimate the parameters of the model as written. Plot the squared residuals from that model against the predicted values from the model. Explain what you see in the residuals.
+
+Your answer should be written in the code chunk of the **Answer** section below. **Assign the plot to prob01.** You may write your explanation to what you see in the residuals below the code chunk.
+
+**Answer:**
+
+```{r, problem01}
+#prob01  
+```
+
+***
+
+**#2** 
+
+**Problem:** 
+
+a) Calculate the test statistic for the Breusch-Pagan test for the model used in question 1. You may not use the `bptest()` function from the `lmtest` package.
+
+b) Given the results of the BP test, do you reject the null hypothesis of homoskedasticity?
+
+Your answer should be written in the code chunk of the **Answer** section below. Save the test statistic to `prob02`. 
+
+**Answer:**
+
+```{r, problem02}
+#prob02  
+```
+
+***
+
+**#3** 
+
+**Problem:** Considering the same model, 
+
+$score = \beta_0 + \beta_1 age + \beta_2 work + \beta_3 study + \beta_4 act + \beta_5 male + u$, 
+
+perform a White test for heteroskedasticity. This time you may complete it "by hand" or use the `bptest()` function from `lmtest`. Can you reject the null of homoskedasticity?
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign either TRUE or FALSE logical value (TRUE if we have enough evidence to reject the null, FALSE if we don't) to `prob03`. 
+
+**Answer:**
+
+```{r, problem03}
+#prob03  
+```
+
+***
+
+**#4** 
+
+**Problem:** In 3-5 sentences, describe the difference between the Breusch-Pagan test and the White test for heteroskedasticity.
+
+Your answer should be written in the code chunk of the **Answer** section below. Save your answer as a string to `prob04`. If you prefer to write your answer below the chunk, assign a placeholder string to `prob04`.
+
+**Answer:**
+
+```{r, problem04}
+#prob04  
+```
+
+***
+
+**#5** 
+
+**Problem:** Estimate the model:
+
+$score = \beta_0 + \beta_1 age + \beta_2 work + \beta_3 study + \beta_4 act + \beta_5 male + u$.
+
+Display the results using 
+
+a) homoskedasticity-assumed standard errors and 
+
+b) HC1 robust standard errors.
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign the regression results summary to `prob05`.
+
+**Answer:**
+
+```{r, problem05}
+#prob05  
+```
+
+***
+
+**#6** 
+
+**Problem:** Considering our model:
+
+$score = \beta_0 + \beta_1 age + \beta_2 work + \beta_3 study + \beta_4 act + \beta_5 male + u$.
+
+Suppose the error variance is believed to increase with hours worked, so
+
+$Var(u_i | X_i) = \sigma^2 (1 + work_i)$
+
+
+a) Let 
+
+$h_i = 1 + work_i$
+
+Rewrite the variance as $Var(u_i | X_i) = \sigma^2 h_i$
+
+b) Explain why the assumption $Var(u_i | X_i) = \sigma^2 (1 + work_i)$ implies heteroskedasticity
+
+
+Your answer should be written in the code chunk of the **Answer** section below. You can assign your answers as strings to `prob06`, or assign a placeholder string and write your answers below the code chunk.
+
+
+**Answer:**
+
+```{r, problem06}
+#prob06  
+```
+
+***
+
+**#7** 
+
+**Problem:** 
+
+a) Suppose we divide the entire regression equation by $\sqrt{h_i}$. Define the transformed error term
+
+$u_i^* = \frac{u_i}{\sqrt{h_i}}$
+
+Using properties of variance, compute $Var(u_i^*|X)$ in terms of $Var(u_i|X_i)$.
+
+Then substitute the expression from part **a** to show that 
+
+$Var(u_i^* | X_i = \sigma^2)$
+
+(Remember that $Var(aX) = a^2 Var(X)$)
+
+b) Estimate your model by WLS, where the weights are:
+
+$w_i = \frac{1}{1 + work_i}$
+
+Your answer should be written in the code chunk of the **Answer** section below. You can assign your answer to part a as a string to `prob07`, or assign a placeholder string and write your answer below the code chunk.
+
+**Answer:**
+
+```{r, problem07}
+#prob07  
+```
+
+***
+
+**#8** 
+
+**Problem:** 
+
+a) Compare your WLS results to your OLS results from question 4. What is different?
+
+b) Explain why higher-work observations receive less weight in the WLS regression.
+
+Your answer should be written in the code chunk of the **Answer** section below. You can assign your answers as strings to `prob08`, or assign a placeholder string and write your answers below the code chunk.
+
+**Answer:**
+
+```{r, problem08}
+#prob08  
+```
+
+***
+
+**#9** 
+
+**Problem:** The researcher wants to test whether the variance when $male = 1$ is the same as when $male = 0$. They choose to use a Goldfelt-Quandt heteroskedasticity test to compare the variance.
+
+The model to be applied to the two subsamples is:
+
+$score = \beta_0 + \beta_1 age + \beta_2 work + \beta_3 study + \beta_4 act + u$
+
+a) Find the degrees of freedom needed to complete the Goldfelt-Quandt test. Assign the degrees of freedom to a vector, with the degrees of freedom when $male = 1$ first and the degrees of freedom when $male = 0$ second. 
+
+b) Use a Goldfeld-Quandt heteroskedasticity test and the degreees of freedom in question 5 to compare the variance when $male = 1$ to $male = 0$ (whether there is a difference in variance in two different groups). Find the F-statistic from the test.
+
+Your answer should be written in the code chunk of the **Answer** section below. The answer to part **a** should be saved as a vector to `prob09`. The answer to part **b** should be saved to the `f_stat` object.
+
+**Answer:**
+
+
+```{r, problem09}
+#prob09  
+#f_stat
+```
+
+***
+
+**#10** 
+
+**Problem:** Given the results of the Goldfelt-Quandt test:
+
+a) Do you reject the null hypothesis that the variance between the groups are equal? 
+
+b) Explain what the F-statistic ratio is comparing.
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign your answer to part **a**, either TRUE or FALSE logical value (TRUE if we have enough evidence to reject the null, FALSE if we don't) to `prob10`. You can write your answer to part **b** either as a string in the code chunk, or below the code chunk.
+
+
+**Answer:**
+
+```{r, problem10}
+#prob10  
+```
+
+***
