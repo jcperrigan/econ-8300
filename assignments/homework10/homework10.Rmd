@@ -1,0 +1,308 @@
+---
+title: "ECON 8300"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r packages}
+need <- c("tidyverse", "plm", "sandwich", "lmtest", "knitr", "kableExtra")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have], repos = "https://cloud.r-project.org")
+invisible(lapply(need, library, character.only = TRUE))
+
+# A small helper for HC1 robust coefficient tests.
+robust_test <- function(model) {
+  lmtest::coeftest(model, vcov. = sandwich::vcovHC(model, type = "HC1"))
+}
+```
+
+# Homework10
+
+Grading Rubric (per question):\
+2 points if complete and correct\
+0 points otherwise
+
+## Retrieving your work
+
+This and all future homework .Rmd files are written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing.
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment.
+
+## Submitting your work
+
+When you upload your files to Canvas, you are to submit ***two*** files:
+
+a.  Your reproducible document file (.Rmd) which should be saved as homework##-ID.Rmd. For example, my homework10 file would be saved as homework10-jperrigan.Rmd.
+
+b.  Your rendered reproducible document file (.html) which should be saved as homework##-ID.html. For example, my homework10 file would be saved as homework10-jperrigan.html.
+
+Your ID is your Canvas username. It is also the text before the "@" symbol in your UNO email address.
+
+You have an unlimited number of submissions, but only the latest submission will be viewed and graded. **Proper means that the file is correctly named and formatted. Latest means that the file is the most recent submission prior to the deadline. Remember the .Rmd file needs to render properly to .html before submitting.**
+
+***
+
+All students are expected to complete all problems.
+
+***
+***
+
+### Use the URLs to access the data. No local files allowed.
+
+This assignment uses the Grunfeld panel: annual observations on investment and capital for 10 firms from 1935 through 1954. You will examine three versions of the investment story:
+
+1. **Across and within firms:** Do observations with more capital also have more investment?
+2. **Within a firm over time:** When a firm has more capital than is usual for that firm, does it also invest more than usual?
+3. **Across firms in a year:** In a given year, do firms with more capital than other firms also invest more?
+
+
+## Data and setup
+
+The `Grunfeld` data are included with the `plm` package. The dataset documentation describes the variables and units.
+
+```{r data}
+data("Grunfeld", package = "plm")
+
+# The panel index tells plm which firm and year each row represents.
+df <- pdata.frame(Grunfeld, index = c("firm", "year"))
+```
+
+```{r inspect-data}
+dplyr::glimpse(Grunfeld)
+```
+
+Before modeling, check what one row represents, which firms and years appear, and how investment and capital are measured. You will need those details to interpret a one-unit change correctly.
+
+***
+
+After doing the assignment and before submitting, make sure you can complete these sentences in your own words:
+
+- Pooled OLS compares ________________________________________________.
+- Firm fixed effects compare _________________________________________ .
+- Time fixed effects compare _________________________________________ .
+- The model that best fits my Question 1 is __________ because __________.
+
+***
+
+**#1** 
+
+**Problem:** 
+
+Write one research question about the relationship between `capital` and `inv` that a firm fixed effects model could help answer. 
+
+Name the outcome and the explanatory variable. Explain what stable differences across firms could otherwise muddy the comparison—for example, persistent differences in scale, technology, or business model.
+
+A useful question should make clear what changes within the same firm over time. Avoid claiming that a regression alone proves a causal effect.
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign your answer as a string to `prob01`. You can also assign a placeholder to `prob01` and write your answer below the code chunk.
+
+**Answer:**
+
+```{r, problem01}
+#prob01 <- "Write your research question and brief rationale here."
+
+```
+
+***
+
+**#2** 
+
+The pooled model does not distinguish a firm's usual capital level from a temporary increase in its capital. 
+
+**Problem:**
+
+a) Predict what kind of pattern could make the pooled capital coefficient positive, even if changes in capital within a firm had a weaker relationship with changes in its investment.
+
+b) Estimate a pooled OLS model for `inv` on `capital`, then report HC1 robust coefficient results. 
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign your model summary to `prob02`. Write your answer to part a below the code chunk.
+
+```{r, problem02}
+# prob02 <- 
+```
+
+***
+
+**#3** 
+
+**Problem:**
+
+Interpret the pooled OLS coefficient on `capital` from Question 2. Include:
+
+- what a one-unit increase in capital means in the dataset's units and what change in investment the estimate associates with it
+- what the unit of analysis is
+- whether the estimate combines differences **between firms** with changes **within firms over time**
+- whether the coefficient is statistically distinguishable from zero at the 5% level, based on the robust test
+
+End with one sentence on why this pooled association alone may not answer the research question you wrote in Question 1.
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign your answer as a string to `prob03`. You can also assign a placeholder to `prob03` and write your answer below the code chunk.
+
+**Answer:**
+
+```{r, problem03}
+#prob03 <- 
+```
+
+***
+
+**#4** 
+
+**Problem:**
+
+a) Estimate `inv` on `capital` and firm indicators (include `firm` as a factor variable), and report HC1 robust coefficient tests. (You do not need to interpret the individual firm-indicator coefficients.)
+
+b) Which coefficient is the main answer to the research question? What does the firm indicator for a particular firm represent relative to the omitted firm? You do not need to interpret every indicator.
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign your model results to `prob04`. Assign your model summary to `prob04`. Write your answer to part a below the code chunk.
+
+**Answer:**
+
+```{r problem04}
+#prob04 <- 
+```
+
+
+
+***
+
+**#5** 
+
+**Problem:**
+
+The fixed effects idea can also be seen by subtracting each firm's average from each observation. Create four columns in `Grunfeld`:
+
+- `m_inv`: that firm's average investment;
+- `m_capital`: that firm's average capital;
+- `dm_inv`: investment minus that firm's average investment;
+- `dm_capital`: capital minus that firm's average capital.
+
+Use `group_by(firm)` and `mutate()` from the `dplyr` package or an equivalent approach. 
+
+Then inspect a few rows. For each firm, the demeaned variables should average approximately zero. This is a useful check: after demeaning, a row tells you whether the firm is above or below its own usual level in that year.
+
+Your answer will be assessed if the new variables are added to the dataframe ```Grunfeld```.
+
+**Answer:**
+
+```{r problem05}
+
+```
+
+***
+
+**#6** 
+
+**Problem:**
+
+a) Use the demeaned variables from Question 5 to estimate `dm_inv` on `dm_capital` **without an intercept**. Report HC1 robust coefficient tests.
+
+b) Then, in one sentence, explain why an intercept is unnecessary here: what is the mean of each demeaned variable within a firm?
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign the robust coefficient test output to `prob06.` Write your answer to part b below the code chunk.
+
+**Answer:**
+
+```{r problem06}
+#prob06
+```
+
+***
+
+**#7** 
+
+**Problem:**
+
+Now estimate the firm fixed effects model with `plm()` using the `within` estimator and the individual effect. Report HC1 robust coefficient tests.
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign the robust coefficient test output to `prob07.` 
+
+**Answer:**
+
+```{r problem07}
+
+```
+
+***
+
+**#8** 
+
+**Problem:**
+
+a) Compare the capital slopes in Questions 4, 6, and 7. Explain how each model removes firm-specific average levels:
+
+- LSDV includes firm indicators;
+- the hand calculation subtracts firm means;
+- `plm(..., model = "within")` applies the within transformation internally.
+
+b) Discuss why should the three slope estimates agree (up to rounding) when they use the same observations, variables, and specification? Don't assume the standard errors must match exactly across implementations; focus on the slope and the comparison it represents.
+
+c) Interpret the firm fixed effects slope in context. State the identifying variation explicitly: is it primarily a comparison of large firms with small firms, or of a firm with itself over time? Contrast that interpretation with your answer to Question 3.
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign your answer as a string to `prob08`. You can also assign a placeholder to `prob08` and write your answer below the code chunk.
+
+
+**Answer:**
+
+```{r problem08}
+#prob08 <- 
+```
+
+***
+
+**#9** 
+
+**Problem:**
+
+a) Use the poolability F-test to compare the pooled model with the firm fixed effects model. Report the test statistic, degrees of freedom, and p-value. 
+
+b) State the null and alternative in words, decide at the 5% level, and explain what that decision says about persistent firm differences. 
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign your answer as to the F test to `prob09`. Write your answer to part b below the code chunk.
+
+
+**Answer:**
+
+
+```{r problem09}
+#prob09 <-
+```
+
+***
+
+**#10** 
+
+**Problem:**
+
+
+a) Estimate `inv` on `capital` with **time fixed effects only** using `plm()`. Report HC1 robust coefficient tests.
+
+b) Interpret the capital slope. Your response should address:
+
+- the estimated direction, size, and statistical significance;
+- what comparison identifies the slope when common year shocks are absorbed;
+- why it may differ from the firm fixed effects estimate;
+- a kind of research question for which time fixed effects would be useful.
+
+Be precise! 
+
+Your answer should be written in the code chunk of the **Answer** section below. Assign your model summary results to `prob10`. Write your answer to part b below the code chunk.
+
+
+**Answer:**
+
+```{r problem10}
+#prob10 <- 
+```
+
+***
+
+
