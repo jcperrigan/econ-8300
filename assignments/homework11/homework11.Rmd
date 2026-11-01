@@ -1,0 +1,347 @@
+---
+title: "ECON-8300"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+    df_print: kable
+    highlight: tango
+    includes:
+      in_header: wcag-overrides.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(broom)
+library(knitr)
+library(kableExtra)
+```
+
+# Homework11
+
+Grading Rubric (per question):  
+2 points if complete and correct  
+0 points otherwise 
+
+
+## Retrieving your work
+
+This and all future homework .Rmd files are written in Markdown. The .Rmd file can be rendered as an .html file for easier viewing. 
+
+Once you have opened the .Rmd file, you may begin writing your answers beneath each problem. Do not remove any of the original problems from the file, because that makes it more difficult for the me to grade your assignment. 
+
+### Submitting your work
+
+When you upload your files to Canvas, you are to submit ***two*** files:
+
+a. Your reproducible document file (.Rmd) which should be saved as homework##-ID.Rmd. For example, my homework08 file would be saved as homework08-jperrigan.Rmd.
+
+b. Your rendered reproducible document file (.html) which should be saved as homework##-ID.html. For example, my homework08 file would be saved as homework08-jperrigan.html.
+
+Your ID is your Canvas username. It is also the text before the "@" symbol in your UNO email address.
+
+You have an unlimited number of submissions, but only the  latest submission will be viewed and graded. **Proper means that the file is correctly named and formatted. Latest means that the file is the most recent submission prior to the deadline. Remember the .Rmd file needs to render properly to .html before submitting.**
+
+
+***
+
+All students are expected to complete all problems.
+
+**The following problems should be completed by each pair. You will be assigned a different pair programming partner weekly; each pair only needs to submit each assignment once. If any problem asks you a particular question, be sure to answer it completely (with code, written sentences, or both).**
+
+***Do not change anything in this file above the double line. Doing so will prevent your homework from being graded.***
+
+***
+***
+
+Use the following code to generate the simulated data for Questions 1-8.
+
+```{r}
+set.seed(8300)
+
+# Single-group event study data
+ambulance_sim <- tibble(
+  week = 1:60
+) %>%
+  mutate(
+    time_centered = week - 30,
+    after = if_else(week >= 30, 1, 0),
+    beta_0 = 15,
+    beta_1 = -0.08,
+    beta_2 = -1.8,
+    beta_3 = -0.10,
+    epsilon = rnorm(n(), mean = 0, sd = 1.5),
+    minutes_to_ekg = beta_0 +
+      beta_1 * time_centered +
+      beta_2 * after +
+      beta_3 * (time_centered * after) +
+      epsilon
+  )
+
+# Treated/control DiD data
+did_sim <- expand_grid(
+  week = 1:60,
+  treated = c(0, 1)
+) |>
+  mutate(
+    after = if_else(week >= 30, 1, 0),
+    epsilon = rnorm(n(), mean = 0, sd = 1.0),
+    minutes_to_ekg = 14 +
+      1.5 * treated +
+      (-0.06) * week +
+      (-2.0) * (treated * after) +
+      epsilon
+  )
+
+# Patient-level data for event-study leads/lags
+did_sim_patients <- expand_grid(
+  week = 1:60,
+  treated = c(0, 1),
+  patient = 1:20
+) %>%
+  mutate(
+    after = if_else(week >= 30, 1, 0),
+    event_time = week - 30,
+    base = 15,
+    treated_diff = 1.2 * treated,
+    common_trend = -0.06 * week,
+    post_treat_effect = -2.0 * (treated * after),
+    epsilon = rnorm(n(), mean = 0, sd = 1),
+    minutes_to_ekg = base +
+      treated_diff +
+      common_trend +
+      post_treat_effect +
+      epsilon
+  )
+```
+
+**#1** 
+
+**Problem:** Answer the following.
+
+a. In this setting, what is the “event”?  
+b. What is the outcome variable?  
+c. Why is a simple before/after comparison not necessarily causal?  
+d. Give one example of a *bad* event study from everyday life.
+
+Your answer should be written in the code chunk of the **Answer** section below. Save your answer as a string to `prob01`. If you prefer to write your answer below the chunk, assign a placeholder string to `prob01`.
+
+**Answer:**
+
+```{r, problem01}
+#prob01
+```
+
+***
+
+**#2** 
+
+**Problem:**  Estimate the following model using `ambulance_sim`:
+
+$$
+Y_t = \beta_0 + \beta_1(Week_t - 30) + \beta_2 After_t + \beta_3[(Week_t - 30)\times After_t] + \epsilon_t
+$$
+
+a. Estimate the model and report the coefficient table.  
+b. Interpret $beta_1$, $\beta_2$, and $\beta_3$ 
+
+Your answer should be written in the code chunk of the **Answer** section below. Save your model results summary to `prob02`.  
+
+
+```{r, problem02}
+#prob02
+```
+
+***
+
+**#3** 
+
+**Problem:**  
+
+a. Create a scatterplot of `minutes_to_ekg` against `week` using the `ambulance_sim` data to visualize the single-group event study. It should have a vertical line at week 30. Add one fitted line for the pre-policy period and one fitted line for the post-policy period.  
+
+b. In 2-4 sentences, explain what the figure suggests about the effect of the policy.
+
+Your answer should be written in the code chunk of the **Answer** section below. Save your answer to part b as a string to `prob03`. If you prefer to write your answer below the chunk, assign a placeholder string to `prob03`.
+
+**Answer:**
+
+```{r, problem03}
+#prob03
+```
+
+***
+
+**#4** 
+
+**Problem:** Answer the following questions:
+
+a. Why use a control group? What is the difference between this set-up and the single-unit event study?
+b. State the parallel trends assumption in plain English.  
+c. Why is the DiD design generally more credible than a single-group before/after design?
+
+Your answer should be written in the code chunk of the **Answer** section below. Save your answers as a string to `prob04`. If you prefer to write your answer below the chunk, assign a placeholder string to `prob04`.
+
+**Answer:**
+
+```{r, problem04}
+#prob04
+```
+
+***
+
+**#5** 
+
+**Problem:** Estimate the basic DiD model using the `did_sim` data:
+
+$$
+Y_{gt} = \beta_0 + \beta_1 Treated_g + \beta_2 After_t + \beta_3(Treated_g \times After_t) + \epsilon_{gt}
+$$
+
+a. Estimate the model and report the coefficient table.  
+b. Interpret $\beta_0$, $\beta_1$, $\beta_2$, and $\beta_3$.  
+d. Explain why $\beta_3$ is the DiD estimate.
+
+Your answer should be written in the code chunk of the **Answer** section below. Save your model results summary to `prob05`. 
+
+**Answer:**
+
+```{r, problem05}
+#prob05
+```
+
+***
+
+**#6** 
+
+**Problem:** Using the simulated `did_sim` data:
+
+a. Compute the average `minutes_to_ekg` for each of the following:
+   - control group, pre treatment (before week 30)
+   - control group, post treatment (after and including week 30)
+   - treated group, pre treatment (before week 30)
+   - treated group, post treatment (after and including week 30)
+
+b. Using *only* those four means, compute the DiD estimator by hand.  
+c. Compare your answer to the estimated interaction coefficient from Question 5.
+
+Your answer should be written in the code chunk of the **Answer** section below. Save your hand-calculated DiD estimator to `prob06`. 
+
+**Answer:**
+
+```{r, problem06}
+#prob06
+```
+
+***
+
+**#7** 
+
+**Problem:** Create a plot of `did_sim` that includes:
+
+* a scatterplot of the weekly observations  
+* separate fitted lines for treated and control groups before the policy
+* separate fitted lines for treated and control groups after the policy  
+* a vertical line at week 30
+
+Your answer should be written in the code chunk of the **Answer** section below. Save your plot to `prob07`. 
+
+**Answer:**
+
+```{r, problem07}
+#prob07
+```
+
+***
+
+**#8** 
+
+**Problem:** Answer the following:
+
+a. In the 2x2 DiD model, what does the variable `after` do?  
+
+$$
+Y_{gt} = \beta_0 + \beta_1 Treated_g + \beta_2 After_t + \beta_3(Treated_g \times After_t) + \epsilon_{gt}
+$$
+
+
+b. Why is the event-study specification more flexible than the 2x2 DiD model?  
+
+$$
+Y_{gt} = \alpha_g + \lambda_t + \sum_{k \neq -1} \beta_k (Treated_g \times 1\{event\_time = k\}) + \epsilon_{gt}
+$$
+
+c. What is the key difference between a single $\beta_3$ in the 2x2 DiD and a set of post-treatment coefficients in an event study with a full set of time indicators?
+
+Save your answer as a string to `prob08`. If you prefer to write your answer below the chunk, assign a placeholder string to `prob08`.
+
+**Answer:**
+
+```{r, problem08}
+#prob08
+```
+
+***
+
+
+**#9** 
+
+**Problem:** Use `did_sim_patients` to estimate an event-study model with the week before treatment ($(k=-1)$) as the omitted reference period.
+
+First create the factor variable:
+
+```{r}
+did_sim_patients <- did_sim_patients %>%
+  mutate(
+    event_time_f = factor(event_time),
+    event_time_f = relevel(event_time_f, ref = "-1")
+  )
+```
+
+Then estimate:
+
+$$
+minutes\_to\_ekg \sim treated + event\_time\_f + treated:event\_time\_f
+$$
+
+a. Estimate the model and report the coefficient table.  
+b. Describe which coefficients are the “leads”? Which are the “lags”?
+
+Your answer should be written in the code chunk of the **Answer** section below. Save your model results summary to `prob09`.  
+
+**Answer:**
+
+```{r, problem09}
+#prob09
+```
+
+***
+
+**#10** 
+
+**Problem:** Using the results from Question 9:
+
+a. Create an event-study plot with:
+   - event time on the x-axis
+   - estimated coefficient on the y-axis
+   - a horizontal line at 0
+   - a vertical line at event time 0
+   - 95% confidence intervals
+
+b. In 4-6 sentences, interpret the figure:
+   - What do the lead coefficients suggest about parallel trends?
+   - What do the lag coefficients suggest about the treatment effect over time?
+
+Save your answer as a string to part b as a string to `prob10`. If you prefer to write your answer below the chunk, assign a placeholder string to `prob10`.
+
+**Answer:**
+
+```{r, problem10}
+#prob10
+```
+
+***

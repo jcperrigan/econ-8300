@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Difference-in-Differences</title>
+
+<script src="Sample-Notebook-Difference-in-Differences_files/header-attrs-2.31/header-attrs.js"></script>
+<script src="Sample-Notebook-Difference-in-Differences_files/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="Sample-Notebook-Difference-in-Differences_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="Sample-Notebook-Difference-in-Differences_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="Sample-Notebook-Difference-in-Differences_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="Sample-Notebook-Difference-in-Differences_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="Sample-Notebook-Difference-in-Differences_files/navigation-1.1/tabsets.js"></script>
+<script src="Sample-Notebook-Difference-in-Differences_files/kePrint-0.0.1/kePrint.js"></script>
+<link href="Sample-Notebook-Difference-in-Differences_files/lightable-0.0.1/lightable.css" rel="stylesheet" />
+<style>
+/* --- Base cleanup (no gray boxes) --- */
+pre, pre code, .sourceCode, .sourceCode pre {
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  color: #111 !important;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+/* --- High-contrast syntax colors (WCAG AA+) --- */
+.sourceCode .kw, .sourceCode .cf { color:#003366 !important; font-weight:600; }  /* keywords/control */
+.sourceCode .dt, .sourceCode .ty { color:#660033 !important; font-weight:600; }  /* types */
+.sourceCode .dv, .sourceCode .bn, .sourceCode .fl { color:#003399 !important; }  /* numbers */
+.sourceCode .st, .sourceCode .ch, .sourceCode .vs { color:#5C2E00 !important; }  /* strings */
+.sourceCode .co, .sourceCode .do { color:#4A4A4A !important; font-style:italic; }/* comments */
+.sourceCode .fu { color:#004D40 !important; }                                    /* functions */
+.sourceCode .va, .sourceCode .bu, .sourceCode .at { color:#163300 !important; }  /* vars/builtins */
+
+/* --- Operators & punctuation (the "orange" offenders) --- */
+.sourceCode .op,            /* Pandoc operator */
+.sourceCode .sc,            /* special char / punctuation */
+pre code .hl-operator,      /* highlight.js operator */
+pre code .hl-punctuation {  /* fallback */
+  color:#111 !important;    /* near-black for max contrast on white */
+  font-weight:600;
+}
+
+/* Remove any stray highlight backgrounds */
+pre.sourceCode code > span,
+.sourceCode span { background: none !important; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Find Pandoc code-line anchors like: <a class="sourceLine" id="cb1-3" href="#cb1-3"></a>
+  var anchors = document.querySelectorAll('a.sourceLine');
+  anchors.forEach(function(a){
+    // Replace each empty <a> with a <span> to eliminate "empty hyperlink" issues
+    var s = document.createElement('span');
+    s.className = a.className;
+    if (a.id) s.id = a.id;
+    if (a.getAttribute('title')) s.setAttribute('data-line', a.getAttribute('title'));
+    a.replaceWith(s);
+  });
+
+  // Defensive cleanup for any leftover empty anchors
+  document.querySelectorAll('pre code a[href]').forEach(function(a){
+    if (!a.textContent.trim()) {
+      var s = document.createElement('span');
+      s.className = a.className || '';
+      if (a.id) s.id = a.id;
+      a.replaceWith(s);
+    }
+  });
+});
+</script>
+
+<style>
+/* --------- Accessible table spacing & readability --------- */
+table {
+  border-collapse: separate !important;
+  border-spacing: 0.5em 0.25em !important;  /* column, row spacing */
+  width: auto;  /* let it size naturally */
+  margin: 1em 0;
+}
+
+th, td {
+  padding: 0.5em 1em !important;   /* inside-cell padding */
+  text-align: center;              /* center numeric values */
+  vertical-align: middle;
+  border: none;                    /* keep it clean */
+}
+
+caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: 0.25em;
+}
+
+/* optional subtle divider lines for clarity */
+thead th {
+  border-bottom: 2px solid #444;
+}
+tbody tr + tr td,
+tbody tr + tr th {
+  border-top: 1px solid #ccc;
+}
+
+tbody th[scope="row"] {
+  text-align: left !important;
+}
+
+</style>
+
+<script>
+// 1) Add scope="col" to header cells that are missing it
+document.querySelectorAll('table thead th:not([scope])').forEach(th => {
+  th.setAttribute('scope', 'col');
+});
+
+// 2) If a table has no caption, create a visually-hidden one
+//    using the nearest preceding heading as a fallback.
+document.querySelectorAll('table').forEach((tbl, idx) => {
+  if (!tbl.querySelector('caption')) {
+    let captionText = '';
+    // walk backwards to find a previous heading
+    let prev = tbl.previousElementSibling;
+    while (prev && !/^H[1-6]$/.test(prev.tagName)) prev = prev.previousElementSibling;
+    if (prev) captionText = prev.textContent.trim();
+    if (!captionText) captionText = 'Data table ' + (idx + 1);
+
+    const cap = document.createElement('caption');
+    cap.textContent = captionText;
+    cap.style.position = 'absolute';
+    cap.style.left = '-9999px';
+    cap.style.height = '1px';
+    cap.style.width = '1px';
+    cap.style.overflow = 'hidden';
+    tbl.insertBefore(cap, tbl.firstChild);
+  }
+});
+</script>
+
+<style>
+/* Line numbers + gutter */
+pre.numberSource code > span > a:first-child::before { color: #6b6b6b !important; }  /* from #aaaaaa */
+pre.numberSource { border-left: 1px solid #6b6b6b !important; }
+
+/* Operators / punctuation classes that were orange */
+code span.op, code span.sc { color: #7a2d00 !important; font-weight: 700; } /* darker than #ce5c00 */
+</style>
+
+<style>
+table thead th { padding-right: 1rem !important; white-space: nowrap; }
+</style>
+
+
+<script>
+  // Add missing scope attributes to table headers for accessibility checkers
+  document.querySelectorAll("table thead th:not([scope])").forEach(th => {
+    th.setAttribute("scope", "col");
+  });
+
+  // (Optional safety) If any header cells are in tbody (rare), set them too
+  document.querySelectorAll("table tbody th:not([scope])").forEach(th => {
+    th.setAttribute("scope", "row");
+  });
+</script>
+
+<style>
+/* --- Bootstrap low-contrast grays: override to darker --- */
+.text-muted,
+.help-block,
+.dropdown-header,
+.navbar-default .navbar-nav > li > a,
+.navbar-default .navbar-text,
+.navbar-default .navbar-brand {
+  color: #444 !important;
+}
+
+/* Placeholder text (often the one the checker flags) */
+.form-control::placeholder { color: #555 !important; opacity: 1 !important; }
+.form-control::-webkit-input-placeholder { color: #555 !important; }
+.form-control::-moz-placeholder { color: #555 !important; opacity: 1 !important; }
+.form-control:-ms-input-placeholder { color: #555 !important; }
+.form-control::-ms-input-placeholder { color: #555 !important; }
+</style>
+
+<style>
+table caption,
+p.caption,
+.caption,
+.table caption {
+  color: #111 !important;
+  opacity: 1 !important;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll("table").forEach(function (tbl) {
+    tbl.querySelectorAll("thead th").forEach(function (th) {
+      if (!th.hasAttribute("scope")) th.setAttribute("scope", "col");
+    });
+    tbl.querySelectorAll("tbody th").forEach(function (th) {
+      if (!th.hasAttribute("scope")) th.setAttribute("scope", "row");
+    });
+  });
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  background-color: #f8f8f8; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ef2929; } /* Alert */
+code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #204a87; } /* Attribute */
+code span.bn { color: #0000cf; } /* BaseN */
+code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4e9a06; } /* Char */
+code span.cn { color: #8f5902; } /* Constant */
+code span.co { color: #8f5902; font-style: italic; } /* Comment */
+code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+code span.dt { color: #204a87; } /* DataType */
+code span.dv { color: #0000cf; } /* DecVal */
+code span.er { color: #a40000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #0000cf; } /* Float */
+code span.fu { color: #204a87; font-weight: bold; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+code span.ot { color: #8f5902; } /* Other */
+code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+code span.ss { color: #4e9a06; } /* SpecialString */
+code span.st { color: #4e9a06; } /* String */
+code span.va { color: #000000; } /* Variable */
+code span.vs { color: #4e9a06; } /* VerbatimString */
+code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Difference-in-Differences</h1>
+
+</div>
+
+<div id="TOC">
+<ul>
+<li><a href="#event-studies" id="toc-event-studies">Event Studies</a>
+<ul>
+<li><a href="#intuition-behind-event-studies"
+id="toc-intuition-behind-event-studies">Intuition behind event
+studies</a></li>
+<li><a href="#event-studies-with-regression"
+id="toc-event-studies-with-regression">Event Studies with
+Regression</a></li>
+<li><a href="#event-study-single-unit-example"
+id="toc-event-study-single-unit-example">Event Study (single unit)
+Example</a></li>
+</ul></li>
+<li><a href="#difference-in-differences"
+id="toc-difference-in-differences">Difference-in-Differences</a>
+<ul>
+<li><a href="#basic-difference-in-differences-setup"
+id="toc-basic-difference-in-differences-setup">Basic
+Difference-in-Differences setup</a></li>
+<li><a href="#parallel-trends-assumption"
+id="toc-parallel-trends-assumption">Parallel trends assumption</a></li>
+<li><a href="#did-simulation" id="toc-did-simulation">DiD
+Simulation</a></li>
+<li><a
+href="#checking-the-parallel-trends-assumption-with-event-study-leads"
+id="toc-checking-the-parallel-trends-assumption-with-event-study-leads">Checking
+the parallel trends assumption with event study leads</a></li>
+</ul></li>
+<li><a href="#summary" id="toc-summary">Summary</a>
+<ul>
+<li><a href="#basic-event-studies" id="toc-basic-event-studies">Basic
+Event Studies</a></li>
+<li><a href="#difference-in-differences-1"
+id="toc-difference-in-differences-1">2×2
+Difference-in-Differences</a></li>
+<li><a href="#event-studies-with-leadslags"
+id="toc-event-studies-with-leadslags">Event Studies with
+Leads/Lags</a></li>
+</ul></li>
+</ul>
+</div>
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>need <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;AER&quot;</span>, <span class="st">&quot;tidyverse&quot;</span>, <span class="st">&quot;plm&quot;</span>, <span class="st">&quot;sandwich&quot;</span>, <span class="st">&quot;lmtest&quot;</span>, <span class="st">&quot;knitr&quot;</span>, <span class="st">&quot;kableExtra&quot;</span>, <span class="st">&quot;grid&quot;</span>, <span class="st">&quot;broom&quot;</span>, <span class="st">&quot;fixest&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>have <span class="ot">&lt;-</span> need <span class="sc">%in%</span> <span class="fu">rownames</span>(<span class="fu">installed.packages</span>())</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">any</span>(<span class="sc">!</span>have)) <span class="fu">install.packages</span>(need[<span class="sc">!</span>have])</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">invisible</span>(<span class="fu">lapply</span>(need, library, <span class="at">character.only =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;reporting.R&quot;</span>)</span></code></pre></div>
+<p>This is a quick manual function using <code>ggplot2</code>. There are
+two packages, <code>ggdag</code> and <code>dagitty</code>, that are
+specifically built for causal diagrams but I have never had much luck
+with them, though I haven’t spent much time with them either. If you are
+planning on spending a lot of time with causal diagrams or directed
+acyclical graphs I recommend checking them out! But for now I’m hacking
+something together instead.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>plot_dag_manual <span class="ot">&lt;-</span> <span class="cf">function</span>(nodes,</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>                            edges,</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>                            <span class="at">xlim =</span> <span class="cn">NULL</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>                            <span class="at">ylim =</span> <span class="cn">NULL</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>                            <span class="at">y_scale =</span> <span class="dv">1</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>                            <span class="at">x_scale =</span> <span class="dv">1</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>                            <span class="at">text_size =</span> <span class="dv">5</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>                            <span class="at">edge_width =</span> <span class="fl">0.6</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>                            <span class="at">arrow_length_pt =</span> <span class="dv">2</span>,</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>                            <span class="at">shrink =</span> <span class="fl">0.20</span>,</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>                            <span class="at">text_family =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>  </span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>  nodes_scaled <span class="ot">&lt;-</span> nodes <span class="sc">|&gt;</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>      <span class="at">x =</span> x <span class="sc">*</span> x_scale,</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>      <span class="at">y =</span> y <span class="sc">*</span> y_scale</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>    )</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>  </span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>  edge_plot <span class="ot">&lt;-</span> edges <span class="sc">|&gt;</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>    <span class="fu">left_join</span>(nodes_scaled <span class="sc">|&gt;</span> <span class="fu">select</span>(<span class="at">from =</span> name, x, y), <span class="at">by =</span> <span class="st">&quot;from&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>    <span class="fu">left_join</span>(nodes_scaled <span class="sc">|&gt;</span> <span class="fu">select</span>(<span class="at">to =</span> name, <span class="at">xend =</span> x, <span class="at">yend =</span> y), <span class="at">by =</span> <span class="st">&quot;to&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>      <span class="at">dx =</span> xend <span class="sc">-</span> x,</span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>      <span class="at">dy =</span> yend <span class="sc">-</span> y,</span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a>      <span class="at">edge_length =</span> <span class="fu">sqrt</span>(dx<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> dy<span class="sc">^</span><span class="dv">2</span>),</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a>      <span class="at">x =</span> x <span class="sc">+</span> shrink <span class="sc">*</span> dx <span class="sc">/</span> edge_length,</span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a>      <span class="at">y =</span> y <span class="sc">+</span> shrink <span class="sc">*</span> dy <span class="sc">/</span> edge_length,</span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a>      <span class="at">xend =</span> xend <span class="sc">-</span> shrink <span class="sc">*</span> dx <span class="sc">/</span> edge_length,</span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a>      <span class="at">yend =</span> yend <span class="sc">-</span> shrink <span class="sc">*</span> dy <span class="sc">/</span> edge_length</span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a>    )</span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a>  </span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a>    <span class="fu">geom_segment</span>(</span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a>      <span class="at">data =</span> edge_plot,</span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a>      <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y, <span class="at">xend =</span> xend, <span class="at">yend =</span> yend, <span class="at">linetype =</span> linetype),</span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a>      <span class="at">arrow =</span> <span class="fu">arrow</span>(<span class="at">length =</span> <span class="fu">unit</span>(arrow_length_pt, <span class="st">&quot;pt&quot;</span>), <span class="at">type =</span> <span class="st">&quot;closed&quot;</span>),</span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a>      <span class="at">linewidth =</span> edge_width,</span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a>      <span class="at">color =</span> <span class="st">&quot;black&quot;</span>,</span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a>      <span class="at">show.legend =</span> <span class="cn">FALSE</span></span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a>    <span class="fu">geom_text</span>(</span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a>      <span class="at">data =</span> nodes_scaled,</span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a>      <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y, <span class="at">label =</span> label),</span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a>      <span class="at">size =</span> text_size,</span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>      <span class="at">color =</span> <span class="st">&quot;black&quot;</span>,</span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a>      <span class="at">family =</span> text_family</span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a>    <span class="fu">theme_void</span>()</span>
+<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a>  </span>
+<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(xlim) <span class="sc">||</span> <span class="sc">!</span><span class="fu">is.null</span>(ylim)) {</span>
+<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a>    p <span class="ot">&lt;-</span> p <span class="sc">+</span> <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> xlim, <span class="at">ylim =</span> ylim, <span class="at">clip =</span> <span class="st">&quot;off&quot;</span>)</span>
+<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a>  }</span>
+<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a>  </span>
+<span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a>  p</span>
+<span id="cb2-55"><a href="#cb2-55" tabindex="-1"></a>}</span></code></pre></div>
+<div id="event-studies" class="section level1">
+<h1>Event Studies</h1>
+<p>Before we start on Difference-in-Differences, we’ll quickly discuss
+Event Studies. This is a very old and simple (maybe the oldest and
+simplest) causal inference research design model. It’s basically: at
+some point in time, an event happened. Whatever changed from before the
+event to after the event is the effect.</p>
+<p>So when someone has coffee at 4:00 pm and can’t sleep that night, and
+therefore decides that coffee ruins their sleep, that’s an event study.
+Or when someone started using a standing desk five days ago and is now
+experiencing less back pain, that’s an event study. When a rooster
+concludes they’re responsible for the sun rising because it rises every
+morning right after they crow, that’s an event study.</p>
+<p><em>Side note: <a
+href="https://theeffectbook.net/ch-EventStudies.html">The Effect
+Book</a> reminded me of the 1991 movie </em>Rock-a-Doodle<em>, which I
+think I watched at least 50 times as a child and may have apparently set
+me up for a lifetime of interest in causal inference. The plot is
+basically: the rooster thinks his crowing is what causes the sun to
+rise. One morning he doesn’t crow and the sun rises anyway, plot
+ensures.</em></p>
+<p>All of these are doing the following: “Compare outcomes before
+vs. after an event and attribute the difference to the event.”</p>
+<div id="intuition-behind-event-studies" class="section level2">
+<h2>Intuition behind event studies</h2>
+<p>Event studies are supposed to work in cases where the causal diagram
+looks like the one below. So at some given point, we move from the
+“before” period to the “after” period of the event, and a treatment goes
+into effect.</p>
+<p>Here we have</p>
+<ul>
+<li><p><span class="math inline">\(Outcome\)</span>: the treatment
+effect we’re interested in, the dependent variable,</p></li>
+<li><p><span class="math inline">\(Treatment\)</span>: actual exposure,
+the causal variable,</p></li>
+<li><p><span class="math inline">\(AfterEvent\)</span>: a post-period
+timing indicator, equal to 1 after the event has occurred, and</p></li>
+<li><p><span class="math inline">\(Time\)</span>: calendar time, a
+confounder.</p></li>
+</ul>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>nodes_event <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">name  =</span> <span class="fu">c</span>(<span class="st">&quot;Time&quot;</span>, <span class="st">&quot;AfterEvent&quot;</span>, <span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Outcome&quot;</span>),</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">label =</span> <span class="fu">c</span>(<span class="st">&quot;Time&quot;</span>, <span class="st">&quot;AfterEvent&quot;</span>, <span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Outcome&quot;</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">x     =</span> <span class="fu">c</span>(<span class="fl">2.0</span>, <span class="fl">0.0</span>, <span class="fl">2.0</span>, <span class="fl">4.2</span>),</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">y     =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>edges_event <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">from     =</span> <span class="fu">c</span>(<span class="st">&quot;Time&quot;</span>, <span class="st">&quot;Time&quot;</span>, <span class="st">&quot;AfterEvent&quot;</span>, <span class="st">&quot;Treatment&quot;</span>),</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">to       =</span> <span class="fu">c</span>(<span class="st">&quot;AfterEvent&quot;</span>, <span class="st">&quot;Outcome&quot;</span>, <span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Outcome&quot;</span>),</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">linetype =</span> <span class="fu">c</span>(<span class="st">&quot;solid&quot;</span>, <span class="st">&quot;solid&quot;</span>, <span class="st">&quot;solid&quot;</span>, <span class="st">&quot;solid&quot;</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>)</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="fu">plot_dag_manual</span>(</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="at">nodes =</span> nodes_event,</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  <span class="at">edges =</span> edges_event,</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  <span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.8</span>, <span class="fl">4.8</span>),</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span>.<span class="dv">2</span>, .<span class="dv">6</span>),</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="at">y_scale =</span> .<span class="dv">3</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  <span class="at">x_scale =</span> <span class="dv">1</span>,</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  <span class="at">text_size =</span> <span class="fl">4.5</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  <span class="at">shrink =</span> <span class="fl">0.5</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  <span class="at">text_family =</span> <span class="st">&quot;serif&quot;</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>)</span></code></pre></div>
+<p><img src="Sample-Notebook-Difference-in-Differences_files/figure-html/unnamed-chunk-3-1.png" alt="Causal diagram for event studies." width="672" /></p>
+<p><span class="math inline">\(AfterEvent\)</span> here just means the
+time after the event happened, so the treatment could still be ongoing.
+The idea is to estimate the effect of the treatment by comparing the
+outcome before and after outcome: when the treatment has happened (or is
+still happening) to when it hasn’t.</p>
+<p>Looking at the causal diagram, it’s pretty easy to imagine some bad
+event studies. A lot of superstitions are bad event studies. Like “Ever
+since I updated this app, my phone battery is worse.” Or “I wore this
+jersey and my team won, now I wear it every game.” Those are both (bad)
+event studies.</p>
+<p>So when we’re thinking about the causal diagram we have to
+consider:</p>
+<ol style="list-style-type: decimal">
+<li><p>Considering whether the diagram actually applies in this
+instance: is the treatment the only thing that changed from before the
+event to after the event, or is there something else going on at the
+same time that might be responsible for the outcomes we see? Event
+studies aren’t bad, but they only apply in certain situations.</p></li>
+<li><p>Thinking about how the other route through <span
+class="math inline">\(Time\)</span> can be closed.</p></li>
+</ol>
+<p>Because of course there’s another potential causal route:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>nodes_line <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">name  =</span> <span class="fu">c</span>(<span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;AfterEvent&quot;</span>, <span class="st">&quot;Time&quot;</span>, <span class="st">&quot;Outcome&quot;</span>),</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">label =</span> <span class="fu">c</span>(<span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;AfterEvent&quot;</span>, <span class="st">&quot;Time&quot;</span>, <span class="st">&quot;Outcome&quot;</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">x =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">1.3</span>, <span class="fl">2.6</span>, <span class="dv">4</span>),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">y     =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>edges_line <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">from     =</span> <span class="fu">c</span>(<span class="st">&quot;Time&quot;</span>, <span class="st">&quot;AfterEvent&quot;</span>, <span class="st">&quot;Time&quot;</span>),</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">to       =</span> <span class="fu">c</span>(<span class="st">&quot;AfterEvent&quot;</span>, <span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Outcome&quot;</span>),</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">linetype =</span> <span class="st">&quot;solid&quot;</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>)</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="fu">plot_dag_manual</span>(</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>  <span class="at">nodes =</span> nodes_line,</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>  <span class="at">edges =</span> edges_line,</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>  <span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.5</span>, <span class="dv">5</span>),</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>  <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.3</span>, <span class="fl">0.3</span>),</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>  <span class="at">y_scale =</span> .<span class="dv">6</span>,</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  <span class="at">text_size =</span> <span class="fl">4.5</span>,</span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>  <span class="at">shrink =</span> <span class="fl">0.45</span>,</span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>  <span class="at">arrow_length_pt =</span> <span class="dv">4</span>,</span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>  <span class="at">text_family =</span> <span class="st">&quot;serif&quot;</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>)</span></code></pre></div>
+<p><img src="Sample-Notebook-Difference-in-Differences_files/figure-html/unnamed-chunk-4-1.png" alt="Back door causal route for event studies" width="672" /></p>
+<p><span class="math inline">\(Time\)</span> is “all the stuff that
+would have changed over time anyway.” Like the rooster actually isn’t
+responsible for the sun rising because it would have risen otherwise
+(see: <em>Rock-a-Doodle</em>).</p>
+<p>So <span class="math inline">\(Time\)</span> is doing two things:</p>
+<ol style="list-style-type: decimal">
+<li><p>It causes the treatment (via <span
+class="math inline">\(AfterEvent\)</span>)</p></li>
+<li><p>It directly affects the outcome</p></li>
+</ol>
+<p>If we don’t control for time, we’ll attribute changes in the outcome
+to treatment when they were actually just due to time passing and would
+have happened anyway.</p>
+<p>So why not just control for <span
+class="math inline">\(AfterEvent\)</span>? Because <span
+class="math inline">\(AfterEvent \approx Treatment\)</span>. They move
+together perfectly:</p>
+<ul>
+<li>before -&gt; untreated</li>
+<li>after -&gt; treated</li>
+</ul>
+<p>So controlling for <span class="math inline">\(AfterEvent\)</span>
+would basically mean: “hold treatment constant while estimating the
+effect of treatment”, which kills the variation we need and we can’t
+estimate anything.</p>
+<p>We can’t compare “before vs after” directly because time itself
+changes outcomes, but if we hold constant the general effects of time,
+we can isolate the effect of crossing the event. The problem isn’t that
+time exists, it’s that time affects both treatment and the outcome. So
+instead of controlling for “after,” we control for everything about time
+<em>except</em> the fact that the event happened.</p>
+</div>
+<div id="event-studies-with-regression" class="section level2">
+<h2>Event Studies with Regression</h2>
+<p>The basic idea is to allow the relationship between time and the
+outcome to change after the event.</p>
+<p>You can do this with the use of an interaction term, also known as
+“segmented regression.”</p>
+<p>So instead of estimating two separate regressions, we estimate one
+model that lets us have both a different level and a different trend
+after the event.</p>
+<p><span class="math display">\[
+Outcome_t = \beta_0 + \beta_1t + \beta_2 After_t + \beta_3 (t \times
+After_t) + \epsilon_t
+\]</span> * <span class="math inline">\(t\)</span> is the time period *
+<span class="math inline">\(After_t\)</span> is a binary indicator
+variable for being after the event (equal to 0 before, 1 after)</p>
+<p>This is a within-unit event study. There is only before and after the
+event, no comparison to a unit who <em>doesn’t</em> get the event
+(treatment).</p>
+<p><strong>Before the event (<span class="math inline">\(After =
+0\)</span>)</strong></p>
+<p><span class="math display">\[
+Outcome_t = \beta_0 + \beta_1 t + \epsilon_t
+\]</span></p>
+<p>This is the pre-event trend</p>
+<ul>
+<li>Intercept: <span class="math inline">\(\beta_0\)</span></li>
+<li>Slope: <span class="math inline">\(\beta_1\)</span></li>
+</ul>
+<p><strong>After the event (<span class="math inline">\(After =
+1\)</span>)</strong></p>
+<p><span class="math display">\[
+Outcome_t = (\beta_0 + \beta_2) + (\beta_1 + \beta_3) t + \epsilon_t
+\]</span></p>
+<p>This is the post-event trend</p>
+<ul>
+<li>Intercept shifts by <span
+class="math inline">\(\beta_2\)</span></li>
+<li>Slope changes by <span class="math inline">\(\beta_3\)</span></li>
+</ul>
+<div id="interpretation" class="section level3">
+<h3>Interpretation</h3>
+<ul>
+<li><span class="math inline">\(\beta_2 =\)</span> immediate change at
+the time of the event</li>
+<li><span class="math inline">\(\beta_3 =\)</span> change in trend after
+the event</li>
+</ul>
+<p>The question is, are thing suddenly different? Answer this using
+<span class="math inline">\(\beta_2\)</span>. Then the question is, are
+they changing differently over time? Answer this using <span
+class="math inline">\(\beta_3\)</span>.</p>
+<p>We’re asking, did something change at the event, and did the
+trajectory change afterward? Basically, the question is: what happens at
+each time, relative to treatment?</p>
+<p>So we’re estimating one line before the event and one line after the
+event, and allowing them to shift up or down (level change) and/ or to
+tilt differently (trend change).</p>
+</div>
+</div>
+<div id="event-study-single-unit-example" class="section level2">
+<h2>Event Study (single unit) Example</h2>
+<p>Event studies are popular in stock market studies, especially when
+the outcome that is of interest is the stock’s return.</p>
+<p>This is because a stock’s price should already reflect the public
+knowledge about a company, so returns should vary from day to day or as
+the market changes overall, but should only change sharply if there’s
+some sort of event (new information revealed about the company). You see
+this a lot for mergers: if a company announces they’re planning a
+merger, even though that merger won’t happen for a while, investors buy
+and sell based on what they anticipate will happen so effects on stock
+prices will be seen right away.</p>
+<p>I mention this because you see these models used quite a bit in
+finance, but (to be perfectly honest) I’m not that interested in
+finance, so I’m going to look at another example of an event study.</p>
+<p><a
+href="https://unomaha.primo.exlibrisgroup.com/permalink/01UON_OMA/6h791u/cdi_pubmed_primary_24943919">This
+is a paper that uses segmented regression</a> to look at changes in in
+pre-hospital ambulance care given the introduction of a new
+collaborative intervention administered during ambulance care. It’s the
+same model that’s covered in <a
+href="https://theeffectbook.net/ch-EventStudies.html">The Effect
+Book</a>, so I’m going to use a similar idea as inspiration for the
+similation we’ll do.</p>
+<div id="model-setup-arrival-time-to-ekg" class="section level3">
+<h3>Model setup: Arrival time to EKG</h3>
+<p>I’m going to use a similar kind of set-up but with simulated data and
+a continuous dependent variable: average number of minutes from
+ambulance arrival to EKG for suspected heart attack patients. An EKG
+measures the heart’s electrical system to detect irregular rhythms,
+structural issues, or signs of a heart attack.</p>
+<p>A new quality improvement policy is introduced in week 20 to improve
+emergency cardiac care. Each week, the average number of minutes from
+ambulance arrival to EKG is observed.</p>
+<p>The model:</p>
+<p><span class="math display">\[
+Y_t = \beta_0 + \beta_1(Week_t - 30) + \beta_2 After_t + \beta_3
+[(Week_t - 30) \times After_t] + \epsilon_t
+\]</span></p>
+<p>where</p>
+<ul>
+<li><span class="math inline">\(Y_t =\)</span> average minutes from
+arrival to ECG in week <span class="math inline">\(t\)</span></li>
+<li><span class="math inline">\(Week_t - 30\)</span> centers time at the
+intervention (we therefore have data for 30 weeks before the
+intervention and after the intervention)</li>
+<li><span class="math inline">\(After_t = 0\)</span> before the policy
+starts, and <span class="math inline">\(After_t = 1\)</span> after the
+policy starts</li>
+</ul>
+<p>This means that:</p>
+<ul>
+<li><span class="math inline">\(\beta_1\)</span> is the pre-intervention
+trend,</li>
+<li><span class="math inline">\(\beta_2\)</span> is the immediate change
+(up or down) at the introduction of the policy</li>
+<li><span class="math inline">\(\beta_3\)</span> is the change in trend
+after the introduction of the policy</li>
+</ul>
+<p>Let’s simulate some data. Feel free to change the data generating
+process to update data and see the differences!</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>ambulance_sim <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">week =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">60</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="at">time_centered =</span> week <span class="sc">-</span> <span class="dv">30</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>    <span class="at">after =</span> <span class="fu">if_else</span>(week <span class="sc">&gt;=</span> <span class="dv">30</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>    <span class="co"># true coefficients for the simulation</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>    <span class="at">beta_0 =</span> <span class="dv">15</span>,      <span class="co"># predicted minutes at week 30 using the pre-intervention line</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>    <span class="at">beta_1 =</span> <span class="sc">-</span><span class="fl">0.08</span>,   <span class="co"># pre-policy trend: already getting slightly faster at getting patients to EKG </span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>    <span class="at">beta_2 =</span> <span class="sc">-</span><span class="fl">1.8</span>,    <span class="co"># immediate improvement at policy intro </span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>    <span class="at">beta_3 =</span> <span class="sc">-</span><span class="fl">0.10</span>,   <span class="co"># extra post-policy improvement per week</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>    <span class="at">epsilon =</span> <span class="fu">rnorm</span>(<span class="fu">n</span>(), <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="fl">1.5</span>),</span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>    <span class="at">minutes_to_ekg =</span> beta_0 <span class="sc">+</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>      beta_1 <span class="sc">*</span> time_centered <span class="sc">+</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>      beta_2 <span class="sc">*</span> after <span class="sc">+</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a>      beta_3 <span class="sc">*</span> (time_centered <span class="sc">*</span> after) <span class="sc">+</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a>      epsilon</span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a>  )</span></code></pre></div>
+</div>
+<div id="simulated-data-model-estimation-and-interpretation"
+class="section level3">
+<h3>Simulated data: model estimation and interpretation</h3>
+<p>Now let’s estimate our model:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>mod_event <span class="ot">&lt;-</span> <span class="fu">lm</span>(minutes_to_ekg <span class="sc">~</span> time_centered <span class="sc">+</span> after <span class="sc">+</span> time_centered<span class="sc">:</span>after, <span class="at">data =</span> ambulance_sim)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">mk_coeftab</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  mod_event,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">mode =</span> <span class="st">&quot;simple&quot;</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;event model: minutes to ekg&quot;</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>)</span></code></pre></div>
+<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+event model: minutes to ekg
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;font-weight: bold;">
+Term
+</th>
+<th style="text-align:right;font-weight: bold;">
+Estimate
+</th>
+<th style="text-align:right;font-weight: bold;">
+Std. Error
+</th>
+<th style="text-align:right;font-weight: bold;">
+p value
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+Intercept
+</th>
+<td style="text-align:right;">
+14.849
+</td>
+<td style="text-align:right;">
+0.558
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+time_centered
+</th>
+<td style="text-align:right;">
+-0.092
+</td>
+<td style="text-align:right;">
+0.032
+</td>
+<td style="text-align:right;">
+0.006
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+after
+</th>
+<td style="text-align:right;">
+-1.237
+</td>
+<td style="text-align:right;">
+0.758
+</td>
+<td style="text-align:right;">
+0.108
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+time_centered:after
+</th>
+<td style="text-align:right;">
+-0.105
+</td>
+<td style="text-align:right;">
+0.044
+</td>
+<td style="text-align:right;">
+0.019
+</td>
+</tr>
+</tbody>
+</table>
+<p>We see that the coefficient on <span
+class="math inline">\(\beta_2\)</span>, the immediate change at the time
+of the policy, is not significant. We don’t have evidence that there was
+an immediate change. But the coefficient on <span
+class="math inline">\(\beta_3\)</span>, the interaction term, is
+significant, so we have evidence to reject the null that the slope of
+the line didn’t change after the treatment.</p>
+<p>And let’s plot it:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">ggplot</span>(ambulance_sim, <span class="fu">aes</span>(<span class="at">x =</span> week, <span class="at">y =</span> minutes_to_ekg)) <span class="sc">+</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> <span class="st">&quot;lightsteelblue3&quot;</span>) <span class="sc">+</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">30</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>) <span class="sc">+</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="at">data =</span> <span class="fu">subset</span>(ambulance_sim, week <span class="sc">&lt;</span> <span class="dv">30</span>),</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">&quot;steelblue4&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>    <span class="at">data =</span> <span class="fu">subset</span>(ambulance_sim, week <span class="sc">&gt;=</span> <span class="dv">30</span>),</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">&quot;steelblue4&quot;</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Simulated interrupted time series: minutes from ambulance arrival to EKG&quot;</span>,</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Week&quot;</span>,</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Average minutes to EKG&quot;</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div>
+<p><img src="Sample-Notebook-Difference-in-Differences_files/figure-html/unnamed-chunk-7-1.png" alt="Simulated interrupted time series scatterplot: minutes from ambulance arrival to EKG" width="672" /></p>
+<p>How do we interpret this?</p>
+<p>Let’s remember our model setup:</p>
+<p>The model:</p>
+<p><span class="math display">\[
+Y_t = \beta_0 + \beta_1(Week_t - 30) + \beta_2 After_t + \beta_3
+[(Week_t - 30) \times After_t] + \epsilon_t
+\]</span></p>
+<p>Before the policy starts, <span class="math inline">\(After_t =
+0\)</span>, so</p>
+<p><span class="math display">\[
+Y_t = \beta_0 + \beta_1(Week_t - 30) + \epsilon_t
+\]</span></p>
+<p>After the policy starts, <span class="math inline">\(After_t =
+1\)</span>, so</p>
+<p><span class="math display">\[
+Y_t = (\beta_0 + \beta_2) + (\beta_1 + \beta_3)(Week_t - 30) +
+\epsilon_t
+\]</span></p>
+<p>Then we can interpret the scenario based on our simulated data/
+estimated model:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod_event)[<span class="st">&quot;(Intercept)&quot;</span>]</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>b1 <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod_event)[<span class="st">&quot;time_centered&quot;</span>]</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>b2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod_event)[<span class="st">&quot;after&quot;</span>]</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod_event)[<span class="st">&quot;time_centered:after&quot;</span>]</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot; * The predicted average minutes to EKG at week 30 based on the pre-policy trend is b0:&quot;</span>, <span class="fu">round</span>(b0, <span class="dv">2</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="st">&quot;* Before the policy, average time to EKG was already falling by about b1 (&quot;</span>, <span class="fu">round</span>(b1, <span class="dv">2</span>), <span class="st">&quot;) minutes per week&quot;</span>, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="st">&quot;* At the time the policy was introduced, average time to EKG immediately dropped by about b2 (&quot;</span>, <span class="fu">round</span>(b2, <span class="dv">2</span>), <span class="st">&quot;) minutes&quot;</span>, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="st">&quot;* After the policy, the weekly trend became steeper by an additional b3 (&quot;</span>, <span class="fu">round</span>(b3, <span class="dv">2</span>), <span class="st">&quot;) minutes per week&quot;</span>, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="st">&quot;* And the post-policy slope is b1 + b3 (&quot;</span>, <span class="fu">round</span>(b1 <span class="sc">+</span> b3, <span class="dv">2</span>), <span class="st">&quot;), so after the policy time to EKG was decreasing by&quot;</span>, <span class="fu">round</span>(b1 <span class="sc">+</span> b3, <span class="dv">2</span>), <span class="st">&quot;minutes per week instead of&quot;</span>, <span class="fu">round</span>(b1, <span class="dv">2</span>), <span class="st">&quot;minutes per week as during the pre-policy period&quot;</span>)</span></code></pre></div>
+<pre><code>##  * The predicted average minutes to EKG at week 30 based on the pre-policy trend is b0: 14.85 
+##  * Before the policy, average time to EKG was already falling by about b1 ( -0.09 ) minutes per week 
+##  * At the time the policy was introduced, average time to EKG immediately dropped by about b2 ( -1.24 ) minutes 
+##  * After the policy, the weekly trend became steeper by an additional b3 ( -0.11 ) minutes per week 
+##  * And the post-policy slope is b1 + b3 ( -0.2 ), so after the policy time to EKG was decreasing by -0.2 minutes per week instead of -0.09 minutes per week as during the pre-policy period</code></pre>
+<p>Before the policy, they were already getting a bit faster at
+obtaining EKGs. The policy appears to have both produced an immediate
+drop in average time to EKG (though that change is not significant, as
+<span class="math inline">\(\beta_2\)</span> from our regression isn’t
+significant) and accelerated the rate of improvement afterward (this
+change is significant, based on the <span
+class="math inline">\(\beta_3\)</span> from the model).</p>
+</div>
+</div>
+</div>
+<div id="difference-in-differences" class="section level1">
+<h1>Difference-in-Differences</h1>
+<p>For sources, I highly recommend <a
+href="https://unomaha.primo.exlibrisgroup.com/permalink/01UON_OMA/6h791u/cdi_proquest_journals_3302228972">Difference-in-Differences:
+A Practitioner’s Guide</a> as well as the <a
+href="https://mixtape.scunning.com/09-difference_in_differences">difference-in-differences
+chapter of Causal Inference: The Mixtape</a>.</p>
+<p>DiD is segmented regression with a comparison group. We’ll add a
+treatment group, so we have a group who gets the event, and a group that
+doesn’t (the control).</p>
+<p>Let’s consider the causal diagram for a DiD model:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>nodes_did <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">name  =</span> <span class="fu">c</span>(<span class="st">&quot;Time&quot;</span>, <span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Outcome&quot;</span>, <span class="st">&quot;Group&quot;</span>),</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">label =</span> <span class="fu">c</span>(<span class="st">&quot;Time&quot;</span>, <span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Outcome&quot;</span>, <span class="st">&quot;Group&quot;</span>),</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">x     =</span> <span class="fu">c</span>(<span class="fl">2.5</span>, <span class="fl">0.0</span>, <span class="fl">5.0</span>, <span class="fl">2.5</span>),</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">y     =</span> <span class="fu">c</span>(<span class="fl">1.2</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="sc">-</span><span class="fl">1.2</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>)</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>edges_did <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  <span class="at">from     =</span> <span class="fu">c</span>(<span class="st">&quot;Time&quot;</span>, <span class="st">&quot;Time&quot;</span>, <span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Group&quot;</span>, <span class="st">&quot;Group&quot;</span>),</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="at">to       =</span> <span class="fu">c</span>(<span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Outcome&quot;</span>, <span class="st">&quot;Outcome&quot;</span>, <span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Outcome&quot;</span>),</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  <span class="at">linetype =</span> <span class="fu">c</span>(<span class="st">&quot;solid&quot;</span>, <span class="st">&quot;solid&quot;</span>, <span class="st">&quot;solid&quot;</span>, <span class="st">&quot;solid&quot;</span>, <span class="st">&quot;solid&quot;</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>)</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="fu">plot_dag_manual</span>(</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  <span class="at">nodes =</span> nodes_did,</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>  <span class="at">edges =</span> edges_did,</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>  <span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.6</span>, <span class="fl">5.6</span>),</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>  <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.6</span>, <span class="fl">1.6</span>),</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>  <span class="at">y_scale =</span> .<span class="dv">6</span>,</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>  <span class="at">text_size =</span> <span class="dv">6</span>,</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>  <span class="at">edge_width =</span> <span class="fl">0.7</span>,</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>  <span class="at">arrow_length_pt =</span> <span class="dv">4</span>,</span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>  <span class="at">shrink =</span> <span class="fl">0.55</span>,</span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a>  <span class="at">text_family =</span> <span class="st">&quot;serif&quot;</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a>)</span></code></pre></div>
+<p><img src="Sample-Notebook-Difference-in-Differences_files/figure-html/unnamed-chunk-9-1.png" alt="Causal diagram for difference-in-differences." width="672" /></p>
+<p>The difference-in-differences model still includes time and a
+treatment, but now it has something else: a group that hasn’t been
+treated, the control group.</p>
+<p>So what we’re going to do is compare the treated group to itself,
+before and after the treatment. And also compare the control group to
+itself, before and after the treated group received the treatment. This
+way we’re trying to take the treated group and control for what would
+have happened in it if <em>only</em> time had happened, and not the
+treatment. So any extra change besides that should be the effect of the
+treatment.</p>
+<p>Make sure to <a
+href="https://mixtape.scunning.com/09-difference_in_differences">read
+through the John Snow cholera example</a> in Cunningham’s <em>Causal
+Inference: The Mixtape</em> ebook (there’s also a print version with
+even more!) to get a great real-life example of this.</p>
+<p>We’re going to add some terms to our model:</p>
+<ul>
+<li>Treated group: ambulance services that adopted the quality
+improvement policy in week 30</li>
+<li>Control group: similar ambulance services that did not adopt it
+during the same period</li>
+</ul>
+<p>We’ll observe weekly average minutes to EKG for both groups.</p>
+<div id="basic-difference-in-differences-setup" class="section level2">
+<h2>Basic Difference-in-Differences setup</h2>
+<p>We now have two dimensions, the group (treated vs. control) and the
+time (before vs. after). We can write it out the various dimension
+combinations like:</p>
+<ul>
+<li>Control group, before (<span class="math inline">\(t = 0\)</span>):
+<span class="math inline">\(Y_{C, 0}\)</span></li>
+<li>Control group, after (<span class="math inline">\(t = 1\)</span>):
+<span class="math inline">\(Y_{C, 1}\)</span></li>
+<li>Treated group, before (<span class="math inline">\(t = 0\)</span>):
+<span class="math inline">\(Y_{T, 0}\)</span></li>
+<li>Treated group, after (<span class="math inline">\(t = 1\)</span>):
+<span class="math inline">\(Y_{T, 1}\)</span></li>
+</ul>
+<p><strong>Step 1: What do we want to know?</strong></p>
+<p>We want to figure out the treatment effect on the treated group, so
+how much the treated group changed:</p>
+<p><span class="math display">\[
+\text{Treatment effect} = Y_{T, 1} - Y_{T, 0}
+\]</span> <strong>Step 2: The problem</strong></p>
+<p>If we just take the change at face value, it includes time effects.
+How much would the treated group have changed over time,
+<em>without</em> the treatment?</p>
+<p>Which means really:</p>
+<p><span class="math display">\[
+Y_{T, 1} - Y_{T, 0} = \text{treatment + time effects}
+\]</span> to solve this, we move on to…</p>
+<p><strong>Step 3: Use the control group</strong></p>
+<p>The control group gives us:</p>
+<p><span class="math display">\[
+Y_{C, 1} - Y_{C, 0} = \text{time effects}
+\]</span> or, what would have happened to the treatment group over time
+anyway, without the treatment.</p>
+<p><strong>Step 4: Difference-in-Differences</strong></p>
+<p>Which brings us to the whole “difference-in-differences” thing, which
+we get by subtracting the two:</p>
+<p><span class="math display">\[
+\text{DiD} = (\bar{Y}_{T, 1} - \bar{Y}_{T, 0}) - (\bar{Y}_{C, 1} -
+\bar{Y}_{1, 0})
+\]</span></p>
+<p>So we’re comparing how the treated group changed to how the control
+group changed. Any change in the treated group that is difference to the
+change in the control group is attributed to the treatment.</p>
+<p>This gives us the basic 2x2 difference-in-differences setup:</p>
+<p><span class="math display">\[
+Y_{gt} = \beta_0 + \beta_1 Treated_g + \beta_2 After_t + \beta_3
+(Treated_g \times After_t) + \epsilon_t
+\]</span></p>
+<p>where</p>
+<ul>
+<li><p><span class="math inline">\(Treated\)</span> is an indicator that
+you’re in the group being treated (whether before or after the
+treatment)</p></li>
+<li><p><span class="math inline">\(After\)</span> is an indicator that
+you’re in the post-treatment period (whether or not you’re in the
+treatment group)</p></li>
+<li><p><span class="math inline">\(Treated \times After\)</span> is an
+indicator for being in the treated group <em>and</em> the post treatment
+period, so you’re being treated right now.</p></li>
+<li><p><span class="math inline">\(\beta_0\)</span>: baseline for the
+control group before the policy</p></li>
+<li><p><span class="math inline">\(\beta_1\)</span>: baseline difference
+between treated and control groups before the treatment</p></li>
+<li><p><span class="math inline">\(\beta_2\)</span>: the time trend we
+would expect in the absence of treatment</p></li>
+<li><p><span class="math inline">\(\beta_3\)</span>: the DiD estimate,
+the additional post-policy change for the treated group <em>beyond</em>
+what happened in the control group.</p></li>
+</ul>
+<p>You <em>can</em> extend DiD to more than two groups or time
+periods:</p>
+<p><span class="math display">\[
+Y_{it} = \alpha_i + \lambda_t + \tau Treated_{it} + \delta X_{it} +
+\epsilon_{it}
+\]</span> where</p>
+<ul>
+<li><p><span class="math inline">\(Y_{it}\)</span> is the outcome for
+unit <span class="math inline">\(i\)</span> at time <span
+class="math inline">\(t\)</span></p></li>
+<li><p><span class="math inline">\(\alpha_i\)</span> are the group
+specific fixed effects (like person, company, state, etc.)</p></li>
+<li><p><span class="math inline">\(\lambda_t\)</span> are the time
+specific fixed effects (year, month, etc.)</p></li>
+<li><p><span class="math inline">\(\tau\)</span> is the DiD
+estimate</p></li>
+<li><p><span class="math inline">\(Treated_{it}\)</span> is the
+treatment indicator for unit <span class="math inline">\(i\)</span> at
+time <span class="math inline">\(t\)</span></p></li>
+<li><p><span class="math inline">\(X_{it}\)</span> are additional
+covariates</p></li>
+</ul>
+<p>This is the two-way fixed effects DiD model. This doesn’t do well
+under staggered treatment adoption though, which is where we see
+different groups receiving treatment at different times. In those cases,
+it’s better to use a different method like the one we’ll see below with
+event leads/ lags. With only two time periods, the model above collapses
+to the 2x2 DiD model.</p>
+</div>
+<div id="parallel-trends-assumption" class="section level2">
+<h2>Parallel trends assumption</h2>
+<p>The thing is, for DiD to work, before treatment <span
+class="math inline">\(Y_{T, 0} - Y_{C, 0}\)</span> would need to have
+evolved the same without the treatment. We are assuming that there is no
+time-variant specific unobservables that are different between the
+groups (treated and control).</p>
+<p>This is where the parallel trends assumption comes in. This is the
+key identifying assumption for DiD. We’re using the control group to
+answer the question, “what would have happened to the treated group if
+the policy hadn’t been implemented?”</p>
+<p>The parallel trends assumption says that the control group is a valid
+stand-in for that counterfactual.</p>
+<p>Let:</p>
+<ul>
+<li><p><span class="math inline">\(Y_{it}(0)\)</span> denote the
+potential outcome <em>without</em> treatment for unit <em>i</em> at time
+<em>t</em></p></li>
+<li><p><span class="math inline">\(D_i = 1\)</span> if unit <em>i</em>
+is in the treatment group</p></li>
+<li><p><span class="math inline">\(D_i = 0\)</span> if unit <em>i</em>
+is in the control group</p></li>
+</ul>
+<p>We can then write the parallel trends assumption as:</p>
+<p><span class="math display">\[
+E[Y_{it}(0) | D_i = 1] - E[Y_{it}(0) | D_i = 0] = \Delta_0\ \text{for
+all }t
+\]</span></p>
+<p>Where <span class="math inline">\(\Delta_0\)</span> is a constant
+difference over time in the untreated potential outcomes between the two
+groups. This assumption does not require the levels of outcomes to be
+the same between groups, only that the difference remains constant over
+time.</p>
+<p>The gap between treatment and control groups in the <em>absence of
+treatment</em> must remain stable. The groups don’t necessary have to
+have the same level or be identical, just the same slope over time. If
+this holds, any deviation from that stable difference after the
+treatment can be attributed to the causal effect of the treatment.</p>
+<p>Of course, this is the counterfactual universe that didn’t actually
+happen, because the treated group actually was treated. We can’t
+actually test the parallel trends assumption, just gather support for
+it.</p>
+<p>The parallel trends assumption basically says that, without the
+treatment, the treated group would have followed the same time trend as
+the control group.</p>
+<p>Anything that makes the treated group evolve differently even without
+treatment violates the parallel trends assumption.</p>
+<p>This can include differences between the two groups pre-treatment
+(the slopes were already different). It can also include group-specific
+shocks at the same time (like if the treated group gets a treatment
+<em>and</em> more funding to carry out the policy at the same time,
+you’d likely give too much credit to the policy.) There can also be
+composition changes, like if the treated group starts treating more
+severe cases over time (if we stick to the hospital example).</p>
+<p>If any of these things aren’t true, our estimator is biased. If we
+remember our DiD formula:</p>
+<p><span class="math display">\[
+\text{DiD} = (Y_{T, 1} - Y_{T, 0}) - Y_{C, 1} - Y_{1, 0}
+\]</span></p>
+<p>We’re subtracting</p>
+<p><span class="math display">\[
+Y_{C, 1} - Y_{1, 0}
+\]</span></p>
+<p>because we assume it equals the treated group’s time trend
+<strong>without the treatment</strong>. If this is wrong, our DiD
+estimate is biased.</p>
+<p>If the treated group was already improving faster, DiD will overstate
+the treatment effect. If the treated group was already getting worse, it
+will understate the effect.</p>
+<p>We can’t test the assumption directly, but we can look for evidence.
+Plotting both groups before treatment and seeing if the slopes are
+roughly parallel is good news; seeing diverging trends before the
+treatment is not good news for this assumption.</p>
+<p>If pre-treatment trends diverge, this threatens validity. If the
+trends converge, there may be policy effects to consider.</p>
+<p>Here’s the thing though: even if pre-trends are parallel, other
+confounders could still affect the result. It is by definition
+untestable since we ccan’t observe the counterfactual conditional
+expectation. We can’t prove DiD is valid, we can just present evidence
+that supports the assumption.</p>
+<p>We’ll look at another option to support the assumption besides
+visualization after we simulate some data.</p>
+</div>
+<div id="did-simulation" class="section level2">
+<h2>DiD Simulation</h2>
+<p>Let:</p>
+<ul>
+<li><span class="math inline">\(Y_{gt} =\)</span> average minutes from
+ambulance arrival to EKG for group <span
+class="math inline">\(g\)</span> in week <span
+class="math inline">\(t\)</span></li>
+<li><span class="math inline">\(Treated_g = 1\)</span> for the treated
+group, <span class="math inline">\(= 0\)</span> for the control
+group</li>
+<li><span class="math inline">\(After_t = 1\)</span> for week 30 and
+after, <span class="math inline">\(= 0\)</span> for before week 30</li>
+</ul>
+<p>Then the standard DiD model is:</p>
+<p><span class="math display">\[
+Y_{gt} = \beta_0 + \beta_1 Treated_g + \beta_2 After_t + \beta_3
+(Treated_g \times After_t) + \epsilon_t
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(\beta_0\)</span>: baseline average
+minutes to EKG for the control group before the policy</li>
+<li><span class="math inline">\(\beta_1\)</span>: baseline difference
+between treated and control groups before the policy</li>
+<li><span class="math inline">\(\beta_2\)</span>: change over time for
+the control group after week 30</li>
+<li><span class="math inline">\(\beta_3\)</span>: the DiD estimate, the
+additional post-policy change for the treated group <em>beyond</em> what
+happened in the control group.</li>
+</ul>
+<p>If lower minutes are better (which they are, in this case), then a
+negative <span class="math inline">\(\beta_3\)</span> means the policy
+improved performance.</p>
+<div id="x2-did-estimation" class="section level3">
+<h3>2x2 DiD estimation</h3>
+<p>Let’s simulate some data and estimate a DiD model:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="dv">14</span> <span class="co"># baseline control, pre-policy</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>b1 <span class="ot">&lt;-</span> <span class="fl">1.5</span> <span class="co"># treated group starts slower</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>b2 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.06</span> <span class="co"># both groups gradually improve over time</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">2.0</span> <span class="co"># policy effect for treated group after week 30</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>did_sim <span class="ot">&lt;-</span> <span class="fu">expand_grid</span>(</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>  <span class="at">week =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">60</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>  <span class="at">treated =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>    <span class="at">after =</span> <span class="fu">if_else</span>(week <span class="sc">&gt;=</span> <span class="dv">30</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>    <span class="at">time_centered =</span> week <span class="sc">-</span> <span class="dv">30</span>,</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>    </span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>    <span class="co"># Data-generating process</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>    <span class="at">epsilon =</span> <span class="fu">rnorm</span>(<span class="fu">n</span>(), <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="fl">1.0</span>),</span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>    </span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>    <span class="at">minutes_to_ekg =</span> b0 <span class="sc">+</span>                </span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>      b1 <span class="sc">*</span> treated <span class="sc">+</span>                   </span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>      b2 <span class="sc">*</span> week <span class="sc">+</span>                   </span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>      b3 <span class="sc">*</span> (treated <span class="sc">*</span> after) <span class="sc">+</span>       </span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a>      epsilon</span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>  )</span></code></pre></div>
+<p>Now let’s estimate the model:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>mod_did <span class="ot">&lt;-</span> <span class="fu">lm</span>(minutes_to_ekg <span class="sc">~</span> treated <span class="sc">+</span> after <span class="sc">+</span> treated<span class="sc">:</span>after, <span class="at">data =</span> did_sim)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="fu">mk_coeftab</span>(</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  mod_did,</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">mode =</span> <span class="st">&quot;simple&quot;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;DiD model: minutes to EKG&quot;</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>)</span></code></pre></div>
+<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+DiD model: minutes to EKG
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;font-weight: bold;">
+Term
+</th>
+<th style="text-align:right;font-weight: bold;">
+Estimate
+</th>
+<th style="text-align:right;font-weight: bold;">
+Std. Error
+</th>
+<th style="text-align:right;font-weight: bold;">
+p value
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+Intercept
+</th>
+<td style="text-align:right;">
+12.674
+</td>
+<td style="text-align:right;">
+0.203
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+treated
+</th>
+<td style="text-align:right;">
+2.459
+</td>
+<td style="text-align:right;">
+0.287
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+after
+</th>
+<td style="text-align:right;">
+-1.537
+</td>
+<td style="text-align:right;">
+0.282
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+</tr>
+<tr>
+<th scope="row" style="text-align:left;" style="text-align:left;">
+treated:after
+</th>
+<td style="text-align:right;">
+-2.731
+</td>
+<td style="text-align:right;">
+0.399
+</td>
+<td style="text-align:right;">
+&lt;0.001
+</td>
+</tr>
+</tbody>
+</table>
+<p>We see in this case that the coefficients are all significant at 1%,
+so we’ll move directly on to the plotting.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">ggplot</span>(did_sim, <span class="fu">aes</span>(<span class="at">x =</span> week, <span class="at">y =</span> minutes_to_ekg, <span class="at">color =</span> <span class="fu">factor</span>(treated))) <span class="sc">+</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">30</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>) <span class="sc">+</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  </span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="co"># BEFORE</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>    <span class="at">data =</span> <span class="fu">subset</span>(did_sim, week <span class="sc">&lt;</span> <span class="dv">30</span>),</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>  </span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>  <span class="co"># AFTER</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>    <span class="at">data =</span> <span class="fu">subset</span>(did_sim, week <span class="sc">&gt;=</span> <span class="dv">30</span>),</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>  </span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(</span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a>    <span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;seagreen4&quot;</span>, <span class="st">&quot;darkmagenta&quot;</span>),</span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>    <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;Control&quot;</span>, <span class="st">&quot;Treated&quot;</span>)</span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Segmented DiD: Minutes to EKG&quot;</span>,</span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Week&quot;</span>,</span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Average Minutes to EKG&quot;</span>,</span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;Group&quot;</span></span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div>
+<p><img src="Sample-Notebook-Difference-in-Differences_files/figure-html/unnamed-chunk-12-1.png" alt="Scatterplot of the treated and control groups pre and post treatment, time to EKG" width="672" /></p>
+<p>Now instead of one line before and after, we have two groups. The key
+question that DiD is trying to answer is whether the treated group’s
+line shifts differently after week 30 compared to the control group.
+Trends look pretty parallel, which makes sense since they were simulated
+with the same time trend before treatment.</p>
+</div>
+<div id="interpretation-1" class="section level3">
+<h3>Interpretation</h3>
+<p>Let’s go through the interpretation of the basic DiD model:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod_did)[<span class="st">&quot;(Intercept)&quot;</span>]</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>b1 <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod_did)[<span class="st">&quot;treated&quot;</span>]</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>b2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod_did)[<span class="st">&quot;after&quot;</span>]</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod_did)[<span class="st">&quot;treated:after&quot;</span>]</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot; * The baseline average minutes to EKG for the control group before the policy is b0:&quot;</span>, <span class="fu">round</span>(b0, <span class="dv">2</span>), <span class="st">&quot;minutes&quot;</span>, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="st">&quot;* The baseline difference between the treated and control groups before the policy is b1 (&quot;</span>, <span class="fu">round</span>(b1, <span class="dv">2</span>), <span class="st">&quot;) minutes per week&quot;</span>, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="st">&quot;* The change over time for the control group after week 30 is b2 (&quot;</span>, <span class="fu">round</span>(b2, <span class="dv">2</span>), <span class="st">&quot;) minutes&quot;</span>, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="st">&quot;* The DiD estimate, the additional post-policy change for the treated group beyond what happened in the control group is b3 (&quot;</span>, <span class="fu">round</span>(b3, <span class="dv">2</span>), <span class="st">&quot;) minutes per week&quot;</span>)</span></code></pre></div>
+<pre><code>##  * The baseline average minutes to EKG for the control group before the policy is b0: 12.67 minutes 
+##  * The baseline difference between the treated and control groups before the policy is b1 ( 2.46 ) minutes per week 
+##  * The change over time for the control group after week 30 is b2 ( -1.54 ) minutes 
+##  * The DiD estimate, the additional post-policy change for the treated group beyond what happened in the control group is b3 ( -2.73 ) minutes per week</code></pre>
+<ul>
+<li><span class="math inline">\(\beta_0\)</span>: baseline for the
+control group before the treatment</li>
+<li><span class="math inline">\(\beta_0 + \beta_1\)</span>: baseline for
+the treated group before the treatment</li>
+<li><span class="math inline">\(\beta_0 + \beta_2\)</span>: the control
+group after the time of the treatment</li>
+<li><span class="math inline">\(\beta_0 + \beta_2 + \beta_3\)</span>:
+the treatment group after the time of the treatment</li>
+</ul>
+<p>That’s why <span class="math inline">\(\beta_3\)</span> is the DiD
+estimate, because it’s what we see after we difference out what happened
+to the control group.</p>
+</div>
+</div>
+<div id="checking-the-parallel-trends-assumption-with-event-study-leads"
+class="section level2">
+<h2>Checking the parallel trends assumption with event study leads</h2>
+<p>I’d mentioned another way to get some evidence to support the
+parallel trends assumption. (This is also the better methodology if you
+have staggered adoption). In this case, instead of one post indicator,
+we estimate a separate effect for each time period relative to
+treatment.</p>
+<p>This is a special case of that describe in <a
+href="https://unomaha.primo.exlibrisgroup.com/permalink/01UON_OMA/6h791u/cdi_sage_journals_10_1177_1536867X211063144">Clarke
+and Tapia-Schythe’s paper</a> on staggered adoption event studies.</p>
+<p>In their setup, different groups adopt the treatment at different
+times, and some groups never adopt. Those groups are the pure controls.
+Everything is then aligned in time to the “event time”, relative to the
+time that the treatment happens.</p>
+<p>For our example, instead of having one treatment implemented at week
+30 for the treated group there would be group 1 treated at week 20,
+group 2 treated at time 30, and group 3 (control) never treated.</p>
+<p>For our setup, we’re going to use the same setup but without the
+staggered timing to gather some evidence to support (or not) the
+parallel trends assumption.</p>
+<p>Let’s map this from the original DiD setup.</p>
+<p><span class="math display">\[
+Y_{gt} = \beta_0 + \beta_1 Treated_g + \beta_2 After_t + \beta_3
+(Treated_g \times After_t) + \epsilon_t
+\]</span> We can rewrite DiD in “event time” language, so we can
+define</p>
+<p><span class="math display">\[
+event\_time = t - T_0
+\]</span> We can then think of the event time as equaling one if <span
+class="math inline">\(t - T_0\)</span> is greater or equal to zero
+(after the event), which then gives us:</p>
+<p><span class="math display">\[
+After_t = 1\{event\_time \geq 0\}
+\]</span> Our interaction term then turns from <span
+class="math inline">\(Treated_g \times After_t\)</span> to</p>
+<p><span class="math display">\[
+Treated_g \times 1\{event\_time \geq 0\}
+\]</span> Now we replace <span class="math inline">\(After\)</span> with
+a full set of time indicators, so instead of</p>
+<p><span class="math display">\[
+1\{event\_time \geq 0\}
+\]</span></p>
+<p>we have</p>
+<p><span class="math display">\[
+\sum_{k \geq 0} 1\{event\_time = k\}
+\]</span> So we’ve turned</p>
+<p><span class="math display">\[
+Treated_g \times After_t \rightarrow \sum_{k \geq 0} Treated_g \times
+1\{event\_time = k\}
+\]</span> That takes care of after the treatment. We also need to add
+the pre-treatment period, just removing the period just before the
+treatment as a reference:</p>
+<p><span class="math display">\[
+\sum_{k \neq 1} Treated_g \times 1\{event\_time = k\}
+\]</span> So now we have turned the basic 2x2 DiD setup into the event
+study version:</p>
+<p><span class="math display">\[
+Y_{gt} = \alpha_g + \lambda_t + \sum_{k \neq -1} \beta_k (Treated_g
+\times 1\{event\_time = k\}) + \epsilon_{gt}
+\]</span> where</p>
+<ul>
+<li><p><span class="math inline">\(k =\)</span> weeks relative to
+treatment (like -5, 4, 1, etc.)</p></li>
+<li><p><span class="math inline">\(k = -1\)</span> is left out because
+it’s the reference time period</p></li>
+<li><p>The <span class="math inline">\(\beta_1 Treated_g\)</span> term
+from the original DiD setup now maps to <span
+class="math inline">\(\alpha_g\)</span>, the group fixed effect</p></li>
+<li><p>The <span class="math inline">\(\beta_2 After_t\)</span> term
+maps to <span class="math inline">\(\lambda_t\)</span>, the time fixed
+effect</p></li>
+<li><p>The <span class="math inline">\(\beta_3 (Treated_g \times
+After_t)\)</span> term maps to all post treatment period <span
+class="math inline">\(\beta)k\)</span></p></li>
+</ul>
+<p>2x2 DiD is a restricted event study in which <span
+class="math inline">\(\beta_k = \beta_3\)</span> for all <span
+class="math inline">\(k \geq 0\)</span> and <span
+class="math inline">\(\beta_k = 0\)</span> for all <span
+class="math inline">\(k &lt; 0\)</span>.</p>
+<p>It’s called event leads because leads are the periods before
+treatment (<span class="math inline">\(k &lt; 0\)</span>) and the lags
+are the periods after treatment (<span class="math inline">\(k \geq
+0\)</span>). Leads are like the “fake” treatment effects before the
+policy (what was already going on) and the lags are the actual treatment
+effects.</p>
+<p>2x2 DiD assumes the treatment effect is the same in every post
+period. The event study relaxes that by estimating a separate effect for
+each period. So 2x2 DiD is an average effect, while the event study is
+the path of the effect over time.</p>
+<p>We can use this to gather support for the parallel trends assumption,
+since under the parallel trends assumption:</p>
+<p><span class="math display">\[
+\beta_k = 0 \text{ for all } k &lt; 0
+\]</span></p>
+<p>So before treatment, the treated and control groups shouldn’t be
+diverging in any way (it shouldn’t matter if treated or not), so the
+coefficients on the interaction terms should be equal to zero. After
+treatment, well hopefully you see an effect! But if you see an upward or
+downward trend in leads, like the <span class="math inline">\(\beta_k
+\neq 0\)</span>, then that’s a violation of the assumption.</p>
+<p>So in our simulated data, the policy went into effect in week 30. So
+weeks 1 to 29 would be leads and the lags would be weeks 30 to 60.</p>
+<p>Let’s give it a try. The thing is, with the original simulated data
+and only one observation per group / week, a full lead/ lag event study
+is too parameter heavy and we’ll end up with over parameterization.</p>
+<p>What we need to do instead is to simulate multiple observations per
+group per week, estimate the event study with the leads and lags
+relative to week 30 (when the treatment went into place), and then omit
+one pre period as a reference (usually <span class="math inline">\(k =
+-1\)</span>).</p>
+<p>In real life, if we couldn’t just simulate away the problem, binning
+would work. Like event time less than -10 (ten weeks before the
+treatment went into effect), and then from -2 to -10, and then between
+week 1 and 5, etc.</p>
+<p>But we can simulate data, so we will.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>did_sim_patients <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  <span class="at">week =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">60</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  <span class="at">treated =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="at">patient =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">20</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>    <span class="at">after =</span> <span class="fu">if_else</span>(week <span class="sc">&gt;=</span> <span class="dv">30</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>    <span class="at">event_time =</span> week <span class="sc">-</span> <span class="dv">30</span>,</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>    <span class="at">base =</span> <span class="dv">15</span>,     <span class="co"># control group baseline</span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>    <span class="at">treated_diff =</span> <span class="fl">0.1</span> <span class="sc">*</span> treated,   <span class="co"># treated group starts a bit slower</span></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>    <span class="co"># both groups improve a bit over time before treatment</span></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a>    <span class="at">common_trend =</span> <span class="sc">-</span><span class="fl">0.25</span> <span class="sc">*</span> week, </span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>    <span class="co"># treatment effect turns on after week 30</span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a>    <span class="at">post_treat_effect =</span> <span class="sc">-</span><span class="fl">2.5</span> <span class="sc">*</span> (treated <span class="sc">*</span> after),</span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a>    <span class="at">epsilon =</span> <span class="fu">rnorm</span>(<span class="fu">n</span>(), <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="fl">1.2</span>),</span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a></span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a>    <span class="at">minutes_to_ekg =</span> base <span class="sc">+</span></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a>      treated_diff <span class="sc">+</span></span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a>      common_trend <span class="sc">+</span></span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a>      post_treat_effect <span class="sc">+</span></span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a>      epsilon</span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a>  )</span></code></pre></div>
+<p>So now we’ve got 60 weeks for the treated and control groups, with 20
+patients per group/ week. I’m going to filter to just the 10 periods
+before and after the event:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>event_window <span class="ot">&lt;-</span> did_sim_patients <span class="sc">%&gt;%</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>  <span class="fu">filter</span>(event_time <span class="sc">&gt;=</span> <span class="sc">-</span><span class="dv">10</span>, event_time <span class="sc">&lt;=</span> <span class="dv">10</span>)</span></code></pre></div>
+<p>Here I’m using <code>fixest</code> because it makes clustered
+standard errors way easier. We’ll cluster by patient because
+observations for the same patient over time are correlated, and failing
+to account for that would make our standard errors too small. Each
+patient has repeated observations over time, so errors are likely
+correlated within patient.</p>
+<p>This is functionally equivalent to</p>
+<p><code>mod_event_study_lm &lt;- feols(minutes_to_ekg ~ factor(week) + factor(patient_id) + treated:event_time_f, data = event_window, cluster = ~ patient)</code>,</p>
+<p>but if you run that model you’ll get different coefficients. But then
+if you test it using
+<code>all.equal(fitted(model1), fitted(model2))</code> you’ll see that
+the results are really close. What’s up with that?</p>
+<p><code>fixest</code> does something and stricter by automatically
+detecting collinearity and dropping different combinations of variables
+and enforcing different normalization. There is collinearity between
+event time and the week fixed effect. (You can see some of these issues
+with collinearity in the panel illustration sample notebook!) So the
+predictions will be the same (you can check by comparing
+<code>fitted()</code>) but the coefficients will be different because of
+different reference points and different dropped categories.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>mod_event_study <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>  minutes_to_ekg <span class="sc">~</span> <span class="fu">i</span>(event_time, treated, <span class="at">ref =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">|</span></span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>    patient <span class="sc">+</span> week,</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>  <span class="at">data =</span> event_window,</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>  <span class="at">cluster =</span> <span class="sc">~</span> patient</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>)</span></code></pre></div>
+<p>We’ll grab our terms:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>event_results <span class="ot">&lt;-</span> <span class="fu">tidy</span>(mod_event_study) <span class="sc">%&gt;%</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(term, <span class="st">&quot;event_time&quot;</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>    <span class="at">event_time =</span> <span class="fu">str_extract</span>(term, <span class="st">&quot;-?</span><span class="sc">\\</span><span class="st">d+&quot;</span>) <span class="sc">%&gt;%</span> <span class="fu">as.numeric</span>()</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>  <span class="fu">distinct</span>(event_time, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>  <span class="fu">select</span>(event_time, estimate, std.error, statistic, p.value)</span></code></pre></div>
+<p>And clean them for presentation (you can just use
+<code>tidy(model_name)</code> or <code>summary(model_name)</code>, but I
+need to make accessible tables for all html files.)</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>event_results <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>    <span class="at">event_time =</span> <span class="sc">-</span><span class="dv">1</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>    <span class="at">estimate =</span> <span class="dv">0</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>    <span class="at">std.error =</span> <span class="dv">0</span>,</span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a>    <span class="at">statistic =</span> <span class="cn">NA_real_</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a>    <span class="at">p.value =</span> <span class="cn">NA_real_</span></span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a>  ),</span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a>  event_results</span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a>  <span class="fu">arrange</span>(event_time) <span class="sc">%&gt;%</span></span>
+<span id="cb20-12"><a href="#cb20-12" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb20-13"><a href="#cb20-13" tabindex="-1"></a>    <span class="at">period =</span> <span class="fu">case_when</span>(</span>
+<span id="cb20-14"><a href="#cb20-14" tabindex="-1"></a>      event_time <span class="sc">&lt;</span> <span class="dv">0</span>  <span class="sc">~</span> <span class="st">&quot;Pre (Lead)&quot;</span>,</span>
+<span id="cb20-15"><a href="#cb20-15" tabindex="-1"></a>      event_time <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;Event&quot;</span>,</span>
+<span id="cb20-16"><a href="#cb20-16" tabindex="-1"></a>      <span class="cn">TRUE</span>            <span class="sc">~</span> <span class="st">&quot;Post (Lag)&quot;</span></span>
+<span id="cb20-17"><a href="#cb20-17" tabindex="-1"></a>    )</span>
+<span id="cb20-18"><a href="#cb20-18" tabindex="-1"></a>  )</span>
+<span id="cb20-19"><a href="#cb20-19" tabindex="-1"></a></span>
+<span id="cb20-20"><a href="#cb20-20" tabindex="-1"></a>event_results_clean <span class="ot">&lt;-</span> event_results <span class="sc">%&gt;%</span></span>
+<span id="cb20-21"><a href="#cb20-21" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb20-22"><a href="#cb20-22" tabindex="-1"></a>    <span class="at">estimate  =</span> <span class="fu">round</span>(estimate, <span class="dv">3</span>),</span>
+<span id="cb20-23"><a href="#cb20-23" tabindex="-1"></a>    <span class="at">std.error =</span> <span class="fu">round</span>(std.error, <span class="dv">3</span>),</span>
+<span id="cb20-24"><a href="#cb20-24" tabindex="-1"></a>    <span class="at">statistic =</span> <span class="fu">round</span>(statistic, <span class="dv">2</span>),</span>
+<span id="cb20-25"><a href="#cb20-25" tabindex="-1"></a>    <span class="at">p.value   =</span> <span class="fu">round</span>(p.value, <span class="dv">3</span>)</span>
+<span id="cb20-26"><a href="#cb20-26" tabindex="-1"></a>  )</span></code></pre></div>
+<p>Now let’s take a look. We’re looking to see if any of the
+coefficients in the pre-period are significant.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">kable</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>  event_results_clean,</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;Event Time&quot;</span>, <span class="st">&quot;Estimate&quot;</span>, <span class="st">&quot;Std. Error&quot;</span>, <span class="st">&quot;t-stat&quot;</span>, <span class="st">&quot;p-value&quot;</span>, <span class="st">&quot;Period&quot;</span>),</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;Event Study Estimates (Reference = Week -1)&quot;</span>,</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>  <span class="at">align =</span> <span class="st">&quot;c&quot;</span>,</span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;html&quot;</span>,</span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a>  <span class="at">escape =</span> <span class="cn">FALSE</span></span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a>  <span class="fu">kable_styling</span>(</span>
+<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a>    <span class="at">bootstrap_options =</span> <span class="fu">c</span>(<span class="st">&quot;striped&quot;</span>, <span class="st">&quot;hover&quot;</span>, <span class="st">&quot;condensed&quot;</span>),</span>
+<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a>    <span class="at">full_width =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a>    <span class="at">position =</span> <span class="st">&quot;left&quot;</span></span>
+<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a>  <span class="fu">row_spec</span>(<span class="dv">0</span>, <span class="at">bold =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a>  <span class="fu">column_spec</span>(<span class="dv">1</span>, <span class="at">bold =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<table class="table table-striped table-hover table-condensed" style="width: auto !important; ">
+<caption>
+Event Study Estimates (Reference = Week -1)
+</caption>
+<thead>
+<tr>
+<th style="text-align:center;font-weight: bold;">
+Event Time
+</th>
+<th style="text-align:center;font-weight: bold;">
+Estimate
+</th>
+<th style="text-align:center;font-weight: bold;">
+Std. Error
+</th>
+<th style="text-align:center;font-weight: bold;">
+t-stat
+</th>
+<th style="text-align:center;font-weight: bold;">
+p-value
+</th>
+<th style="text-align:center;font-weight: bold;">
+Period
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+-10
+</td>
+<td style="text-align:center;">
+0.412
+</td>
+<td style="text-align:center;">
+0.356
+</td>
+<td style="text-align:center;">
+1.16
+</td>
+<td style="text-align:center;">
+0.261
+</td>
+<td style="text-align:center;">
+Pre (Lead)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+-9
+</td>
+<td style="text-align:center;">
+-0.338
+</td>
+<td style="text-align:center;">
+0.358
+</td>
+<td style="text-align:center;">
+-0.94
+</td>
+<td style="text-align:center;">
+0.357
+</td>
+<td style="text-align:center;">
+Pre (Lead)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+-8
+</td>
+<td style="text-align:center;">
+0.097
+</td>
+<td style="text-align:center;">
+0.384
+</td>
+<td style="text-align:center;">
+0.25
+</td>
+<td style="text-align:center;">
+0.803
+</td>
+<td style="text-align:center;">
+Pre (Lead)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+-7
+</td>
+<td style="text-align:center;">
+0.513
+</td>
+<td style="text-align:center;">
+0.428
+</td>
+<td style="text-align:center;">
+1.20
+</td>
+<td style="text-align:center;">
+0.245
+</td>
+<td style="text-align:center;">
+Pre (Lead)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+-6
+</td>
+<td style="text-align:center;">
+0.276
+</td>
+<td style="text-align:center;">
+0.320
+</td>
+<td style="text-align:center;">
+0.86
+</td>
+<td style="text-align:center;">
+0.399
+</td>
+<td style="text-align:center;">
+Pre (Lead)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+-5
+</td>
+<td style="text-align:center;">
+0.053
+</td>
+<td style="text-align:center;">
+0.305
+</td>
+<td style="text-align:center;">
+0.17
+</td>
+<td style="text-align:center;">
+0.864
+</td>
+<td style="text-align:center;">
+Pre (Lead)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+-4
+</td>
+<td style="text-align:center;">
+-0.046
+</td>
+<td style="text-align:center;">
+0.350
+</td>
+<td style="text-align:center;">
+-0.13
+</td>
+<td style="text-align:center;">
+0.896
+</td>
+<td style="text-align:center;">
+Pre (Lead)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+-3
+</td>
+<td style="text-align:center;">
+0.566
+</td>
+<td style="text-align:center;">
+0.359
+</td>
+<td style="text-align:center;">
+1.58
+</td>
+<td style="text-align:center;">
+0.132
+</td>
+<td style="text-align:center;">
+Pre (Lead)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+-2
+</td>
+<td style="text-align:center;">
+-0.115
+</td>
+<td style="text-align:center;">
+0.482
+</td>
+<td style="text-align:center;">
+-0.24
+</td>
+<td style="text-align:center;">
+0.813
+</td>
+<td style="text-align:center;">
+Pre (Lead)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+-1
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+NA
+</td>
+<td style="text-align:center;">
+NA
+</td>
+<td style="text-align:center;">
+Pre (Lead)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+0
+</td>
+<td style="text-align:center;">
+-3.204
+</td>
+<td style="text-align:center;">
+0.437
+</td>
+<td style="text-align:center;">
+-7.33
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+Event
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+1
+</td>
+<td style="text-align:center;">
+-2.354
+</td>
+<td style="text-align:center;">
+0.389
+</td>
+<td style="text-align:center;">
+-6.05
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+Post (Lag)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+2
+</td>
+<td style="text-align:center;">
+-2.269
+</td>
+<td style="text-align:center;">
+0.458
+</td>
+<td style="text-align:center;">
+-4.96
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+Post (Lag)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+3
+</td>
+<td style="text-align:center;">
+-2.276
+</td>
+<td style="text-align:center;">
+0.423
+</td>
+<td style="text-align:center;">
+-5.38
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+Post (Lag)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+4
+</td>
+<td style="text-align:center;">
+-1.757
+</td>
+<td style="text-align:center;">
+0.429
+</td>
+<td style="text-align:center;">
+-4.10
+</td>
+<td style="text-align:center;">
+0.001
+</td>
+<td style="text-align:center;">
+Post (Lag)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+5
+</td>
+<td style="text-align:center;">
+-2.616
+</td>
+<td style="text-align:center;">
+0.356
+</td>
+<td style="text-align:center;">
+-7.35
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+Post (Lag)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+6
+</td>
+<td style="text-align:center;">
+-2.110
+</td>
+<td style="text-align:center;">
+0.577
+</td>
+<td style="text-align:center;">
+-3.66
+</td>
+<td style="text-align:center;">
+0.002
+</td>
+<td style="text-align:center;">
+Post (Lag)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+7
+</td>
+<td style="text-align:center;">
+-2.638
+</td>
+<td style="text-align:center;">
+0.323
+</td>
+<td style="text-align:center;">
+-8.18
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+Post (Lag)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+8
+</td>
+<td style="text-align:center;">
+-2.363
+</td>
+<td style="text-align:center;">
+0.343
+</td>
+<td style="text-align:center;">
+-6.89
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+Post (Lag)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+9
+</td>
+<td style="text-align:center;">
+-2.474
+</td>
+<td style="text-align:center;">
+0.443
+</td>
+<td style="text-align:center;">
+-5.59
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+Post (Lag)
+</td>
+</tr>
+<tr>
+<td style="text-align:center;font-weight: bold;">
+10
+</td>
+<td style="text-align:center;">
+-2.609
+</td>
+<td style="text-align:center;">
+0.302
+</td>
+<td style="text-align:center;">
+-8.65
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+<td style="text-align:center;">
+Post (Lag)
+</td>
+</tr>
+</tbody>
+</table>
+<p>We can also plot the interaction coefficients pre and post treatment
+to get an even better sense of any changes:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">ggplot</span>(event_results_clean, <span class="fu">aes</span>(<span class="at">x =</span> event_time, <span class="at">y =</span> estimate, <span class="at">color =</span> period)) <span class="sc">+</span></span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">&quot;dotted&quot;</span>) <span class="sc">+</span></span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>) <span class="sc">+</span></span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a>  </span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a>  </span>
+<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(</span>
+<span id="cb22-8"><a href="#cb22-8" tabindex="-1"></a>    <span class="fu">aes</span>(</span>
+<span id="cb22-9"><a href="#cb22-9" tabindex="-1"></a>      <span class="at">ymin =</span> estimate <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> std.error,</span>
+<span id="cb22-10"><a href="#cb22-10" tabindex="-1"></a>      <span class="at">ymax =</span> estimate <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> std.error</span>
+<span id="cb22-11"><a href="#cb22-11" tabindex="-1"></a>    ),</span>
+<span id="cb22-12"><a href="#cb22-12" tabindex="-1"></a>    <span class="at">width =</span> <span class="fl">0.2</span>,</span>
+<span id="cb22-13"><a href="#cb22-13" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.8</span></span>
+<span id="cb22-14"><a href="#cb22-14" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb22-15"><a href="#cb22-15" tabindex="-1"></a>  </span>
+<span id="cb22-16"><a href="#cb22-16" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(</span>
+<span id="cb22-17"><a href="#cb22-17" tabindex="-1"></a>    <span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb22-18"><a href="#cb22-18" tabindex="-1"></a>      <span class="st">&quot;Pre (Lead)&quot;</span> <span class="ot">=</span> <span class="st">&quot;slateblue&quot;</span>,</span>
+<span id="cb22-19"><a href="#cb22-19" tabindex="-1"></a>      <span class="st">&quot;Event&quot;</span> <span class="ot">=</span> <span class="st">&quot;black&quot;</span>,</span>
+<span id="cb22-20"><a href="#cb22-20" tabindex="-1"></a>      <span class="st">&quot;Post (Lag)&quot;</span> <span class="ot">=</span> <span class="st">&quot;darkmagenta&quot;</span></span>
+<span id="cb22-21"><a href="#cb22-21" tabindex="-1"></a>    )</span>
+<span id="cb22-22"><a href="#cb22-22" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb22-23"><a href="#cb22-23" tabindex="-1"></a>  </span>
+<span id="cb22-24"><a href="#cb22-24" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb22-25"><a href="#cb22-25" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Event Study: Effect of the Policy on Minutes to EKG&quot;</span>,</span>
+<span id="cb22-26"><a href="#cb22-26" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Weeks Relative to Policy Introduction&quot;</span>,</span>
+<span id="cb22-27"><a href="#cb22-27" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Estimated Effect on Minutes to EKG&quot;</span>,</span>
+<span id="cb22-28"><a href="#cb22-28" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;Period&quot;</span></span>
+<span id="cb22-29"><a href="#cb22-29" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb22-30"><a href="#cb22-30" tabindex="-1"></a>  </span>
+<span id="cb22-31"><a href="#cb22-31" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div>
+<p><img src="Sample-Notebook-Difference-in-Differences_files/figure-html/unnamed-chunk-20-1.png" alt="Estimated event study interaction coefficients, pre and post treatment" width="672" /></p>
+<p>This shows the estimated effect of the policy over time relative to
+week 30 (event time 0). Each point represents the <em>difference</em>
+between the treated and control groups at a given week.</p>
+<p>The lead values should be close to zero if the parallel trends
+assumption holds, so the treated and control groups were similar before
+the treatment. The vertical dashed line marks when the policy
+begins.</p>
+<p>After that point, the lags show how the treatment effect happens over
+time. We see that there’s a clear shift away from zero after the
+treatment, so we have evidence that the intervention had an effect. The
+pattern over the following weeks shows whether that effect is immediate,
+gradual, persistent, etc.</p>
+<p>The <span class="math inline">\(\beta_3\)</span> from the original
+2x2 DiD setup was a single average treatment effect for all the post
+treatment periods, and assumes the effect is constant over time.</p>
+<p>Here, each <span class="math inline">\(\beta_k\)</span> is a time
+specific treatment effect, one for each week after the treatment. It’s
+equal to the difference between treated and control at time <span
+class="math inline">\(k\)</span>, relative to the difference between
+treated and control in the reference period: <span
+class="math inline">\(\beta_k = (\bar{Y}_{T, k} - \bar{Y}_{C, k}) -
+(\bar{Y}_{T, -1} - \bar{Y}_{C, -1})\)</span>, if <span
+class="math inline">\(k = -1\)</span> is the reference period. It’s a
+difference-in-differences at each time point. Each event-study
+coefficient is a difference-in-differences estimate at a specific time
+relative to the policy.</p>
+<p>If <span class="math inline">\(\beta_k = 0\)</span> for all <span
+class="math inline">\(k &lt; 0\)</span>, then treated and control evolve
+similarly pre-treatment (we have support for parallel trends). If <span
+class="math inline">\(\beta_k \neq 0\)</span> for <span
+class="math inline">\(k \geq 0\)</span>, then treatment has an effect at
+that time.</p>
+</div>
+</div>
+<div id="summary" class="section level1">
+<h1>Summary</h1>
+<div id="basic-event-studies" class="section level2">
+<h2>Basic Event Studies</h2>
+<p>The simplest event study compares outcomes for a single group before
+and after a treatment policy change. It looks at how the outcome changes
+before and after the treatment. This approach is intuitive and easy to
+visualize, but it relies on a strong assumption, that nothing else
+changed at the same time that could explain the observed shift. Without
+a comparison group, it is difficult to rule out other time-related
+factors, so this design is best viewed as descriptive rather than causal
+on its own.</p>
+</div>
+<div id="difference-in-differences-1" class="section level2">
+<h2>2×2 Difference-in-Differences</h2>
+<p>The 2×2 DiD design compares treated and control groups before and
+after a policy to isolate a causal effect. It works by subtracting out
+two things, the baseline differences between groups and common changes
+over time. The key identifying assumption is parallel trends. This is
+needed because the idea of parallel trends is that, without the policy,
+the difference between treated and control groups would have remained
+constant. Under this assumption, the interaction term captures the
+causal effect.</p>
+</div>
+<div id="event-studies-with-leadslags" class="section level2">
+<h2>Event Studies with Leads/Lags</h2>
+<p>In more complex settings where treatment is staggered across groups/
+times, event studies use leads and lags to align units in “event time”
+and estimate effects relative to each group’s adoption. This helps us
+estimate both how treatment effects evolve over time and also provides
+evidence to support the parallel trends assumption. The lead
+coefficients (pre-treatment periods) should be close to zero if treated
+and control groups were changing similarly before treatment. Any
+systematic differences before the event suggest the identifying
+assumption of parallel trends may be violated.</p>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "Sample-Notebook-Difference-in-Differences_files/mathjax-local/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
