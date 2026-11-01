@@ -4,8 +4,6 @@ output:
   html_document:
     toc: yes
     toc_depth: 2
-    mathjax: local
-    self_contained: false
     df_print: kable
     highlight: tango
     includes:

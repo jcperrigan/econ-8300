@@ -1,0 +1,314 @@
+---
+title: "In-Class Activity: Event Studies and Difference-in-Differences"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(scipen = 999)
+```
+
+```{r}
+need <- c("tidyverse", "broom", "knitr", "kableExtra")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have])
+invisible(lapply(need, library, character.only = TRUE))
+```
+
+# Overview
+
+In this activity you will work through three related designs:
+
+1. A basic event study with a single treated unit observed before and after a policy.
+2. A 2x2 difference-in-differences setup with a treated and a control group.
+3. An event-study with leads and lags in a staggered-adoption panel.
+
+The outcome in all three parts is the organ donation rate per million residents. The policy is a donor registration reform meant to increase organ donation. It's similar to the `socviz` dataset but simulated to make the timing treatment clearer.
+
+## Learning goals
+
+By the end of this activity, you should be able to:
+
+- estimate and interpret a basic DiD model
+- explain the parallel trends assumption
+- estimate an event-study model with leads and lags
+- use pre-treatment coefficients to support parallel trends (or not)
+
+# Part 0. Build the datasets
+
+Let's generate all of the data up front.
+
+## 0.1 Single-state event study data
+
+```{r}
+set.seed(8300)
+
+single_state <- tibble(
+  year = 1995:2010
+) %>%
+  mutate(
+    time = row_number(),
+    after = if_else(year >= 2003, 1, 0),
+    time_centered = year - 2003,
+    donation_rate = 18 +
+      0.25 * time +
+      2.2 * after +
+      0.35 * (time_centered * after) +
+      rnorm(n(), 0, 0.8)
+  )
+
+single_state
+```
+
+## 0.2 DiD data
+
+```{r}
+set.seed(8301)
+
+did_data <- expand_grid(
+  year = 1995:2010,
+  state = c("Control", "Treated")
+) %>%
+  mutate(
+    treated = if_else(state == "Treated", 1, 0),
+    after = if_else(year >= 2003, 1, 0),
+    donation_rate = 18 +
+      1.5 * treated +
+      0.35 * (year - 1995) +
+      3.0 * (treated * after) +
+      rnorm(n(), 0, 0.9)
+  )
+
+did_data
+```
+
+## 0.3 Staggered-adoption panel for leads/lags
+
+```{r}
+set.seed(8302)
+
+adoption_years <- tibble(
+  state = c("Arizona", "Colorado", "Florida", "Georgia", "Iowa", "Kansas", "Nevada", "Utah"),
+  adopt_year = c(2002, 2004, 2006, 2008, Inf, Inf, 2005, 2007)
+)
+
+staggered_data <- expand_grid(
+  state = adoption_years$state,
+  year = 1998:2010,
+  hospital = 1:20
+) %>%
+  left_join(adoption_years, by = "state") |>
+  mutate(
+    treated_ever = if_else(is.finite(adopt_year), 1, 0),
+    event_time = if_else(is.finite(adopt_year), year - adopt_year, NA_real_),
+    treated_now = if_else(is.finite(adopt_year) & year >= adopt_year, 1, 0),
+    state_effect = case_when(
+      state == "Arizona"  ~  1.2,
+      state == "Colorado" ~  0.6,
+      state == "Florida"  ~  0.3,
+      state == "Georgia"  ~ -0.4,
+      state == "Iowa"     ~  0.8,
+      state == "Kansas"   ~ -0.2,
+      state == "Nevada"   ~  0.1,
+      state == "Utah"     ~  1.0
+    ),
+    common_trend = 0.28 * (year - 1998),
+    treatment_effect = if_else(treated_now == 1, 2.5 + 0.15 * pmax(event_time, 0), 0),
+    donation_rate = 19 + state_effect + common_trend + treatment_effect + rnorm(n(), 0, 1.1)
+  )
+
+staggered_data
+```
+
+# Part 1. Basic event study: one state before and after
+
+Let's say one state introduces a donor registration campaign in 2003 and we see the donation rate before and after.
+
+## Task 1. Visualize the single-state data
+
+Create a scatterplot of `donation_rate` against `year` using the `single_state` data. Add:
+
+- points,
+- a dashed vertical line at 2003,
+- one fitted line before 2003,
+- one fitted line for 2003 and after.
+
+```{r}
+# your code here
+```
+
+## Task 2. Estimate the segmented regression
+
+Estimate:
+
+
+$$
+DonationRate_t = \beta_0 + \beta_1 TimeCentered_t + \beta_2 After_t + \beta_3(TimeCentered_t \times After_t) + \epsilon_t
+$$
+
+using `single_state`.
+
+```{r}
+# your code here
+```
+
+## Task 3. Interpret the coefficients
+
+In words, what do the following coefficients mean?
+
+1. $\beta_1$
+2. $\beta_2$
+3. $\beta_3$
+
+Write 2-4 sentences total.
+
+**Your answer:**
+
+
+
+## Task 4. Why is this design weak for causal inference?
+
+Give one reason why a single-group before/after event study is vulnerable to bias.
+
+**Your answer:**
+
+
+
+# Part 2. Difference-in-differences
+
+Now we add a control state that did not adopt the reform in 2003.
+
+## Task 5. Visualize the treated and control groups
+
+Make a scatterplot of `donation_rate` against `year`, colored by `state`. Add:
+
+- a dashed vertical line at 2003,
+- separate fitted lines for each state before the policy,
+- separate fitted lines for each state after the policy.
+
+```{r}
+# your code here
+```
+
+## Task 6. Estimate the basic DiD model
+
+Estimate:
+
+$$
+DonationRate_{gt} = \beta_0 + \beta_1 Treated_g + \beta_2 After_t + \beta_3(Treated_g \times After_t) + \epsilon_{gt}
+$$
+
+```{r}
+# your code here
+```
+
+## Task 7. Compute the "gap of gaps"
+
+Use group means to calculate the DiD estimate manually.
+
+Hint: first compute the mean donation rate by `state` and `after`.
+
+```{r}
+# your code here
+```
+
+Then answer:
+
+1. What is the treated group's change from before to after?
+2. What is the control group's change from before to after?
+3. What is the difference-in-differences estimate?
+
+**Your answer:**
+
+
+
+## Task 8. Parallel trends
+
+Look at your plot from Task 5.
+
+Do the pre-treatment trends look roughly parallel? Based on the simulation, does the parallel trends assumption seem plausible here?
+
+**Your answer:**
+
+
+
+# Part 3. Event-study leads and lags
+
+Now we'll go to a staggered-adoption setting where different states adopt at different times and some never adopt.
+
+
+## Task 9. Create event-time indicators and estimate an event study
+
+We'll keep only event times between -4 and 4 for treated states, and keep never-treated states as controls.
+
+```{r}
+event_window <- staggered_data %>%
+  filter((treated_ever == 1 & event_time >= -4 & event_time <= 4) | treated_ever == 0)
+
+event_window <- event_window %>%
+  mutate(
+    event_time_f = if_else(treated_ever == 1, as.character(event_time), "never"),
+    event_time_f = factor(event_time_f)
+  )
+
+head(event_window, n = 20)
+```
+
+Now create a factor for the treated units' event times only, using `-1` as the omitted reference period. One convenient way is to make a variable that is `"never"` for never-treated states and the event time for treated states, then interact that with treatment status.
+
+Estimate a model with:
+
+- state fixed effects,
+- year fixed effects,
+- event-time interactions for treated states.
+
+You may use a model of the form:
+
+$$
+DonationRate_{st} = \alpha_s + \lambda_t + \sum_{k \neq -1}\beta_k \left(1\{event\_time = k\} \times treated\_ever_s\right) + \epsilon_{st}
+$$
+
+```{r}
+# your code here
+```
+
+## Task 10. Extract and plot the lead/lag coefficients
+
+Create a tidy results table of the event-time interaction terms, then plot:
+
+- event time on the x-axis,
+- coefficient estimate on the y-axis,
+- a horizontal line at 0,
+- a vertical line at 0,
+- points and 95% confidence intervals.
+
+```{r}
+# your code here
+```
+
+Then answer:
+
+1. Are the lead coefficients mostly close to zero?
+2. What do the lag coefficients suggest about the treatment effect after adoption?
+3. How does this event-study setup relate back to the basic DiD model?
+
+**Your answer:**
+
+
+
+# Wrap-up
+
+In 3-5 sentences, summarize the differences among:
+
+- a basic event study,
+- a 2x2 DiD design,
+- an event-study with leads and lags.
+
+**Your answer:**
+
+
+
