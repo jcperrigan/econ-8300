@@ -48,7 +48,13 @@ Use `?saving` for more information.
 Take a look at the summary statistics and data structure.
 
 ```{r}
+source("reporting.R")
+```
+
+
+```{r}
 # data structure
+glimpse(saving)
 
 # summary stats
 ```

@@ -1,0 +1,495 @@
+---
+title: "In-Class Activity: Heteroskedasticity"
+output: html_document
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+library(wooldridge)
+library(tidyverse)
+library(lmtest)
+library(sandwich)
+library(broom)
+
+data("saving")
+saving <- na.omit(saving)
+```
+
+# In-class activity overview
+
+**Topic:** Heteroskedasticity — what causes it, how to diagnose it, and how to deal with it
+
+**Dataset:** `saving` from the `wooldridge` package
+
+
+
+## Learning goals
+
+By the end of class, you should be able to:
+
+1. explain why heteroskedasticity often appears in cross-sectional data,
+2. diagnose heteroskedasticity using plots and formal tests,
+3. explain what heteroskedasticity changes about OLS inference,
+4. use robust standard errors, and
+5. estimate a simple WLS model when we assume a form of the variance.
+
+## Data reminder
+
+The `saving` dataset includes household annual savings (`sav`), annual income (`inc`), family size (`size`), education of the household head (`educ`), age of the household head (`age`), and a race indicator (`black`).
+
+Use `?saving` for more information.
+
+---
+
+# Activity 1 (10 minutes): Check out the data and think about causes
+
+
+## 1a. Inspect the data
+
+Take a look at the summary statistics and data structure.
+
+```{r}
+source("reporting.R")
+```
+
+
+```{r}
+# data structure
+glimpse(saving)
+
+# summary stats
+```
+
+```{r, results = "asis"}
+mk_dataset_summary(saving)
+#summary(saving)
+```
+
+## 1b. Plot savings against income
+
+Create a scatterplot of `sav` against `inc`. Add a linear regression line.
+
+```{r}
+# put your scatterplot here
+ggplot(saving, aes(x = inc, y = sav)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "savings and income",
+    x = "income",
+    y = "savings"
+  ) +
+  theme_minimal()
+```
+
+## 1c. Write 2–3 sentences
+
+In words, why might higher-income households show more variation in savings than lower-income households?
+
+> **Answer:**
+
+There's a positive relationship between income and savings. There seems to be some more vertical spread at higher income levels, and less vertical spread at lower income levels.
+
+
+---
+
+# Activity 2 (10 minutes): Fit OLS and diagnose with plots
+
+Estimate the simple model
+
+
+$sav_i = \beta_0 + \beta_1 inc_i + u_i$
+
+```{r, results = "asis"}
+# estimate your model here
+mod1 <- lm(sav ~ inc, data = saving)
+
+mk_coeftab(mod1)
+# show your results here
+```
+
+## 2a. Residual plot against fitted values
+
+Plot your model residuals against your fitted values.
+
+```{r}
+# save your residuals and fitted values
+saving_aug <- augment(mod1)
+
+
+
+# plot your residuals against your fitted values. Add a horizontal line at zero.
+
+ggplot(saving_aug, aes(x = .fitted, y = .resid)) +
+  geom_point(alpha = 0.5, color = "steelblue") +
+  geom_hline(yintercept = 0) +
+  labs(
+    title = "residuals vs fitted",
+    x = "fitted",
+    y = "residuals"
+  ) +
+  theme_minimal()
+
+```
+
+
+.hat:
+
+it's the diagonal element ($h_{ii}$) of the hat matrix $H = X(X'X)^{-1}X'$. Measures how far an observations predictor values are from the mean of all the predictor values. 
+
+## 2b. Plot squared residuals against income
+
+Plot your squared residuals from your model against income.
+
+```{r}
+# create your scatterplot of your squared residuals from your model against income here
+ggplot(saving_aug, aes(x = .fitted, y = .resid^2)) +
+  geom_point(alpha = 0.5, color = "steelblue") +
+  labs(
+    title = "squared residuals vs fitted",
+    x = "fitted",
+    y = "residuals squared"
+  ) +
+  theme_minimal()
+```
+
+## 2c. Write 2–3 sentences
+
+What pattern do you see? Does it look consistent with homoskedasticity or heteroskedasticity?
+
+> **Answer:**
+
+It shows some difference in noise at different levels of income/ fitted values. Some indication of heteroskedasticity. But we'll want to test it. 
+
+---
+
+---
+
+# Activity 3 (12 minutes): Breusch–Pagan test by hand
+
+We will now carry out the BP test manually.
+
+Big idea (both BP and White test): estimate baseline OLS model, get residuals, test whether the variance of the residuals depends on the regressor. If it does, then heteroskedasticity is there.
+
+Let's say our starting regression is 
+
+$Y_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \dots + \beta_k X_{ki} + u_{i}$
+
+We estimate our regression:
+
+$\hat{Y_i} = \hat{\beta}_0 + \hat{\beta}_1 X_{1i} + \dots \hat{\beta}_k X_{ki}$
+
+And we have our residuals:
+
+$\hat{u}_i = Y_i - \hat{Y}_i$
+
+BP:
+
+Run an auxiliary regression:
+
+$\hat{u}_i^2 = \alpha + \gamma_1 X_{1i} + \gamma_2 X_{2i} + \gamma_k X_{ki} + v_i$
+
+Test 
+$H_0: \gamma_1 = \gamma_2 = \dots = \gamma_k = 0$
+
+Test statistic: $LM = n \times R^2 \sim \chi^2(k)$
+
+Why: because it's a lagrange multiplier, it checks whether the squared residuals are related to $X$
+
+The $R^2$ is coming from the auxillary regression. It's measuring how much of the variation in the squared residuals is being explained by the $X$'s. And then when we multiply it by $n$ it scales the test stat so that it follow a chi squared distribution.
+
+If the independent variables really strongly predict the squared residuals, the $R^2$ will be big and so the $LM$ will be big. And so we'll reject the null of homoskedasticity.
+
+BP test features:
+
+* Assumes the variance is a linear function of the regressors
+* Higher power if the function form is specified correctly
+
+## 3a. Step 1: get squared residuals
+
+```{r, results = "asis"}
+# save your model's squared residuals
+saving_bp <- saving_aug %>%
+  mutate(resid_sq = .resid^2)
+
+
+```
+
+## 3b. Step 2: auxiliary regression
+
+Regress the squared residuals on `inc`.
+
+```{r, results = "asis"}
+# Regress the squared residuals on the dependent variable
+bp_aux <- lm(resid_sq ~ inc, data = saving_bp)
+
+mk_coeftab(bp_aux)
+#summary(bp_aux)
+```
+
+## 3c. Step 3: compute the BP test statistic
+
+Recall:
+
+
+$BP = n \times R^2$
+
+### 3a. Compute the test statistic
+
+### 3b. Compute the critical value at 5 %
+
+### 3c. Compute the p-value of the test statistic
+
+
+
+```{r}
+# compute the test statistic
+n <- nobs(bp_aux)
+r2_bp <- summary(bp_aux)$r.squared
+bp_stat <- n * r2_bp
+
+# compute the critical value at 5%
+bp_df <- 1
+bp_crit <- qchisq(.95, df = bp_df) 
+
+# f critical statistic, right tail
+#qf(.05, q, df, lower.tail = FALSE)
+
+# Compute the p-value of the test statisitc
+bp_pval <- 1 - pchisq(bp_stat, df = bp_df)
+
+c(bp_stat = bp_stat,
+  bp_crit = bp_crit,
+  bp_pval = bp_pval)
+```
+
+## 3d. Decision
+
+State the null and alternative hypotheses, then say whether you reject the null at the 5% level.
+
+> **Answer:**
+
+$H_0: Var(u \mid inc) = \sigma^2$ (constant variance, homoskedastic, squared residuals are not related to the $X$)
+$H_a: Var(u \mid inc)$ depends on income (it varies with different levels of income, heteroskedastic, squared residuals are related to the $X$)
+
+So we reject if bp_stat is greater than bp_crit, or if the p value is less than 0.05.
+
+With a high p-value (like the one we have), we fail to reject the null. There isn't strong evidence of heteroskedasticity. 
+
+With a low p-value, we reject the null in favor of the alternative, indicating that heteroskedasticity is present. 
+
+---
+
+# Activity 4 (10 minutes): White test
+
+Now perform a White-style heteroskedasticity test for our model. You may use `bptest()` for this one.
+
+White test is the same, up to the auxiliary regression that we run:
+
+$\hat{u}_i = \alpha + X_i + X_i^2 + \text{cross terms} + v_i$
+
+Let's say we have $X_1$ and $X_2$. The auxiliary regression would add:
+
+- $X_1, X_2$
+- $X_1 \times X_2$
+- $X_1^2$, $X_2^2$
+
+Test statistic: $LM = n \times R^2 \sim \chi^2(m)$
+
+where $m$ is the number of terms excluding the constant. 
+
+It doesn't assume any functional form (not assuming linearity). It's going to detect nonlinear heteroskedasticity. Also some forms of model misspecification. But it can have issues with overfitting in small samples.
+
+```{r}
+# do your White test here
+white_test <- bptest(mod1, ~inc + I(inc^2), data = saving)
+
+white_test
+```
+The white test has the same null hypothesis as the BP test. We fail to reject or reject the null in the same way. A large p-value means fail to reject the null, so no strong evidence of heteroskedasticity. Small p value means reject the null in favor of heteroskedasticity.
+
+## 4a. Compare BP and White
+
+In 3–4 sentences, explain the difference between the BP test and the White test.
+
+> **Answer:**
+
+BP test assumes a linear relationship between the error variance and the regressors and the White test doesn't. Because of that the White test is more flexible. The White test is more useful if you think there might be heteroskedasticity but don't want to impose the linear relationship that the BP test does. But the power of the BP test is higher if its functional form is specified correct.
+
+
+## 4b. Why might the White test be useful?
+
+> **Answer:**
+
+
+
+
+---
+
+# Activity 5 (10 minutes): Conventional vs robust standard errors
+
+## 5a. Usual OLS output
+
+```{r, results = "asis"}
+# display the usual OLS output here (homoskedasticity-assumed standard errors)
+#summary(mod1)
+mk_coeftab(mod1, mode = "full", digits = 6)
+```
+
+## 5b. HC1 robust standard errors
+
+```{r, results = "asis"}
+# display OLS output here with robust standard errors.
+#coeftest(mod1, vcov = vcovHC, mod1, type = "HC1")
+mk_coeftab_robust(mod1, mode = "full", digits = 6, robust_type = "HC1")
+```
+
+## 5c. Short response
+
+Did the coefficient estimate on `inc` change? Did the standard error change? Why?
+
+> **Answer:**
+
+We see that the coefficient estimate didn't change but the standard error did. It changed because the usual OLS standard errors assume homoskedasticity. And heteroskedasticity doesn't automatically bias OLS slope estimates, but it does make the usual homoskedasticity based standard errors unreliable. 
+
+---
+
+# Activity 6 (10 minutes): Add controls and think about pure vs impure heteroskedasticity
+
+Now estimate a richer model:
+
+
+$sav_i = \beta_0 + \beta_1 inc_i + \beta_2 size_i + \beta_3 educ_i + \beta_4 age_i + \beta_5 black_i + u_i$
+
+```{r, results = "asis"}
+# estimate your model here 
+mod2 <- lm(sav ~ inc + size + educ + age + black, data = saving)
+
+# now display results with robust standard errors.
+mk_coeftab_robust(mod2, mode = "full", digits = 5, robust_type = "HC1")
+
+#coeftest(mod2, vcov = vcovHC(mod2, type = "HC1"))
+```
+
+## 6a. Diagnose again
+
+Make a residual-versus-fitted plot for `mod2`.
+
+```{r}
+# save your residuals and fitted values here
+saving_aug2 <- augment(mod2)
+
+# create your scatterplot of residuals vs. fitted values here. Add a horizontal line at zero.
+
+ggplot(saving_aug2, aes(x = .fitted, y = .resid)) +
+  geom_point(alpha = 0.5, color = "steelblue") +
+  geom_hline(yintercept = 0) +
+  labs(
+    title = "residuals vs fitted model 2",
+    x = "fitted",
+    y = "residuals"
+  ) +
+  theme_minimal()
+```
+
+## 6b. Reflection
+
+Did adding controls eliminate the heteroskedasticity? If not, is that more consistent with pure or impure heteroskedasticity?
+
+> **Answer:**
+
+Adding controls might change the pattern that we see in the residuals somewhat, but the variance still seems to rise with the fitted values so the heteroskedasticity still seems present. 
+
+
+
+---
+
+# Activity 7 (12 minutes): Weighted least squares
+
+Suppose we believe the error variance rises proportionally with income squared:
+
+
+$Var(u_i \mid inc_i) = \sigma^2 inc_i^2$
+
+Then a simple WLS approach is to weight observations by $1 / inc_i^2$.
+
+## 7a. Estimate WLS
+
+```{r, results = "asis"}
+#estimate your weighted least squares model sav ~ inc
+mod_wls <- lm(sav ~ inc, data = saving, weights = 1 / (inc^2))
+
+
+
+# display your model's results with robust standard
+
+mk_coeftab_robust(mod_wls, mode = "full", robust_type = "HC1")
+
+```
+
+## 7b. Compare OLS and WLS coefficients
+
+```{r}
+# compare your coefficients from your simple linear model and your WLS model
+
+
+bind_rows(
+  tidy(mod1) %>% mutate(model = "OLS"),
+  tidy(mod_wls) %>% mutate(model = "WLS")
+) %>%
+  select(model, term, estimate, std.error, statistic, p.value)
+```
+
+## 7c. Short response
+
+Why do high-income observations receive less weight in this WLS model?
+
+> **Answer:**
+
+- High-income households are assumed to have larger error variance.
+- WLS gives less weight to observations with larger variance.
+- So high-income observations receive less weight here.
+
+
+What would happen if we had the wrong variance model?
+- WLS could be inefficient or misguided; robust SEs are often safer when the variance form is unknown.
+---
+
+# Activity 8 (8 minutes): Wrap-up synthesis
+
+Answer each in 1–2 sentences.
+
+## 8a. What usually causes heteroskedasticity in cross-sectional data like this?
+
+> **Answer:**
+
+Wide ranges of values, scale effects, variance changing proportionally with income, or size. 
+
+
+## 8b. What are two ways to diagnose heteroskedasticity?
+
+> **Answer:**
+
+BP test, White test. Residuals or squared residuals plots are suggestive. 
+
+## 8c. What are two ways to deal with heteroskedasticity?
+
+> **Answer:**
+
+robust standard errors, respecifying the model, WLS/ GLS if a variance form is known or plausibly modeled.
+
+
+## 8d. Final takeaway
+
+Complete the sentence:
+
+> “Heteroskedasticity matters mainly because ____________________________________________.”
+
+it makes the usual OLS standard errors and hypothesis tests unreliable. 
+
+---
+
+# Optional extension if your pair finishes early
+
+1. Repeat the BP test for `mod2`.
+2. Compare `coeftest(mod2)` to `coeftest(mod2, vcov = vcovHC(mod2, type = "HC1"))`.
+3. Try plotting `abs(.resid)` against `inc` for both `mod1` and `mod2`.
