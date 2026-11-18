@@ -1,0 +1,458 @@
+---
+title: "In-Class Activity - Panel Data"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+need <- c("AER", "tidyverse", "plm", "sandwich", "lmtest", "knitr")
+have <- need %in% rownames(installed.packages())
+if (any(!have)) install.packages(need[!have])
+invisible(lapply(need, library, character.only = TRUE))
+source('reporting.R')
+```
+
+# Panel Data Activity
+
+## Goals for today
+
+1. visualize panel data as both repeated observations within entities and as cross sections over time
+2. estimate a pooled model
+3. estimate entity fixed effects using dummy variables
+4. estimate entity fixed effects using de-meaning
+5. add time fixed effects
+6. explain what two-way fixed effects is actually doing and why it is **not** an automatic causal interpretation machine
+
+We will use the `Fatalities` data from the `AER` package. These are annual state-level observations on traffic fatalities and drunk-driving-related policies in the lower 48 U.S. states from 1982 to 1988.
+
+A useful starting question is:
+
+How is the traffic fatality rate related to the beer tax, and how does the answer change when we compare states to themselves over time rather than pooling everything together?
+
+## 1. Load and inspect the data
+
+```{r}
+data("Fatalities", package = "AER")
+
+df <- Fatalities |>
+  as_tibble() |>
+  mutate(
+    state = as.factor(state),
+    year = as.factor(year),
+    frate = fatal / pop
+  )
+```
+
+### Task 1
+
+Use code to answer the following:
+
+1. How many observations are there?
+2. How many states are there?
+3. How many years are there?
+4. Does this look like a balanced panel?
+
+```{r}
+# your code here
+nrow(df)
+n_distinct(df$state)
+n_distinct(df$year)
+count(df, state) |>
+  summarize(min_n = min(n), max_n = max(n))
+```
+
+```{r}
+count(df, year)
+```
+
+Write 1-2 sentences here:
+
+**Answer:**
+It is a balanced panel. Balanced panels are important because every entity is contributing the same number of time periods. Unbalanced panels can be caused because of stuff like attrition or non response or late entry so have to keep an eye on unbalanced panels because data might be missing not at random.
+
+
+## 2. Visualizing the panel
+
+A panel can be viewed in at least two ways:
+
+- within entities over time: how a given state changes from year to year;
+- across entities at a point in time: how states differ from one another in a given year.
+
+### Task 2a: one variable over time
+
+Create a plot of the average traffic fatality rate (`frate`) by year.
+
+```{r}
+# your code here
+df |>
+  group_by(year) |>
+  summarize(mean_frate = mean(frate, na.rm = TRUE)) |>
+  ggplot(aes(x = year, y = mean_frate, group = 1)) +
+  geom_line() + geom_point() +
+  theme_minimal()
+  
+```
+
+What broad time pattern do you see?
+
+**Answer:**
+
+Downward trend then upward trend. If both fatality rates and alcohol policy variables trend over time, can be problems with a pool comparison.
+
+### Task 2b: a few state trajectories
+
+Pick 6 states and plot `frate` over time for those states.
+
+```{r}
+# your code here
+selected_states <- c("fl", "ca", "ny", "tx", "wi")
+
+df |>
+  filter(state %in% selected_states) |>
+  ggplot(aes(x = year, y = frate, color = state, group = state)) +
+  geom_line() + geom_point() +
+  theme_minimal()
+
+```
+
+What do you notice about differences across states and changes within states?
+
+**Answer:**
+Changes within states and also differences between states.
+
+
+### Task 2c: cross-sectional snapshots
+
+Make side-by-side scatterplots of `frate` against `beertax` for 1982 and 1988 only.
+
+```{r}
+# your code here
+
+```
+
+Why might a simple cross-sectional relationship be misleading here?
+
+**Answer:**
+
+
+
+## 3. Pooled OLS
+
+Pooled OLS stacks all state-year observations together and ignores the panel structure.
+
+Estimate:
+
+
+$frate_{it} = \beta_0 + \beta_1 beertax_{it} + u_{it}$
+
+and then a second pooled model with controls:
+
+
+$frate_{it} = \beta_0 + \beta_1 beertax_{it} + \beta_2 jail_{it} + \beta_3 service_{it} + \beta_4 miles_{it} + \beta_5 unemp_{it} + \beta_6 \log(income_{it}) + u_{it}$
+
+```{r}
+# estimate your first pooled model here and show results
+pool1 <- plm(frate ~ beertax, 
+             data = df, 
+             index = c("state", "year"), 
+             model = "pooling")
+
+# add your second pooled model here and show results
+pool2 <- plm(frate ~ beertax + jail + service + miles + unemp + log(income), 
+             data = df, 
+             index = c("state", "year"), 
+             model = "pooling")
+```
+
+```{r, results = "asis"}
+mk_coeftab_robust(pool1, robust_type = "HC1", digits = 7)
+```
+
+
+```{r, results = "asis"}
+mk_coeftab_robust(pool2, robust_type = "HC1", digits = 7)
+```
+
+### Task 3
+
+1. What is the coefficient on `beertax` in the simple pooled model?
+2. What happens to it after adding controls?
+3. Why should we still be cautious about interpreting pooled OLS causally?
+
+**Answer:**
+Pooled OLS treats all of the observations as if they weren't a panel. Even though we added controls, omitted time constant state characteristics can still be in the error term and be correlated with beer taxes.
+
+
+## 4. Entity fixed effects using binary indicators
+
+Now estimate state fixed effects by adding **state dummy variables** directly with `lm()`.
+
+Estimate:
+
+$frate_{it} = \beta_1 beertax_{it} + \alpha_i + u_{it}$
+
+using `factor(state)`.
+
+```{r}
+# estimate your model here and show results
+fe_dummy <- lm(frate ~ beertax + factor(state), data = df)
+
+coeftest(fe_dummy, vcov= vcovCL, type = "HC1", cluster = ~state)
+```
+
+```{r}
+# estimate your model here and show results
+fe_dummy <- lm(frate ~ beertax + factor(state), data = df)
+
+coeftest(fe_dummy, vcov = vcovHC(fe_dummy, type = "HC1"))
+```
+
+### Task 4
+
+1. How does the `beertax` coefficient compare to pooled OLS?
+2. What comparison is the fixed effects model making now?
+3. Why do we not usually spend time interpreting all 47 state dummy coefficients one by one?
+
+**Answer:**
+The beertax is now negative. The coefficient on beertax is now identified by comparing a state to itself over time. It removes all state characterics that don't change over time.
+
+
+## 5. Entity fixed effects using de-meaning
+
+The fixed effects model can also be estimated by subtracting each state's mean from each variable.
+
+For any variable $x_{it}$, the state-demeaned version is:
+
+$\tilde{x}_{it} = x_{it} - \bar{x}_i$
+
+### Task 5a
+
+Create state-demeaned versions of `frate` and `beertax` and create a new dataframe with the de-meaned variables.
+
+```{r}
+# create your new dataframe here
+df_dm <- df |>
+  group_by(state) |>
+  mutate(
+    frate_dm = frate - mean(frate, na.rm = TRUE),
+    beertax_dm = beertax - mean(beertax, na.rm = TRUE)
+  ) |>
+  ungroup()
+```
+
+### Task 5b
+
+Estimate the demeaned regression without an intercept:
+
+$\tilde{frate}_{it} = \beta_1 \tilde{beertax}_{it} + \tilde{u}_{it}$
+
+```{r}
+# estimate your model here and show results
+fe_demeaned <- lm(frate_dm ~ beertax_dm - 1, data = df_dm)
+coeftest(fe_demeaned, vcov = vcovCL, type = "HC1", cluster = ~state)
+```
+
+### Task 5c
+
+Compare the `beertax` coefficient from:
+
+- the dummy-variable fixed effects model, and
+- the demeaned fixed effects model.
+
+What do you see?
+
+**Answer:**
+
+```{r}
+tribble(
+  ~model, ~beertax_coef,
+  "state FE dummies", coef(fe_dummy)['beertax'],
+  "state FE demeaning", coef(fe_demeaned)['beertax_dm']
+) |>
+  mutate(beertax_coef = round(beertax_coef, 6)) |>
+  knitr::kable()
+```
+
+
+
+## 6. Time fixed effects
+
+Now control for shocks common to all states in a given year.
+
+Estimate:
+
+$frate_{it} = \beta_1 beertax_{it} + \lambda_t + u_{it}$
+
+using year dummy variables.
+
+```{r}
+# estimate your model here and show results
+time_fe_dummy <- lm(frate ~ beertax + factor(year), data = df)
+
+coeftest(time_fe_dummy, vcov = vcovCL, type = "HC1", cluster = ~state)
+```
+
+### Task 6
+
+1. What does adding year fixed effects control for?
+2. Is the coefficient now identified from within-state changes, cross-state differences within a year, or both?
+3. In words, what question is this model closer to answering?
+
+**Answer:**
+Year fixed effects absorb nationwide year shocks common to all states. The coefficient is identified from cross state differences. This model helps to answer a cross sectional section (states compared to each other).
+
+
+## 7. Two-way fixed effects
+
+Now include both state and year fixed effects:
+
+$frate_{it} = \beta_1 beertax_{it} + \alpha_i + \lambda_t + u_{it}$
+
+```{r}
+# estimate your model here and show results
+twfe_dummy <- lm(frate ~ beertax + factor(state) + factor(year), data = df)
+
+coeftest(twfe_dummy, vcov = vcovCL, type = "HC1", cluster = ~state)
+```
+
+### Task 7a
+
+How does the `beertax` coefficient change across these four models?
+
+- pooled OLS
+- state FE
+- time FE
+- two-way FE
+
+Create a small comparison table.
+
+```{r}
+# your code here
+comparison <- tribble(
+  ~model, ~coefficient,
+  'pooled OLS', coef(pool1)['beertax'],
+  'state fe', coef(fe_dummy)['beertax'],
+  'time fe', coef(time_fe_dummy)['beertax'],
+  'twfe', coef(twfe_dummy)['beertax']
+) |>
+  mutate(coefficient = round(coefficient, 7))
+
+knitr::kable(comparison)
+```
+
+### Task 7b: manual double de-meaning
+
+Two-way fixed effects can be understood through double de-meaning:
+
+$x^{tw}_{it} = x_{it} - \bar{x}_i - \bar{x}_t + \bar{x}$
+
+and the same for $y_{it}$.
+
+Create double de-meaned versions of `frate` and `beertax`. Create a new dataframe with the double de-meaned versions of the variables in it.
+
+```{r}
+# create your dataframe here
+overall_frate <- mean(df$frate, na.rm = T)
+overall_beertax <- mean(df$beertax, na.rm = T)
+
+df_tw <- df |>
+  group_by(state) |>
+  mutate(
+    frate_state_mean = mean(frate, na.rm = T),
+    beertax_state_mean = mean(beertax, na.rm = T)
+  ) |>
+  ungroup() |>
+  group_by(year) |>
+  mutate(
+    frate_year_mean = mean(frate, na.rm = T),
+    beertax_year_mean = mean(beertax, na.rm = T)
+  ) |>
+  ungroup() |>
+  mutate(
+    frate_tw = frate - frate_state_mean - frate_year_mean + overall_frate,
+    beertax_tw = beertax - beertax_state_mean - beertax_year_mean + overall_beertax
+  ) 
+
+'/Users/jessicaperrigan/Documents/Zoom/2026-11-16 18.10.02 ECON-8300 Classroom/video1392150733.mp4'
+```
+
+Now regress `frate_tw` on `beertax_tw` without an intercept.
+
+```{r}
+# estimate your model and show your resutls here
+twfe_dm <- lm(frate_tw ~ beertax_tw - 1, data = df_tw)
+
+coeftest(twfe_dm, vcov = vcovCL, type = "HC1", cluster = ~state)
+```
+
+How does this coefficient compare to the two-way FE coefficient from `lm()` with dummies?
+
+**Answer:**
+TWFE doesn't estimate the relationship between raw frate and raw beertax. It estimates the relationship between fatality rates after removing each state's average level and each year's average level and beer taxes afer removing each state's average level and each year's average level. 
+
+
+## 8. Why two-way fixed effects is not a magic interpretation machine
+
+Two-way fixed effects removes:
+
+- average differences across states, and
+- average differences across years.
+
+So the coefficient on `beertax` is estimated from whatever variation is left over after both of those are removed.
+
+### Task 8a
+
+Compute the standard deviation of `beertax` before and after double de-meaning.
+
+```{r}
+# your code here
+tribble(
+  ~measure, ~sd_value,
+  "sd of raw beertax", sd(df$beertax, na.rm = TRUE),
+  "sd of double de-meaned beertax", sd(df_tw$beertax_tw, na.rm = TRUE)
+) |>
+  mutate(sd_value = round(sd_value, 6)) |>
+  knitr::kable()
+```
+
+What happened to the usable variation?
+
+**Answer:**
+
+
+
+
+### Task 8b
+
+In 3-5 sentences, explain why the two-way FE coefficient should **not** be described as “the pure causal effect” just because the model has lots of fixed effects.
+
+Your answer should address the following ideas:
+
+- what variation the model is using;
+- what kinds of omitted variables are still a problem;
+- why adding time FE can dramatically change the interpretation.
+
+**Answer:**
+
+TWFE uses only variation in beer taxes after moving state/ year averages. Time varying state level omitted variables can still be a threat. Maybe a state changes enforcement intensity, seatbelt laws, road quality, anti drunk driving campaign at the same time it changed alcohol taxes. TWFE doesn't automatically fix that. 
+
+Why can time FE change interpretation so much? If beer taxes or fatality rates move partly because of nationwide shocks, the identifying variation after adding year FE can be really different from the variation used in a one way FE model.
+
+## 9. Wrap-up
+
+Write a short summary answering these questions:
+
+1. When would pooled OLS be misleading in panel data?
+2. What is the main idea of entity fixed effects?
+3. What does double de-meaning do in a two-way FE model?
+
+**Answer:**
+
+
+
