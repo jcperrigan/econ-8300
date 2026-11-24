@@ -164,7 +164,19 @@ mk_coeftab_robust <- function(model,
   has_kableextra <- requireNamespace("kableExtra", quietly = TRUE)
   
   # Robust VCOV and robust coefficient test
-  Vrob <- sandwich::vcovHC(model, type = robust_type)
+  if (inherits(model, "plm")) {
+    Vrob <- plm::vcovHC(
+      model,
+      method = "arellano",
+      type = robust_type,
+      cluster = "group"
+    )
+  } else {
+    Vrob <- sandwich::vcovHC(
+      model,
+      type = robust_type
+    )
+  }
   ct <- lmtest::coeftest(model, vcov. = Vrob)
   tb <- broom::tidy(ct)
   

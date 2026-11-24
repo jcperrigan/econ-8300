@@ -159,14 +159,33 @@ mk_coeftab_robust <- function(model,
   .require_pkg("broom")
   .require_pkg("knitr")
   .require_pkg("sandwich")
+  .require_pkg("lmtest")
   
   has_kableextra <- requireNamespace("kableExtra", quietly = TRUE)
   
-  # Robust VCOV (HC0/HC1/HC2/HC3, etc.)
-  Vrob <- sandwich::vcovHC(model, type = robust_type)
+  # Robust VCOV and robust coefficient test
+  if (inherits(model, "plm")) {
+    Vrob <- plm::vcovHC(
+      model,
+      method = "arellano",
+      type = robust_type,
+      cluster = "group"
+    )
+  } else {
+    Vrob <- sandwich::vcovHC(
+      model,
+      type = robust_type
+    )
+  }
+  ct <- lmtest::coeftest(model, vcov. = Vrob)
+  tb <- broom::tidy(ct)
   
-  # broom will use the supplied vcov to compute robust SEs/t/z/p
-  tb <- broom::tidy(model, vcov = Vrob, conf.int = (mode == "full"))
+  # Robust confidence intervals if needed
+  if (mode == "full") {
+    crit <- qt(0.975, df = stats::df.residual(model))
+    tb$conf.low  <- tb$estimate - crit * tb$std.error
+    tb$conf.high <- tb$estimate + crit * tb$std.error
+  }
   
   tb$term <- ifelse(tb$term == "(Intercept)", "Intercept", tb$term)
   tb$term <- .apply_term_labels(tb$term, term_labels)
@@ -785,6 +804,7 @@ mk_coef_compare <- function(models,
                             digits = 3,
                             show_ci = FALSE,
                             ci_level = 0.95,
+                            vcov_list = NULL,
                             caption = "Coefficient comparison across models") {
   
   stopifnot(is.list(models))
@@ -794,6 +814,12 @@ mk_coef_compare <- function(models,
   }
   
   stopifnot(length(model_names) == length(models))
+  
+  if (is.null(vcov_list)) {
+    vcov_list <- vector("list", length(models))
+  }
+  
+  stopifnot(length(vcov_list) == length(models))
   
   relabel_terms <- function(terms, term_labels) {
     if (is.null(term_labels)) return(terms)
@@ -805,19 +831,40 @@ mk_coef_compare <- function(models,
   
   tabs <- lapply(seq_along(models), function(i) {
     
-    t <- broom::tidy(models[[i]],
-                     conf.int = show_ci,
-                     conf.level = ci_level)
+    mod <- models[[i]]
+    V   <- vcov_list[[i]]
+    
+    if (is.null(V)) {
+      t <- broom::tidy(mod, conf.int = show_ci, conf.level = ci_level)
+    } else {
+      ct <- lmtest::coeftest(mod, vcov. = V)
+      t <- data.frame(
+        term = rownames(ct),
+        estimate = ct[, 1],
+        std.error = ct[, 2],
+        stringsAsFactors = FALSE,
+        row.names = NULL
+      )
+      
+      if (show_ci) {
+        alpha <- 1 - ci_level
+        crit <- stats::qnorm(1 - alpha / 2)
+        t$conf.low  <- t$estimate - crit * t$std.error
+        t$conf.high <- t$estimate + crit * t$std.error
+      }
+    }
     
     keep <- c("term", "estimate", "std.error")
     if (show_ci) keep <- c(keep, "conf.low", "conf.high")
     
     t <- t[, keep, drop = FALSE]
     
-    names(t) <- c("term",
-                  paste0("b_", i),
-                  paste0("se_", i),
-                  if (show_ci) c(paste0("lo_", i), paste0("hi_", i)))
+    names(t) <- c(
+      "term",
+      paste0("b_", i),
+      paste0("se_", i),
+      if (show_ci) c(paste0("lo_", i), paste0("hi_", i))
+    )
     
     t
   })
@@ -906,4 +953,32 @@ mk_anova <- function(model,
   k
 }
 
+
+
+mk_vif_table <- function(model, caption = "Variance Inflation Factors") {
+  
+  .require_pkg("car")
+  .require_pkg("knitr")
+  
+  vif_tbl <- car::vif(model) %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column("Term") %>%
+    rename(VIF = 2)
+  
+  k <- knitr::kable(
+    vif_tbl,
+    format = "html",
+    caption = caption,
+    align = c("l","r"),
+    row.names = FALSE
+  )
+  
+  if (requireNamespace("kableExtra", quietly = TRUE)) {
+    k <- k %>%
+      kableExtra::kable_classic(full_width = FALSE) %>%
+      kableExtra::row_spec(0, bold = TRUE)
+  }
+  
+  .make_first_col_rowheaders(k)
+}
                       
